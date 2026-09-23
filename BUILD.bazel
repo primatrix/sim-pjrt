@@ -9,6 +9,7 @@ cc_library(
     srcs = ["src/profiler.cc"],
     hdrs = ["src/profiler.h"],
     deps = [
+        ":bundle_timing",
         "@xla//xla:future",
         "@xla//xla/pjrt/c:pjrt_c_api_profiler_extension_hdrs",
         "@xla//xla/tsl/profiler/utils:xplane_builder",

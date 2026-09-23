@@ -13,7 +13,7 @@ description: 后端选择、设备数、Virtual HBM与在线性能参数。
 | `PJRT_NAMES_AND_LIBRARY_PATHS` | `tpu:/绝对路径/pjrt_sim_plugin.so` | 指定插件 |
 | `JAX_ENABLE_COMPILATION_CACHE` | 设置为 `false` | 禁用不受支持的持久化可执行文件缓存 |
 | `PJRT_SIM_DEVICE_COUNT` | `1` | 接受 1 或不超过 256 的偶数；不得超过 libtpu 拓扑容量 |
-| `PJRT_SIM_LIBTPU_PATH` | 必填 | 用此 libtpu 编译原始输入，支持运行时 JIT 和提前编译，无需真实 TPU；以 Final LLO bundles 估时，TPU HLO 调试信息仅用于 XProf 标签，编译失败直接报错 |
+| `PJRT_SIM_LIBTPU_PATH` | 必填 | 用此 libtpu 编译原始输入，支持运行时 JIT 和提前编译，无需真实 TPU；以 Final LLO bundles 估时，TPU HLO 提供 XProf 标签与 SparseCore 依赖关联，编译失败直接报错 |
 | `PJRT_SIM_TPU_TOPOLOGY` | 未设置 | 必填，如 `v5e:2x2`；设备型号、坐标和 core 索引来自此拓扑，模拟设备数不能超过其容量 |
 | `PJRT_SIM_BUNDLE_PROFILE` | 未设置 | 必填的 JSON 参数；缺口默认拒绝，`allow_partial=true` 显式允许未校准的部分估计 |
 | `PJRT_SIM_BUNDLE_PYTHON` | `python3` | 运行纯函数估时模块的解释器；`PYTHONPATH` 需包含仓库 `python/` |

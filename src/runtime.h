@@ -47,7 +47,7 @@ class SimRuntime {
       int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
       const std::vector<Completion>& inputs, const ProfileActivity& profile,
       const std::string& name,
-      const std::vector<BundleActivity>& activities = {});
+      std::shared_ptr<const std::vector<BundleActivity>> activities = {});
   Completion Transfer(int64_t source, int64_t destination, int64_t bytes,
                       const Completion& input, const ProfileActivity& profile);
 
