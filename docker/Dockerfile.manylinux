@@ -1,0 +1,21 @@
+FROM quay.io/pypa/manylinux_2_34_x86_64@sha256:0b4acc5b3c4c797bb9a6286c4d15039962f61ee0c5426753afd5cbe45baebfc4
+
+ENV PATH="/opt/python/cp312-cp312/bin:${PATH}"
+COPY .bazelversion docker/bazel.sha256 /tmp/bazel-install/
+RUN cd /tmp/bazel-install \
+    && bazel_version="$(cat .bazelversion)" \
+    && curl --fail --location --retry 3 \
+        "https://releases.bazel.build/${bazel_version}/release/bazel-${bazel_version}-linux-x86_64" \
+        --output "bazel-${bazel_version}-linux-x86_64" \
+    && sha256sum --check bazel.sha256 \
+    && install -m 0755 "bazel-${bazel_version}-linux-x86_64" /usr/local/bin/bazel \
+    && rm -rf /tmp/bazel-install
+
+# XLA's hermetic Python setup and bind-mounted outputs require a non-root user.
+ARG BUILD_UID=1000
+ARG BUILD_GID=1000
+RUN if ! getent group "${BUILD_GID}" >/dev/null; then groupadd --gid "${BUILD_GID}" builder; fi \
+    && useradd --non-unique --uid "${BUILD_UID}" --gid "${BUILD_GID}" --create-home builder
+USER builder
+WORKDIR /workspace
+CMD ["bash", "docker/release.sh"]

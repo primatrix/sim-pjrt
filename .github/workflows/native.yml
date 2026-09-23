@@ -1,14 +1,92 @@
-name: Native build and tests
-on: workflow_dispatch
+name: Native build and release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+
 permissions:
   contents: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  native:
-    runs-on: [self-hosted, linux, x64, sim-pjrt]
-    timeout-minutes: 180
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-      - name: Build and test
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          export BUILD_UID=$(id -u) BUILD_GID=$(id -g)
-          docker compose run --build --rm bazel test //... --jobs=8
+          python - <<'PY'
+          import os, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+          tag = os.environ['GITHUB_REF_NAME']
+          if tag != f'v{version}':
+              raise SystemExit(f'Tag {tag} does not match package version {version}')
+          PY
+      - name: Make room for XLA
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          df -h .
+      # The SHA identifies an immutable snapshot; the prefix reuses previous builds.
+      - name: Restore Bazel dependencies and compiled actions
+        id: bazel-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .build/bazel-cache
+          key: native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-${{ github.sha }}
+          restore-keys: |
+            native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-
+      - name: Build and validate manylinux wheel
+        run: |
+          docker build -f docker/Dockerfile.manylinux \
+            --build-arg BUILD_UID="$(id -u)" --build-arg BUILD_GID="$(id -g)" \
+            -t sim-pjrt-manylinux .
+          docker run --rm --init -v "$PWD:/workspace" sim-pjrt-manylinux
+      - name: Update shared Bazel cache on main
+        if: github.ref == 'refs/heads/main' && steps.bazel-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .build/bazel-cache
+          key: ${{ steps.bazel-cache.outputs.cache-primary-key }}
+      - name: Checksum artifacts
+        working-directory: dist
+        run: sha256sum *.whl > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manylinux-2-34-x86_64-wheel
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: manylinux-2-34-x86_64-wheel
+          path: dist
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          flags=()
+          if [[ "$RELEASE_TAG" == *-* || "$RELEASE_TAG" =~ (a|b|rc|dev)[0-9] ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" dist/* \
+            --verify-tag --generate-notes "${flags[@]}"

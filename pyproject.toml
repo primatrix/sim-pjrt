@@ -7,9 +7,10 @@ name = "sim-pjrt"
 version = "0.1.0"
 description = "Run JAX workloads with a simulated TPU PJRT backend on CPU"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 license = "Apache-2.0"
-dependencies = ["jax==0.11.1", "jaxlib==0.11.1", "libtpu==0.0.48"]
+# Follow SGLang-Jax's TPU extra; see docs/dependencies.md for the upstream revision.
+dependencies = ["jax[tpu]==0.11.1"]
 
 [project.scripts]
 sim-pjrt = "sim_pjrt.cli:main"

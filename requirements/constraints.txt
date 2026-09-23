@@ -1,5 +1,6 @@
 # Tested Python 3.12 environment, 2026-09-14.
-# Install SGLang-Jax from the source commit pinned in README.md.
+# Historical snapshot; not a lockfile for current upstream SGLang-Jax.
+# See docs/dependencies.md for the current runtime baseline.
 absl-py==2.5.0
 aiofiles==25.1.0
 aiohappyeyeballs==2.7.1

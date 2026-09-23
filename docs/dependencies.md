@@ -27,6 +27,20 @@ the repository names used by XLA's C++ macros. `.bazelrc` carries the CPU build
 settings needed by those targets. GPU repository mappings exist for upstream
 select expressions; they do not enable a GPU build.
 
+## Python runtime baseline
+
+The package follows SGLang-Jax main as of 2026-09-23, commit
+[`d966db449817692b566ee646bdd3ae15964265a7`](https://github.com/sgl-project/sglang-jax/blob/d966db449817692b566ee646bdd3ae15964265a7/python/pyproject.toml):
+Python >=3.12,<3.14 and `jax[tpu]==0.11.1`. JAX's TPU extra requires
+jaxlib 0.11.1 and libtpu 0.0.46.*. The package uses this extra directly rather
+than maintaining a separate libtpu version pin. Upstream leaves Flax unpinned.
+
+This dependency alignment has not yet been validated with a full simulator
+integration run. Previous integration results and checked-in LLO fixtures used
+libtpu 0.0.48; their provenance remains unchanged. `requirements/constraints.txt`
+is a historical environment snapshot, not a lockfile for current upstream
+SGLang-Jax. Revalidate integration before replacing that snapshot.
+
 ## Updating
 
 1. Select an upstream XLA commit and calculate its archive checksum.
