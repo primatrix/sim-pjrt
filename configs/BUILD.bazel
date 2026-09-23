@@ -1,0 +1,1 @@
+filegroup(name = "defaults", srcs = glob(["*.json"]), visibility = ["//visibility:public"])

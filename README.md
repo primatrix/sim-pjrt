@@ -19,7 +19,7 @@ source, Python and C++ toolchains, and dependencies automatically. First builds
 need network access and native build prerequisites; `docker/Dockerfile` lists
 the Ubuntu packages. No TPU, GPU, CUDA, or `libtpu` is required.
 
-The plugin is `bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so`.
+The plugin is `bazel-bin/pjrt_sim_plugin.so`.
 For offline analysis tools, also build:
 
 ```sh
@@ -48,29 +48,49 @@ command from the mounted repository. No wrapper scripts are required.
 In a Python environment with JAX/jaxlib 0.11.1:
 
 ```sh
+export PYTHONPATH="$PWD/python${PYTHONPATH:+:$PYTHONPATH}"
 export JAX_PLATFORMS=tpu
 export JAX_ENABLE_COMPILATION_CACHE=false
-export PJRT_NAMES_AND_LIBRARY_PATHS="tpu:$PWD/bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so"
+export PJRT_NAMES_AND_LIBRARY_PATHS="tpu:$PWD/bazel-bin/pjrt_sim_plugin.so"
 export PJRT_SIM_DEVICE_COUNT=1
-python xla/pjrt/sim/smoke_test.py -v
+python tests/python/smoke_test.py -v
 ```
 
 The backend name `tpu`, `PJRT_SIM_*` settings, and plugin filename remain compatible.
-See the [plugin guide](xla/pjrt/sim/README.md) for supported semantics and the
+See the [plugin guide](docs/plugin-guide.md) for supported semantics and the
 SGLang-Jax integration environment. The build image does not install that runtime.
+
+## Layout
+
+```text
+src/             C++ plugin and native planner
+python/          Analysis, replay, and profiling tools
+tests/cpp/       Native unit tests
+tests/python/    Python model and JAX/SGLang tests
+configs/         Example hardware and replay settings
+requirements/    Python integration environment constraints
+docs/            Guides, design notes, and documentation site
+docker/          Bazel development image
+third_party/     Pinned XLA dependency overrides and patches
+```
+
+Native targets are declared in the root `BUILD.bazel`. Python tools and tests
+have their own Bazel packages. To run Python tests directly, set
+`PYTHONPATH="$PWD/python${PYTHONPATH:+:$PYTHONPATH}"` from the repository root.
+Analysis CLIs can be invoked directly, for example `python python/replay.py --help`.
 
 ## Development
 
 - [Building, Docker, and caches](docs/building.md)
 - [XLA pin and dependency maintenance](docs/dependencies.md)
-- [Chinese documentation site](xla/pjrt/sim/docs-site/README.md)
+- [Chinese documentation site](docs/site/README.md)
 - [Validation record](docs/migration-validation.md)
 
 `bazel test //...` runs native unit tests and fast Python model tests. The complete
 JAX/SGLang matrix requires its documented Python environment and is run separately:
 
 ```sh
-SIM_PYTHON=/path/to/python bash xla/pjrt/sim/run_tests.sh
+SIM_PYTHON=/path/to/python bash tests/run_tests.sh
 ```
 
 ## License

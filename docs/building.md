@@ -75,10 +75,10 @@ guide to create the integration Python environment, or use your existing contain
 
 | Target | Output or checks |
 | --- | --- |
-| `//:plugin` | `bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so` |
-| `//:plan_export` | `bazel-bin/xla/pjrt/sim/plan_export` |
-| `//:xplane_descriptor` | `bazel-bin/xla/pjrt/sim/xplane.descriptor.pb` |
-| `//xla/pjrt/sim:python_tests` | Fast Python scheduling/report tests, no native compilation |
+| `//:plugin` | `bazel-bin/pjrt_sim_plugin.so` |
+| `//:plan_export` | `bazel-bin/plan_export` |
+| `//:xplane_descriptor` | `bazel-bin/xplane.descriptor.pb` |
+| `//tests/python:python_tests` | Fast Python scheduling/report tests, no native compilation |
 | `//...` with `bazel test` | Native unit tests and fast Python tests |
 
 Pass standard Bazel options directly, for example `--jobs=8` or
