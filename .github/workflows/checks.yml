@@ -25,3 +25,8 @@ jobs:
           cache-dependency-path: xla/pjrt/sim/docs-site/package-lock.json
       - run: npm ci
       - run: npm run build
+  docker:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/docker.sh bash -c 'bazel --version && ./scripts/test-python.sh'
