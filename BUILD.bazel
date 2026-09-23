@@ -1,3 +1,4 @@
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@xla//xla:xla.default.bzl", "xla_cc_binary", "xla_cc_test")
 
@@ -281,3 +282,12 @@ xla_cc_binary(
 
 
 alias(name = "plugin", actual = ":pjrt_sim_plugin.so")
+
+# Keep XLA include paths and generated headers, without indexing its sources.
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+    targets = "//:all",
+    exclude_external_sources = True,
+    exclude_headers = "external",
+    tags = ["manual"],
+)

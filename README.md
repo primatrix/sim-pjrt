@@ -82,6 +82,7 @@ Analysis CLIs can be invoked directly, for example `python python/replay.py --he
 ## Development
 
 - [Building, Docker, and caches](docs/building.md)
+- [clangd setup](docs/building.md#clangd): `bazel run //:refresh_compile_commands`
 - [XLA pin and dependency maintenance](docs/dependencies.md)
 - [Chinese documentation site](docs/site/README.md)
 - [Validation record](docs/migration-validation.md)

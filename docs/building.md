@@ -56,8 +56,8 @@ this checkout, at the same absolute path as on the host; this preserves artifact
 symlinks. It needs neither privileged mode nor a Docker-socket mount. Remote Docker
 daemons and non-Linux/ARM hosts are not supported by this configuration.
 
-The Compose service passes standard Bazel startup options for batch mode and a
-persistent output root under `.build/docker-cache/bazel`. Containers are disposable;
+The Compose service runs Bazel in batch mode and sets `XDG_CACHE_HOME` so both
+Bazel and nested tooling use `.build/docker-cache/bazel/_bazel_builder`. Containers are disposable;
 dependencies and compiled outputs persist across invocations. Do not run native
 and Docker builds simultaneously in one checkout because they update the same
 artifact symlinks; use separate checkouts for concurrent environments.
@@ -95,6 +95,44 @@ inside Docker; configure networking in your own Compose override if needed.
 
 After a successful build, use the plugin in a compatible Linux runtime environment.
 Compiled outputs are not a universal binary distribution for other operating systems.
+
+## clangd
+
+After the first successful build, generate the editor compilation database from
+the same Bazel targets and flags:
+
+```sh
+bazel run //:refresh_compile_commands
+```
+
+This uses the pinned [Hedron compilation database extractor](https://github.com/hedronvision/bazel-compile-commands-extractor).
+It writes `compile_commands.json` in the checkout root. Run the normal build first
+to materialize generated XLA/Protobuf/MLIR headers; extraction itself does not
+compile the plugin or produce these headers. It includes this project's C++
+sources, headers, and unit tests, while retaining the XLA/toolchain include paths.
+External C++ source targets are excluded to keep indexing focused on the plugin.
+Headers used by project sources, including XLA and generated headers, remain
+available for parsing and navigation.
+
+Open the checkout root in an editor with clangd enabled. The checked-in `.clangd`
+selects the database; no handwritten include paths are needed. The database,
+`external` dependency link, and clangd cache are generated and ignored by Git.
+Rerun the command after changing build dependencies, flags, or the checkout path.
+Normal source edits do not need a refresh. Building the plugin still uses
+`bazel build //:plugin`.
+
+With the Compose environment:
+
+```sh
+docker compose run --build --rm bazel run //:refresh_compile_commands
+```
+
+Run clangd in the same environment as the compiler for reliable access to its
+system headers and toolchain. For a container-based editor, attach the editor to
+the development container. The build image does not install clangd; provide it
+through the editor's language-server installation or your development image.
+The native and Compose environments have separate caches: refresh the database
+after switching between them.
 
 ## CI
 

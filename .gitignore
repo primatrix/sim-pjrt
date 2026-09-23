@@ -8,3 +8,8 @@ __pycache__/
 *.xplane.pb
 .bazelrc.local
 .env
+
+# Machine-specific editor database, dependency links, and clangd index.
+compile_commands.json
+external
+.cache/clangd/
