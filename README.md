@@ -8,46 +8,34 @@ HLO, with profiling, offline replay, and optional virtual storage for large tens
 Floating-point results can be placeholders. This is a single-host simulator,
 not a TPU compiler or a calibrated latency predictor.
 
-## Build in your existing Docker container
+## Build
 
-Run the build inside the development container. Git, Python, Bazel, and the
-build toolchain requirements below apply **inside the container**; they do not
-need to be installed separately on the Docker host.
+All build modes use the same pinned XLA source and `scripts/build.sh` targets.
+Linux x86-64 is the supported platform. No GPU, TPU, CUDA, or `libtpu` is required.
 
-If your container is named `xla` and the original checkout is mounted at `/xla`,
-the new nested repository is available at `/xla/sim-pjrt`:
+| Mode | Host prerequisites | Command |
+| --- | --- | --- |
+| Repository Docker environment | Docker, Bash | `./scripts/docker.sh ./scripts/build.sh --jobs=8` |
+| Existing development container | Running container with the build tools and this checkout mounted | Run `./scripts/build.sh --jobs=8` inside it |
+| Native | Git, Python 3.12+, Bazel 8.7.0 (or Bazelisk), C++ build prerequisites | `./scripts/build.sh --jobs=8` |
 
-```sh
-docker exec -w /xla/sim-pjrt xla ./scripts/build.sh --jobs=8
-```
+The Docker helper builds an environment image, mounts this checkout, and runs the
+same native entry point. Ubuntu is pinned by digest; Bazel uses `.bazelversion`
+and a checked-in SHA-256 checksum. Source edits do not rebuild image layers.
+The container runs with your UID/GID, preserves caches under `.build/docker-cache`,
+and is removed on exit. Build outputs remain available in the checkout.
 
-Replace the container name and working directory with your actual setup. If
-sim-pjrt is mounted separately at `/workspace/sim-pjrt`, use that path instead.
-The container must be running and able to reach the dependency download sites.
-Keep its Bazel cache persistent across container recreation to avoid repeated
-cold builds. No GPU passthrough, TPU, CUDA, or `libtpu` is required.
-
-For the full integration suite, use the Python environment inside that container:
-
-```sh
-docker exec -w /xla/sim-pjrt \
-  -e SIM_PYTHON=/path/in/container/to/python \
-  xla bash xla/pjrt/sim/run_tests.sh
-```
-
-The paths above are examples based on the earlier development guide, not a
-verified description of a currently running container. The extraction checks
-in `docs/migration-validation.md` ran on the host, not in Docker.
-
-## Build directly (or from a container shell)
-
-Supported build environment: Linux x86-64, Git, Python 3.12+, and Bazel 8.7.0
-(or Bazelisk, which reads `.bazelversion`). The initial build needs network access,
-a C++ build environment, and substantial disk/RAM for the XLA CPU dependency graph.
+An existing container needs no wrapper or new image. For example, if it is named
+`xla` and this repository is mounted at `/workspace/sim-pjrt`:
 
 ```sh
-./scripts/build.sh --jobs=8
+docker exec -w /workspace/sim-pjrt xla ./scripts/build.sh --jobs=8
 ```
+
+Replace that example's name/path with your actual setup. Git, Python, and Bazel
+are required inside the container, not additionally on the host.
+See [build modes and cache management](docs/building.md) for shell access,
+configuration, native tests, and integration environments.
 
 This fetches the exact upstream XLA commit in
 [`third_party/xla.lock.json`](third_party/xla.lock.json), verifies its commit/tree,
@@ -97,10 +85,10 @@ are retained for compatibility. The project/repository name is **sim-pjrt**.
 SIM_PYTHON=/path/to/python bash xla/pjrt/sim/run_tests.sh
 ```
 
-CI runs the fast tests and builds the documentation on pushes and pull requests.
+CI runs the fast tests, checks the Docker build environment, and builds the documentation on pushes and pull requests.
 The manually triggered native workflow builds and tests the plugin on a
 self-hosted Linux x86-64 runner labelled `sim-pjrt` with sufficient resources and
-Bazel 8.7.0 available. The full SGLang matrix is a separate environment-dependent
+Docker available by default, or native build prerequisites when that mode is selected. The full SGLang matrix is a separate environment-dependent
 check; the fast tests do not substitute for it.
 
 Pass Bazel options through `scripts/bazel` or `scripts/build.sh`, including
@@ -114,6 +102,7 @@ Do not commit machine-specific paths or credentials.
 - `scripts/`: source preparation and local build/test entry points.
 - `third_party/xla.lock.json`: immutable upstream source pin, without vendored code.
 - `build_tools/`: portable CPU build configuration.
+- `docker/`: pinned development image and Bazel binary checksum.
 - `docs/`: architecture and repository maintenance notes.
 
 The source package retains `xla/pjrt/sim` so C++ includes and Bazel package

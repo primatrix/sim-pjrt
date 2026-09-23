@@ -22,11 +22,42 @@ python3.12 -m venv /tmp/pjrt-sim-venv
 
 ## 2. 构建插件
 
+三种方式共用固定的 XLA 版本和同一套构建目标，选择适合当前环境的一种即可。
+
+### 使用仓库提供的 Docker 环境
+
+宿主机只需 Linux x86-64、Bash 和可用的本地 Docker 服务：
+
 ```sh
-./scripts/bazel build -c opt //xla/pjrt/sim:pjrt_sim_plugin.so
+./scripts/docker.sh ./scripts/build.sh --jobs=8
 ```
 
-生成文件位于 `bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so`。构建入口会自动准备固定版本的 XLA；首次只编译该插件及其传递依赖。需要 Linux x86-64、Git、Python 3.12+ 和 Bazel 8.7.0（或 Bazelisk）。
+脚本构建固定基础镜像和 Bazel 版本的开发镜像，以当前用户的 UID/GID 运行。
+XLA 源码和编译缓存保留在 `.build/` 下，容器退出后不会丢失。
+
+### 使用已有容器
+
+在已配置好的容器内运行 `./scripts/build.sh --jobs=8`。例如：
+
+```sh
+docker exec -w /workspace/sim-pjrt xla ./scripts/build.sh --jobs=8
+```
+
+将 `xla` 和 `/workspace/sim-pjrt` 替换为实际容器名和挂载路径。
+Git、Python、Bazel 等依赖只需在容器中准备。
+
+### 直接在宿主机构建
+
+需要 Linux x86-64、Git、Python 3.12+、Bazel 8.7.0（或 Bazelisk）和基础 C++ 构建工具：
+
+```sh
+./scripts/build.sh --jobs=8
+```
+
+三种方式均生成 `bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so`。
+首次自动准备固定版本的 XLA，仅构建插件、原生规划工具、描述文件及其传递依赖。
+无需 TPU、GPU、CUDA 或 `libtpu`。同一仓库在不同构建环境间应顺序使用，
+需要并发构建时使用不同 checkout。
 
 ## 3. 选择模拟后端
 

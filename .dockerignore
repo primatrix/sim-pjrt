@@ -1,0 +1,6 @@
+# Build an environment image; do not send source, history, or XLA caches.
+**
+!.bazelversion
+!docker/
+!docker/Dockerfile
+!docker/bazel.sha256

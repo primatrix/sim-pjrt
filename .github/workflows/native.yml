@@ -1,5 +1,12 @@
 name: Native build and tests
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Build environment
+        type: choice
+        options: [docker, native]
+        default: docker
 permissions:
   contents: read
 jobs:
@@ -8,5 +15,11 @@ jobs:
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
-      - run: ./scripts/build.sh --jobs=8
-      - run: ./scripts/bazel test -c opt //xla/pjrt/sim:all --jobs=8 --test_output=errors
+      - if: inputs.environment == 'docker'
+        run: ./scripts/docker.sh ./scripts/build.sh --jobs=8
+      - if: inputs.environment == 'docker'
+        run: ./scripts/docker.sh ./scripts/bazel test -c opt //xla/pjrt/sim:all --jobs=8 --test_output=errors
+      - if: inputs.environment == 'native'
+        run: ./scripts/build.sh --jobs=8
+      - if: inputs.environment == 'native'
+        run: ./scripts/bazel test -c opt //xla/pjrt/sim:all --jobs=8 --test_output=errors
