@@ -1,0 +1,1 @@
+{"frequency_hz":1000000000,"bundle_issue_cycles":1,"completion_tail_cycles":0,"dma_granule_bytes":512,"dma":{"hbm_to_vmem":{"bytes_per_second":100000000000,"latency_cycles":20,"resource":"hbm"},"vmem_to_hbm":{"bytes_per_second":100000000000,"latency_cycles":20,"resource":"hbm"}}}

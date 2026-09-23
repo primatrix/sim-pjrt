@@ -1,0 +1,69 @@
+= control target key start
+LH: loop header
+LB: loop body
+LE: loop exit
+PB: predicated region body
+PF: predicated region fallthrough
+CT: control target
+= control target key end
+
+     0   :  { %6 = vsyncpa [#allocation4], 0 /* loc("/home/yanko/lab/sim-pjrt/examples/dump_libtpu.py":65:21 to :35) */  ;;  %s120_s0 = inlined_call_operand.hbm [shape: f32[8,128], index: 0, kind: input, shape index: {}] /* input window allocation for operator input 0. The window shape is f32[8,128], while the full shape is f32[8,128]. The u8 shape/size shown above represents the raw byte size of this window in VMEM.  */  ;;  %s121_s1 = inlined_call_operand.hbm [shape: f32[8,128], index: 1, kind: output, shape index: {}] /* output window allocation for operator output 0. The window shape is f32[8,128], while the full shape is f32[8,128]. The u8 shape/size shown above represents the raw byte size of this window in VMEM.  */ } /* entry bundle: %llo_demo_pallas_add.1 = custom-call(%x_ref.1) */
+   0x1   :  { %7 = vsyncpa [#allocation5], 0 /* loc("/home/yanko/lab/sim-pjrt/examples/dump_libtpu.py":65:21 to :35) */  ;;  %s31_s8 = sand.u32 2147483647, %s120_s0  ;;  %s35_s12 = scalar_lea.hbm %s120_s0, 8  ;;  %s32_s8 = int_to_ptr.hbm [resolvable:$true] %s31_s8 }
+   0x2   :  { %s33_s9 = scalar_lea.hbm %s32_s8, 8  ;;  %p36_p1 = scmp.lt.s32.totalorder %s32_s8, %s120_s0 }
+   0x3   :  { %p34_p0 = scmp.ne.s32.totalorder %s32_s8, %s33_s9  ;;  %p37_p2 = scmp.lt.s32.totalorder %s35_s12, %s33_s9 }
+   0x4   :  { %p38_p3 = por %p37_p2, %p36_p1 }
+   0x5   :  { %p39_p4 = pnand %p38_p3, %p34_p0 }
+   0x6   :  { %42 = shalt.err (!%p39_p4) /* BoundsCheck 0 [deref of opnd#0] for %12=dma.hbm_to_vmem
+hlo: llo_demo_pallas_add.1
+ */ }
+   0x7   :  { %s83_s15 = smov 2147483647 /* materialized constant */  ;;  %s84_s18 = smov [#allocation3] /* materialized constant */ }
+   0x8   :  { %s43_s16 = sand.u32 [#allocation3], %s83_s15  ;;  %s47_s19 = scalar_lea.vmem %s84_s18, 8  ;;  %s44_s16 = int_to_ptr.vmem [resolvable:$true] %s43_s16 }
+   0x9   :  { %s45_s17 = scalar_lea.vmem %s44_s16, 8  ;;  %p48_p6 = scmp.lt.s32.totalorder %s44_s16, [#allocation3] }
+   0xa   :  { %p46_p5 = scmp.ne.s32.totalorder %s44_s16, %s45_s17  ;;  %p49_p7 = scmp.lt.s32.totalorder %s47_s19, %s45_s17 }
+   0xb   :  { %p50_p8 = por %p49_p7, %p48_p6 }
+   0xc   :  { %p51_p9 = pnand %p50_p8, %p46_p5 }
+   0xd   :  { %54 = shalt.err (!%p51_p9) /* BoundsCheck 0 [deref of opnd#2] for %12=dma.hbm_to_vmem
+hlo: llo_demo_pallas_add.1
+ */ }
+   0xe   :  { %12 = dma.hbm_to_vmem [thread:$0]  /*hbm=*/%s120_s0, /*size_in_granules=*/8, /*vmem=*/%s84_s18, /*dst_syncflagno=*/[#allocation4] /* 
+base_bounds: (1, 1)
+dynamic_base_bounds: (1, 1)
+window_bounds: (1, 1)
+iteration_bounds: (1)
+strides: (1, 1)
+pad_low: (0, 0)
+pad_high: (0, 0)
+element_size_in_bytes: 4096
+second_minor_factor: 1 */ }
+   0xf   :  { %79 = dma.done.wait [#allocation4], 8 /* pipeline-emitter-dma-wait */ }
+  0x10   :  { %80 = vsyncadd [#allocation4], 4294967288  ;;  %v16_v0 = vld [vmem:[#allocation3] sm:$0xff] /* loc("/home/yanko/lab/sim-pjrt/examples/dump_libtpu.py":65:21 to :31) */  ;;  %s55_s22 = sand.u32 [#allocation6], %s83_s15  ;;  %s85_s24 = smov [#allocation6] /* materialized constant */  ;;  %s56_s22 = int_to_ptr.vmem [resolvable:$true] %s55_s22 }
+  0x11   :  { %v17_v1 = vadd.f32 1.0, %v16_v0 /* loc("/home/yanko/lab/sim-pjrt/examples/dump_libtpu.py":65:21 to :35) */  ;;  %s57_s23 = scalar_lea.vmem %s56_s22, 8  ;;  %s59_s25 = scalar_lea.vmem %s85_s24, 8 }
+  0x12   :  { %p58_p10 = scmp.ne.s32.totalorder %s56_s22, %s57_s23  ;;  %p60_p11 = scmp.lt.s32.totalorder %s56_s22, [#allocation6] }
+  0x13   :  { %18 = vst [vmem:[#allocation6] sm:$0xff] /*vst_source=*/%v17_v1 /* loc("/home/yanko/lab/sim-pjrt/examples/dump_libtpu.py":65:8 to :18) */  ;;  %p61_p12 = scmp.lt.s32.totalorder %s59_s25, %s57_s23 }
+  0x14   :  { %p62_p13 = por %p61_p12, %p60_p11 }
+  0x15   :  { %p63_p14 = pnand %p62_p13, %p58_p10 }
+  0x16   :  { %66 = shalt.err (!%p63_p14) /* BoundsCheck 3 [deref of opnd#0] for %23=dma.vmem_to_hbm
+hlo: llo_demo_pallas_add.1
+ */ }
+  0x17   :  { %s67_s0 = sand.u32 2147483647, %s121_s1  ;;  %s71_s2 = scalar_lea.hbm %s121_s1, 8  ;;  %s68_s0 = int_to_ptr.hbm [resolvable:$true] %s67_s0 }
+  0x18   :  { %s69_s28 = scalar_lea.hbm %s68_s0, 8  ;;  %p72_p1 = scmp.lt.s32.totalorder %s68_s0, %s121_s1 }
+  0x19   :  { %p70_p0 = scmp.ne.s32.totalorder %s68_s0, %s69_s28  ;;  %p73_p2 = scmp.lt.s32.totalorder %s71_s2, %s69_s28 }
+  0x1a   :  { %p74_p3 = por %p73_p2, %p72_p1 }
+  0x1b   :  { %p75_p4 = pnand %p74_p3, %p70_p0 }
+  0x1c   :  { %78 = shalt.err (!%p75_p4) /* BoundsCheck 3 [deref of opnd#2] for %23=dma.vmem_to_hbm
+hlo: llo_demo_pallas_add.1
+ */ }
+  0x1d   :  { %23 = dma.vmem_to_hbm [thread:$0]  /*vmem=*/%s85_s24, /*size_in_granules=*/8, /*hbm=*/%s121_s1, /*dst_syncflagno=*/[#allocation5] /* 
+base_bounds: (1, 1)
+dynamic_base_bounds: (1, 1)
+window_bounds: (1, 1)
+iteration_bounds: (1)
+strides: (1, 1)
+pad_low: (0, 0)
+pad_high: (0, 0)
+element_size_in_bytes: 4096
+second_minor_factor: 1 */ }
+  0x1e   :  { %81 = dma.done.wait [#allocation5], 8 /* pipeline-emitter-dma-wait */ }
+  0x1f   :  { %82 = vsyncadd [#allocation5], 4294967288 }
+  0x20   :  { %27 = vsyncpa [#allocation4], 1 }
+  0x21   :  { %28 = vsyncpa [#allocation5], 1 } /* exit bundle: %llo_demo_pallas_add.1 = custom-call(%x_ref.1) */

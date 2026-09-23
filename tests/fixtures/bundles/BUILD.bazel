@@ -1,0 +1,5 @@
+filegroup(
+    name = "fixtures",
+    srcs = ["pallas_add.txt", "example_profile.json", "no_faults.json"],
+    visibility = ["//tests/python:__pkg__"],
+)
