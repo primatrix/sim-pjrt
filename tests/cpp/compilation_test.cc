@@ -43,7 +43,7 @@ TEST_P(CompilationTest, RetainsOriginalInputAndUsesBundles) {
   CompilationInput input{GetParam() ? "mlir" : "hlo", code, {}};
   EXPECT_FALSE(input.options.executable_build_options.has_debug_options());
   ASSERT_OK_AND_ASSIGN(auto result,
-                       CompileProgram(input, client.get(), 0, true));
+                       CompileProgram(input, client.get(), true));
   EXPECT_EQ(input.code, code);
   EXPECT_FALSE(input.options.executable_build_options.has_debug_options());
   EXPECT_NE(result.executable, nullptr);
@@ -59,14 +59,14 @@ INSTANTIATE_TEST_SUITE_P(InputFormats, CompilationTest, testing::Bool());
 TEST(CompilationInputTest, RejectsTextDisguisedAsHloProto) {
   ASSERT_OK_AND_ASSIGN(auto client, GetXlaPjrtCpuClient(CpuClientOptions{}));
   CompilationInput input{"hlo", kHlo, {}};
-  EXPECT_EQ(CompileProgram(input, client.get(), 0, false).status().code(),
+  EXPECT_EQ(CompileProgram(input, client.get(), false).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
 TEST(CompilationInputTest, RejectsUnsupportedFormat) {
   ASSERT_OK_AND_ASSIGN(auto client, GetXlaPjrtCpuClient(CpuClientOptions{}));
   CompilationInput input{"unknown", "", {}};
-  EXPECT_EQ(CompileProgram(input, client.get(), 0, false).status().code(),
+  EXPECT_EQ(CompileProgram(input, client.get(), false).status().code(),
             absl::StatusCode::kUnimplemented);
 }
 
@@ -120,7 +120,7 @@ TEST(CompilationInputTest, VirtualOutputMaterializesOnlyAtHostRead) {
   const std::string code = module->ToProto().SerializeAsString();
   CompilationInput input{"hlo", code, {}};
   ASSERT_OK_AND_ASSIGN(auto result,
-                       CompileProgram(input, client.get(), 16, false));
+                       CompileProgram(input, client.get(), false));
   std::vector<std::vector<PjRtBuffer*>> arguments(1);
   std::optional<std::vector<Future<>>> futures;
   ASSERT_OK_AND_ASSIGN(auto outputs,

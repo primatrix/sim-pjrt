@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">sim-pjrt — virtual TPU</title>
+  <desc id="desc">Transparent burgundy icon: a virtual TPU with a three-by-three compute array, an execution route, and a timing waveform. Dashed edges indicate simulation.</desc>
+  <!-- Physical interface; the dashed package represents a virtual device. -->
+  <path fill="none" stroke="#742B32" stroke-width="5" d="M80 28 L80 44 M104 28 L104 44 M128 28 L128 44 M152 28 L152 44 M176 28 L176 44 M80 212 L80 228 M104 212 L104 228 M128 212 L128 228 M152 212 L152 228 M176 212 L176 228 M28 80 L44 80 M28 104 L44 104 M28 128 L44 128 M28 152 L44 152 M28 176 L44 176 M212 80 L228 80 M212 104 L228 104 M212 128 L228 128 M212 152 L228 152 M212 176 L228 176"/>
+  <rect x="48" y="48" width="160" height="160" rx="12" fill="none" stroke="#742B32" stroke-width="3" stroke-dasharray="8 5"/>
+  <!-- TPU lettering drawn as paths, not dependent on installed fonts. -->
+  <path fill="none" stroke="#742B32" stroke-width="2.5" d="M109 61 L119 61 M114 61 L114 72 M125 72 L125 61 L133 61 L133 66 L125 66 M139 61 L139 72 L147 72 L147 61"/>
+  <!-- Systolic compute tiles. -->
+  <g fill="#742B32" fill-opacity="0.10" stroke="#742B32" stroke-width="1.5">
+    <rect x="80" y="82" width="24" height="24"/>
+    <rect x="116" y="82" width="24" height="24"/>
+    <rect x="152" y="82" width="24" height="24"/>
+    <rect x="80" y="118" width="24" height="24"/>
+    <rect x="116" y="118" width="24" height="24"/>
+    <rect x="152" y="118" width="24" height="24"/>
+    <rect x="80" y="154" width="24" height="24"/>
+    <rect x="116" y="154" width="24" height="24"/>
+    <rect x="152" y="154" width="24" height="24"/>
+  </g>
+  <!-- Workload replay traverses the array in an S-shaped route. -->
+  <path fill="none" stroke="#742B32" stroke-width="4" d="M164 94 L92 94 L92 130 L164 130 L164 166 L92 166"/>
+  <g fill="#742B32">
+    <rect x="160" y="90" width="8" height="8"/>
+    <path d="M96 161 L87 166 L96 171 Z"/>
+    <rect x="125" y="127" width="6" height="6"/>
+  </g>
+  <!-- Execution timing / performance modeling. -->
+  <path fill="none" stroke="#742B32" stroke-width="2" d="M80 193 L95 193 L95 185 L107 185 L107 193 L123 193 L123 185 L147 185 L147 193 L163 193 L163 185 L176 185"/>
+</svg>

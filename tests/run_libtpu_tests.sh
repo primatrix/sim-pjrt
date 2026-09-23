@@ -13,7 +13,6 @@ export TPU_SKIP_MDS_QUERY=1
 export PJRT_SIM_BUNDLE_PYTHON=${PJRT_SIM_BUNDLE_PYTHON:-$sim_python}
 # This named example explicitly opts into uncalibrated partial bundle estimates.
 export PJRT_SIM_BUNDLE_PROFILE=${PJRT_SIM_BUNDLE_PROFILE:-$sim_root/configs/bundle_timing_example.json}
-unset PJRT_SIM_MAX_MATERIALIZED_BYTES
 sim_results=${SIM_RESULTS_DIR:-/tmp/pjrt-sim-libtpu-results}
 mkdir -p "$sim_results"
 sim_run=$(mktemp -d "$sim_results/run.XXXXXX")

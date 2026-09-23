@@ -7,9 +7,9 @@ description: 构建插件，选择模拟后端并运行第一个 JAX 程序。
 
 ## 1. 准备环境
 
-需要可用的 Bazel 构建环境，以及与本仓库基线兼容的 JAX/jaxlib。框架集成基线为 Python 3.12、JAX/jaxlib 0.11.1、Flax 0.12.9；虚拟存储迭代也在本地 Python 3.13 / JAX 0.11.1 上验证过。
+需要可用的 Bazel 构建环境，以及与本仓库基线兼容的 JAX/jaxlib。框架集成基线为 Python 3.12、JAX/jaxlib 0.11.1、Flax 0.12.9。
 
-SGLang-Jax 的测试提交为 `7ebbbef498b9e484fdc5902986578a3504734e46`。如果要运行完整框架集成，在该版本的源码目录安装 CPU 依赖：
+SGLang-Jax 的测试提交为 `cd0b4bf6d92d8aac9ba74ca329cd8f059a3859e4`。如果要运行完整框架集成，在该版本的源码目录安装 CPU 依赖：
 
 ```sh
 python3.12 -m venv /tmp/pjrt-sim-venv
@@ -46,13 +46,7 @@ export BUILD_GID=$(id -g)
 ```
 
 Docker 只是构建环境，缓存保留在 `.build/docker-cache`。
-离线分析需要的原生工具可以单独构建：
-
-```sh
-bazel build //:plan_export //:xplane_descriptor
-```
-
-无需 TPU、GPU、CUDA 或 `libtpu`。首次构建需要下载和编译依赖。
+构建不需要 TPU 硬件；运行必须安装 libtpu（已验证 0.0.48）。首次构建需要下载和编译依赖。
 同一 checkout 的宿主机和 Docker 构建应顺序运行。
 
 ## 3. 选择模拟后端
@@ -65,6 +59,13 @@ export JAX_PLATFORMS=tpu
 export JAX_ENABLE_COMPILATION_CACHE=false
 export PJRT_NAMES_AND_LIBRARY_PATHS="tpu:$PWD/bazel-bin/pjrt_sim_plugin.so"
 export PJRT_SIM_DEVICE_COUNT=1
+export PJRT_SIM_LIBTPU_PATH="$PWD/.venv/lib/python3.12/site-packages/libtpu/libtpu.so"
+export PJRT_SIM_TPU_TOPOLOGY=v5e:2x2
+export PJRT_SIM_BUNDLE_PYTHON="$PWD/.venv/bin/python"
+export PJRT_SIM_BUNDLE_PROFILE="$PWD/configs/bundle_timing_example.json"
+export TPU_SKIP_MDS_QUERY=1
+export TPU_WORKER_HOSTNAMES=localhost
+export TPU_ACCELERATOR_TYPE=v5litepod-4
 ```
 
 插件使用 `tpu` 名称，以便 JAX 采用 TPU/Pallas lowering。持久化可执行文件缓存不受支持。
@@ -96,7 +97,7 @@ python tests/python/smoke_test.py -v
 
 ## 下一步
 
-- [虚拟存储](/guides/virtual-storage/)：了解逻辑形状、物理存储与初始化方式。
+- [Virtual HBM](/guides/virtual-hbm/)：了解逻辑形状、物理存储与初始化方式。
 - [张量并行](/guides/tensor-parallelism/)：使用多个设备和显式分片。
 - [性能分析](/guides/profiling/)：采集并解释时间线。
 
@@ -106,4 +107,4 @@ python tests/python/smoke_test.py -v
 
 **首次运行很慢：** 编译和 CPU 执行也会消耗真实时间，不能把这一耗时当成模拟 TPU 的计算时间。
 
-**初始化时主机内存占用过高：** 确认虚拟存储已在后端初始化前开启，并用编译后的形状初始化，避免先创建完整主机权重。
+**初始化时主机内存占用过高：** Virtual HBM 始终启用，但不会消除加载器创建的主机数组。使用 dummy 权重和编译后的形状初始化，避免先下载并创建完整主机权重。

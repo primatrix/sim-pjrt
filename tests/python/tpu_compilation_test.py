@@ -55,7 +55,6 @@ class TpuCompilationTest(unittest.TestCase):
                 TPU_WORKER_HOSTNAMES="localhost",
                 TPU_ACCELERATOR_TYPE="v5litepod-4",
             )
-            env.pop("PJRT_SIM_MAX_MATERIALIZED_BYTES", None)
             process = subprocess.run(
                 [
                     sys.executable,

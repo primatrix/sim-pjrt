@@ -1,58 +1,36 @@
 ---
 title: XProf 性能分析
-description: 采集主机调用和模拟设备时间线，正确解释事件时钟。
 ---
 
-插件通过 `PJRT_Profiler_Extension` 接入 JAX 的 profiler 生命周期，输出标准 `*.xplane.pb`。采集本身不需要 Python 转换助手。
+插件通过原生 `PJRT_Profiler_Extension` 输出 `*.xplane.pb`，无 Python 导出助手。
 
-## 采集一个框架运行
-
-使用[快速开始](/getting-started/)的后端环境，并安装 `profiling-requirements.txt` 中的依赖：
+设置[后端环境](/getting-started/)，安装 `requirements/profiling-requirements.txt`，运行：
 
 ```sh
-export PJRT_SIM_DEVICE_COUNT=4
-python tests/python/sglang_smoke_test.py \
-  --tp-size 4 --overlap --profile-dir /tmp/sim-profile
-xprof server --logdir /tmp/sim-profile
+SIM_PYTHON=.venv/bin/python SIM_TP_SIZES=4 SIM_PROFILE=1 bash tests/run_libtpu_tests.sh
+xprof server --logdir /path/to/run/tp4/xprof --port 8791
 ```
 
-在 XProf 中选择捕获会话和 Trace Viewer。时间线包含框架 host annotations、PJRT 提交与等待、模拟执行、HLO、DMA 和通信。
+在 Trace Viewer 展开 `/device:CUSTOM:1000 Simulated TPU 0` 等设备行：
 
-如果要继续做离线重放，需要在采集之前同时设置 `PJRT_SIM_TRACE`，见[离线重放](/guides/replay/)。
-
-## 两类时间
-
-| 时间域 | 含义 |
+| 轨道 | 含义 |
 | --- | --- |
-| `cpu_wall` | 实际观测到的主机调用、CPU 就绪通知等时间 |
-| `simulated`，`clock_alignment=runtime_realtime` | 在线模型的设备资源预留，与实时运行对齐 |
+| Bundles | 整个程序的 bundle 模型时长，非逐指令测量 |
+| Launch | 模拟启动延迟 |
+| DMA | 显式 H2D/D2H/设备 copy 的模拟传输 |
+| Host completion / device N | 执行和传输的提交到完成区间 |
+| PJRT host API | 主机调用线程 |
 
-在线完成事件同时等待模型期限和必要的 CPU 数据就绪。设备区间是模型结果，不是硬件测量。
+模型区间与 host 共用时间基准，但 `simulated` 和 `cpu_wall` 不是同一种测量。长 H2D submit-to-ready 可能来自主机通知延迟，不能当作 DMA 时长。异步区间分配到不交叉的行。逐 buffer 的 ready 查询、销毁、回调注册和额外通知延迟事件不再采集。
 
-## 关键事件
+SGLang profiler 在 scheduler 进程中启停。脚本先预热完整请求流程、flush 缓存，再采集第二轮；不会在导出后压缩或删除时间空隙。
 
-| 事件 | 解释 |
-| --- | --- |
-| Compile / Execute submit | 主机 API 调用，包括观测开销 |
-| Execute submit-to-ready | 从提交到观测完成，包含排队与提交时间 |
-| Host source releasable | 主机源数据可以复用，与设备输出就绪不同 |
-| Buffer ready / Event await | 就绪查询与实际阻塞 |
-| Executions | 设备上的可执行程序范围 |
-
-`correlation_id` 关联提交与完成；`sim_program_id` 标识程序；`buffer_id`、`input_buffers`、`output_buffers` 关联缓冲区依赖。缓冲区 ID 表示句柄，不表示底层唯一物理分配。
-
-## 导出报告
+`correlation_id` 关联提交与完成，`sim_program_id` 关联执行程序。设置 `PJRT_SIM_TRACE` 可保留执行 JSONL 和每个程序的 bundle 报告，其中有 Final LLO 文件与去重映射路径。
 
 ```sh
-python python/profile_report.py /tmp/sim-profile \
-  --output /tmp/profile.report.json \
-  --trace-output /tmp/profile.trace.json
+python python/profile_report.py /path/to/xprof --output report.json --trace-output trace.json
 ```
 
-累计区间可能重叠，pending 时长也不等于计算时间或利用率。
+累计 pending 区间可能重叠，不等于计算利用率。设备时间是部分、未校准的估算；停止时未完成的事件会标记 `incomplete`。每个 session 最多收集一百万个事件，并报告丢弃数。
 
-## 采集注意事项
-
-SGLang 的执行发生在 scheduler 进程。仅在父进程用 `jax.profiler.trace` 包住 `engine.generate()` 可能漏掉子进程，应使用框架自身的 profiler 请求。集成测试采用 `host_tracer_level=1`、`python_tracer_level=0`，避免大量 Python 编译事件挤占时间线。
-
-每个插件 session 最多接受 100,000 个观测事件，并报告丢弃数量；设备模型事件在收集时生成，数量可能更多。停止采集不会等待所有设备任务结束，尚未完成的区间会被裁剪并标记 `incomplete=1`。
+连续 decode 可以提前排队，掩盖主机开销；请求结束或 batch 切换时队列可能耗尽。此时的 bubble 包含主机调度、输入准备和通知延迟，不能直接解释为真实 TPU 内部停顿。

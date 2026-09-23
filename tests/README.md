@@ -1,25 +1,72 @@
 # Tests
 
-Run from the repository root:
+`bazel test //...` runs six native test targets and two pure Python targets.
+It covers CPU output substitution, Virtual HBM, bundle runtime readiness,
+profiling, API error ownership, compilation validation and bundle estimation.
+Real libtpu native compilation cases are optional in Bazel and run with an
+explicit library/profile environment; there is no fake local estimator.
+
+## Integration
+
+Use Python 3.12 with JAX/jaxlib 0.11.1, Flax 0.12.9, libtpu 0.0.48 and
+SGLang-Jax checkout `cd0b4bf6d92d8aac9ba74ca329cd8f059a3859e4`.
+Install `requirements/profiling-requirements.txt` for XProf validation.
 
 ```sh
-bazel test //...
+export SIM_PYTHON="$PWD/.venv/bin/python"
+export PYTHONPATH="/path/to/sglang-jax/python${PYTHONPATH:+:$PYTHONPATH}"
+export PJRT_SIM_LIBTPU_PATH="$PWD/.venv/lib/python3.12/site-packages/libtpu/libtpu.so"
+export PJRT_SIM_TPU_TOPOLOGY=v5e:2x2
+export TPU_WORKER_HOSTNAMES=localhost
+export TPU_ACCELERATOR_TYPE=v5litepod-4
+export NUMBA_CACHE_DIR=/tmp/sim-numba-cache
+bash tests/run_tests.sh
 ```
 
-`cpp/` contains the six native unit test targets declared in the root
-`BUILD.bazel`. `python/` contains model tests and framework integration tests;
-Bazel runs the three fast model test targets without JAX.
+The script builds/tests the plugin, runs JAX control/donation/transfers,
+Virtual HBM, Pallas, real offline TPU compilation, multi-device execution,
+and SGLang requests. It defaults to the explicitly partial
+`configs/bundle_timing_example.json`; set `PJRT_SIM_BUNDLE_PROFILE` for another
+profile. The compilation integration test checks delayed readiness, 32 MiB D2H,
+Final LLO provenance, and strict rejection of unresolved timing semantics.
+Oversized weight tests use 512 MiB total weights so the real TPU compiler can
+accept the fixture within the selected topology's memory constraints.
 
-For direct Python invocation, first set:
+For only the serving matrix using an already-built plugin:
 
 ```sh
-export PYTHONPATH="$PWD/python${PYTHONPATH:+:$PYTHONPATH}"
+bash tests/run_libtpu_tests.sh
 ```
 
-Offline planner tests need `bazel build //:plan_export //:xplane_descriptor`.
-JAX and SGLang tests additionally need the plugin and their runtime environment;
-see [the plugin guide](../docs/plugin-guide.md). XProf tests require
-`requirements/profiling-requirements.txt`.
+This defaults to TP1/2/4, with overlap for TP2/4. Every execution must use
+`libtpu_bundles`. Each overlap case completes 11 requests including prefill,
+decode, unequal concurrent lengths, future-token reuse, prefix caching and flush.
 
-`run_tests.sh` is the full integration test harness, invoked with
-`SIM_PYTHON=/path/to/python bash tests/run_tests.sh`.
+A large-model profile uses the same environment:
+
+```sh
+SIM_TP_SIZES=4 SIM_HIDDEN_SIZE=4096 SIM_NUM_LAYERS=32 \
+SIM_INTERMEDIATE_SIZE=11008 SIM_PROFILE=1 SIM_TEST_TIMEOUT=1800 \
+  bash tests/run_libtpu_tests.sh
+```
+
+This is a Llama-sized trunk with a small test vocabulary and dummy/virtual
+weights. The harness warms a full request round and flushes the cache before
+profiling a second full round. It checks that capture contains no backend
+compilation, async lanes do not cross, and model durations match bundle reports
+inside their correlated submission-to-completion spans.
+
+`SIM_RESULTS_DIR` selects the artifact parent directory; each run gets a fresh
+subdirectory. `SIM_TP_SIZES` must fit the topology. Run libtpu cases sequentially
+because the library takes a process lock even during offline compilation.
+
+For a two-layer Qwen3 MoE case (128 experts, top-8, expert width 768):
+
+```sh
+SIM_MODEL=qwen3_moe SIM_TP_SIZES=4 SIM_HIDDEN_SIZE=2048 SIM_NUM_LAYERS=2 \
+SIM_PROFILE=1 SIM_TEST_TIMEOUT=1800 bash tests/run_libtpu_tests.sh
+```
+
+This uses dummy weights and Virtual HBM. It validates serving control flow,
+Final LLO compilation and profiling, not checkpoint accuracy or real expert load.
+When profiling, `model_config.json` is saved alongside the XProf directory.

@@ -10,7 +10,7 @@
 
 #include "absl/log/log.h"
 #include "src/profiler.h"
-#include "src/virtual_storage.h"
+#include "src/virtual_hbm.h"
 #include "tsl/platform/env.h"
 #include "xla/pjrt/c/pjrt_c_api_cpu_internal.h"
 #include "xla/pjrt/c/pjrt_c_api_helpers.h"
@@ -111,7 +111,7 @@ void ProfileBuffer(const ProfileActivity& activity, PJRT_Buffer* buffer,
 
 PJRT_Error* FromHost(PJRT_Client_BufferFromHostBuffer_Args* args) {
   ProfileCall profile("PJRT H2D submit");
-  PJRT_Error* error = VirtualFromHost(args, MaxMaterializedBytes(args->client));
+  PJRT_Error* error = VirtualFromHost(args);
   if (!error) {
     Track(args->buffer);
     TransferBuffer(args->buffer, -1, {}, profile.activity());
@@ -427,11 +427,6 @@ PJRT_Error* DestroyExecutable(PJRT_LoadedExecutable_Destroy_Args* args) {
 }
 
 }  // namespace
-
-int64_t MaxMaterializedBytes(PJRT_Client* client) {
-  auto runtime = Runtime(client);
-  return runtime ? runtime->max_materialized_bytes() : 0;
-}
 
 void RegisterWork(PJRT_LoadedExecutable* executable, ExecutableWork work,
                   const std::string& program_json) {

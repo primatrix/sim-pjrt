@@ -13,7 +13,6 @@ namespace xla::sim {
 // PJRT_SIM_TRACE is set. Each process writes <prefix>.<pid>.jsonl.
 void AddInstrumentation(PJRT_Api& api);
 void RegisterRuntime(PJRT_Client* client, RuntimeConfig config);
-int64_t MaxMaterializedBytes(PJRT_Client* client);
 void RegisterWork(PJRT_LoadedExecutable* executable, ExecutableWork work,
                   const std::string& program_json = {});
 }  // namespace xla::sim

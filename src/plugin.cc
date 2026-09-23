@@ -155,7 +155,6 @@ PJRT_Error* Compile(PJRT_Client_Compile_Args* args) {
                          {args->program->code, args->program->code_size},
                          std::move(*options)};
   auto compiled = CompileProgram(input, args->client->client.get(),
-                                 MaxMaterializedBytes(args->client),
                                  std::getenv("PJRT_SIM_TRACE") != nullptr);
   if (!compiled.ok()) {
     profile.activity().Finish(compiled.status());

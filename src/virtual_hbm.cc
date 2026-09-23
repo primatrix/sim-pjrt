@@ -1,4 +1,4 @@
-#include "src/virtual_storage.h"
+#include "src/virtual_hbm.h"
 
 #include <cstring>
 #include <utility>
@@ -20,72 +20,62 @@
 
 namespace xla::sim {
 namespace {
-bool Large(const Shape& shape, int64_t limit) {
-  return shape.IsArray() && ShapeUtil::ByteSizeOf(shape) > limit;
-}
-Shape PhysicalShape(Shape shape, int64_t limit) {
+Shape PhysicalShape(Shape shape) {
   if (shape.IsTuple()) {
-    for (Shape& child : *shape.mutable_tuple_shapes()) {
-      child = PhysicalShape(child, limit);
-    }
-  } else if (Large(shape, limit) &&
+    for (Shape &child : *shape.mutable_tuple_shapes())
+      child = PhysicalShape(child);
+  } else if (shape.IsArray() &&
              primitive_util::IsFloatingPointType(shape.element_type())) {
     return ShapeUtil::MakeShape(shape.element_type(), {});
   }
   return shape;
 }
-bool HasFloat(const Shape& shape) {
+bool HasFloat(const Shape &shape) {
   if (shape.IsTuple()) {
-    for (const Shape& child : shape.tuple_shapes()) {
-      if (HasFloat(child)) return true;
+    for (const Shape &child : shape.tuple_shapes()) {
+      if (HasFloat(child))
+        return true;
     }
     return false;
   }
   return shape.IsArray() &&
          primitive_util::IsFloatingPointType(shape.element_type());
 }
-bool AllFloat(const Shape& shape) {
+HloInstruction *Zero(HloComputation *computation, const Shape &shape) {
   if (shape.IsTuple()) {
-    for (const Shape& child : shape.tuple_shapes()) {
-      if (!AllFloat(child)) return false;
-    }
-    return true;
-  }
-  return HasFloat(shape);
-}
-HloInstruction* Zero(HloComputation* computation, const Shape& shape) {
-  if (shape.IsTuple()) {
-    std::vector<HloInstruction*> children;
-    for (const Shape& child : shape.tuple_shapes()) {
+    std::vector<HloInstruction *> children;
+    for (const Shape &child : shape.tuple_shapes()) {
       children.push_back(Zero(computation, child));
     }
     return computation->AddInstruction(HloInstruction::CreateTuple(children));
   }
-  auto* zero = computation->AddInstruction(
+  auto *zero = computation->AddInstruction(
       HloInstruction::CreateConstant(LiteralUtil::Zero(shape.element_type())));
-  if (shape.dimensions_size() == 0) return zero;
+  if (shape.dimensions_size() == 0)
+    return zero;
   return computation->AddInstruction(
       HloInstruction::CreateBroadcast(shape, zero, {}));
 }
 absl::Status NoData() {
   return absl::FailedPreconditionError(
-      "Virtual simulator tensor has no materialized data; pointer export is "
+      "Virtual HBM has no materialized data on device; pointer export is "
       "unavailable; use D2H for simulated data");
 }
 
 class VirtualBuffer final : public PjRtBuffer {
- public:
+public:
   VirtualBuffer(std::unique_ptr<PjRtBuffer> storage, Shape shape)
       : storage_(std::move(storage)), shape_(std::move(shape)) {
-    if (!shape_.has_layout()) LayoutUtil::SetToDefaultLayout(&shape_);
+    if (!shape_.has_layout())
+      LayoutUtil::SetToDefaultLayout(&shape_);
   }
-  PjRtBuffer* storage() const { return storage_.get(); }
-  const Shape& on_device_shape() const override { return shape_; }
-  PjRtMemorySpace* memory_space() const override {
+  PjRtBuffer *storage() const { return storage_.get(); }
+  const Shape &on_device_shape() const override { return shape_; }
+  PjRtMemorySpace *memory_space() const override {
     return storage_->memory_space();
   }
-  PjRtDevice* device() const override { return storage_->device(); }
-  PjRtClient* client() const override { return storage_->client(); }
+  PjRtDevice *device() const override { return storage_->device(); }
+  PjRtClient *client() const override { return storage_->client(); }
   absl::StatusOr<size_t> GetOnDeviceSizeInBytes() const override {
     return ShapeUtil::ByteSizeOf(shape_);
   }
@@ -93,34 +83,38 @@ class VirtualBuffer final : public PjRtBuffer {
   void Delete() override { storage_->Delete(); }
   bool IsDeleted() const override { return storage_->IsDeleted(); }
   bool IsOnCpu() const override { return false; }
-  absl::StatusOr<std::unique_ptr<ExternalReference>> AcquireExternalReference()
-      override {
+  absl::StatusOr<std::unique_ptr<ExternalReference>>
+  AcquireExternalReference() override {
     return NoData();
   }
   absl::StatusOr<std::unique_ptr<ExternalReference>>
   ReleaseDeviceMemoryOwnership(bool) override {
     return NoData();
   }
-  Future<> ToLiteral(MutableLiteralBase* literal) override {
+  Future<> ToLiteral(MutableLiteralBase *literal) override {
     if (!literal || !ShapeUtil::Compatible(shape_, literal->shape())) {
       return Future<>(absl::InvalidArgumentError("Virtual D2H shape mismatch"));
     }
+    if (!HasFloat(shape_))
+      return storage_->ToLiteral(literal);
     return CopyRawToHost(literal->untyped_data(), 0, literal->size_bytes());
   }
-  Future<> LazyToLiteral(
-      absl::AnyInvocable<Future<MutableLiteralBase*>() &&> generator) override {
+  Future<> LazyToLiteral(absl::AnyInvocable<Future<MutableLiteralBase *>() &&>
+                             generator) override {
+    if (!HasFloat(shape_))
+      return storage_->LazyToLiteral(std::move(generator));
     auto [promise, future] = MakePromise();
     // Do not retain this buffer across asynchronous callbacks.
     auto ready = storage_->GetReadyFuture();
     Shape shape = shape_;
     std::move(generator)().OnReady(
         [promise = std::move(promise), ready,
-         shape](absl::StatusOr<MutableLiteralBase*> result) mutable {
+         shape](absl::StatusOr<MutableLiteralBase *> result) mutable {
           if (!result.ok()) {
             promise.Set(result.status());
             return;
           }
-          auto* literal = *result;
+          auto *literal = *result;
           if (!literal || !ShapeUtil::Compatible(shape, literal->shape())) {
             promise.Set(
                 absl::InvalidArgumentError("Virtual D2H shape mismatch"));
@@ -135,7 +129,7 @@ class VirtualBuffer final : public PjRtBuffer {
         });
     return future;
   }
-  Future<> CopyRawToHost(void* destination, int64_t offset,
+  Future<> CopyRawToHost(void *destination, int64_t offset,
                          int64_t size) override {
     const int64_t bytes = ShapeUtil::ByteSizeOfElements(shape_);
     if (offset < 0 || size < 0 || offset > bytes || size > bytes - offset ||
@@ -143,11 +137,14 @@ class VirtualBuffer final : public PjRtBuffer {
       return Future<>(
           absl::InvalidArgumentError("Virtual D2H range is invalid"));
     }
+    if (!HasFloat(shape_))
+      return storage_->CopyRawToHost(destination, offset, size);
     auto [promise, future] = MakePromise();
     storage_->GetReadyFuture().OnReady([promise = std::move(promise),
                                         destination,
                                         size](absl::Status status) mutable {
-      if (status.ok() && size) std::memset(destination, 0, size);
+      if (status.ok() && size)
+        std::memset(destination, 0, size);
       promise.Set(status);
     });
     return future;
@@ -157,19 +154,18 @@ class VirtualBuffer final : public PjRtBuffer {
     on_done(absl::UnimplementedError("Virtual remote copies are unsupported"),
             false);
   }
-  absl::StatusOr<std::unique_ptr<PjRtBuffer>> CopyToMemorySpace(
-      PjRtMemorySpace* memory) override {
+  absl::StatusOr<std::unique_ptr<PjRtBuffer>>
+  CopyToMemorySpace(PjRtMemorySpace *memory) override {
     ABSL_ASSIGN_OR_RETURN(auto copy, storage_->CopyToMemorySpace(memory));
     return std::make_unique<VirtualBuffer>(std::move(copy), shape_);
   }
-  absl::StatusOr<std::unique_ptr<PjRtBuffer>> Bitcast(PrimitiveType,
-                                                      absl::Span<const int64_t>,
-                                                      const Layout*) override {
+  absl::StatusOr<std::unique_ptr<PjRtBuffer>>
+  Bitcast(PrimitiveType, absl::Span<const int64_t>, const Layout *) override {
     return absl::UnimplementedError(
         "Virtual buffer bitcast is unsupported; use a compiled reshape");
   }
 
- private:
+private:
   std::unique_ptr<PjRtBuffer> storage_;
   Shape shape_;
 };
@@ -178,11 +174,10 @@ class VirtualBuffer final : public PjRtBuffer {
 // CPU program. CPU memory-analysis numbers would be misleading, so the default
 // unsupported response is retained for compiled memory statistics.
 class LogicalExecutable final : public PjRtExecutable {
- public:
-  LogicalExecutable(PjRtLoadedExecutable* physical,
+public:
+  LogicalExecutable(PjRtLoadedExecutable *physical,
                     std::shared_ptr<HloModule> logical, CompileOptions options)
-      : physical_(physical),
-        logical_(std::move(logical)),
+      : physical_(physical), logical_(std::move(logical)),
         options_(std::move(options)) {}
   int num_replicas() const override { return physical_->num_replicas(); }
   int num_partitions() const override { return physical_->num_partitions(); }
@@ -190,8 +185,8 @@ class LogicalExecutable final : public PjRtExecutable {
     return physical_->SizeOfGeneratedCodeInBytes();
   }
   absl::string_view name() const override { return logical_->name(); }
-  absl::StatusOr<std::vector<std::shared_ptr<HloModule>>> GetHloModules()
-      const override {
+  absl::StatusOr<std::vector<std::shared_ptr<HloModule>>>
+  GetHloModules() const override {
     return std::vector<std::shared_ptr<HloModule>>{logical_};
   }
   absl::StatusOr<std::vector<std::vector<absl::string_view>>>
@@ -206,53 +201,52 @@ class LogicalExecutable final : public PjRtExecutable {
     return options_;
   }
 
- private:
-  PjRtLoadedExecutable* physical_;
+private:
+  PjRtLoadedExecutable *physical_;
   std::shared_ptr<HloModule> logical_;
   CompileOptions options_;
 };
 
 class VirtualExecutable final : public PjRtLoadedExecutable {
- public:
+public:
   VirtualExecutable(std::unique_ptr<PjRtLoadedExecutable> physical,
-                    std::shared_ptr<HloModule> logical, CompileOptions options,
-                    int64_t limit)
+                    std::shared_ptr<HloModule> logical, CompileOptions options)
       : physical_(std::move(physical)),
         metadata_(physical_.get(), logical, std::move(options)),
-        signature_(logical->entry_computation_layout().ComputeProgramShape()),
-        limit_(limit) {}
-  PjRtExecutable* GetExecutable() const override { return &metadata_; }
-  PjRtClient* client() const override { return physical_->client(); }
-  const DeviceAssignment& device_assignment() const override {
+        signature_(logical->entry_computation_layout().ComputeProgramShape()) {}
+  PjRtExecutable *GetExecutable() const override { return &metadata_; }
+  PjRtClient *client() const override { return physical_->client(); }
+  const DeviceAssignment &device_assignment() const override {
     return physical_->device_assignment();
   }
-  absl::Span<const LogicalDeviceIds> addressable_device_logical_ids()
-      const override {
+  absl::Span<const LogicalDeviceIds>
+  addressable_device_logical_ids() const override {
     return physical_->addressable_device_logical_ids();
   }
-  absl::Span<PjRtDevice* const> addressable_devices() const override {
+  absl::Span<PjRtDevice *const> addressable_devices() const override {
     return physical_->addressable_devices();
   }
   void Delete() override { physical_->Delete(); }
   bool IsDeleted() const override { return physical_->IsDeleted(); }
-  absl::StatusOr<std::vector<std::vector<std::unique_ptr<PjRtBuffer>>>> Execute(
-      absl::Span<const std::vector<PjRtBuffer*>> arguments,
-      const ExecuteOptions& options,
-      std::optional<std::vector<Future<>>>& futures) const override {
-    std::vector<std::vector<PjRtBuffer*>> unwrapped;
-    for (const auto& device_args : arguments) {
+  absl::StatusOr<std::vector<std::vector<std::unique_ptr<PjRtBuffer>>>>
+  Execute(absl::Span<const std::vector<PjRtBuffer *>> arguments,
+          const ExecuteOptions &options,
+          std::optional<std::vector<Future<>>> &futures) const override {
+    std::vector<std::vector<PjRtBuffer *>> unwrapped;
+    for (const auto &device_args : arguments) {
       ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(device_args));
       unwrapped.push_back(std::move(args));
     }
     ABSL_ASSIGN_OR_RETURN(auto outputs,
                           physical_->Execute(unwrapped, options, futures));
-    for (auto& device_outputs : outputs) Wrap(device_outputs);
+    for (auto &device_outputs : outputs)
+      Wrap(device_outputs);
     return outputs;
   }
-  absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>> ExecuteSharded(
-      absl::Span<PjRtBuffer* const> arguments, PjRtDevice* device,
-      const ExecuteOptions& options, std::optional<Future<>>& future,
-      bool fill) const override {
+  absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>>
+  ExecuteSharded(absl::Span<PjRtBuffer *const> arguments, PjRtDevice *device,
+                 const ExecuteOptions &options, std::optional<Future<>> &future,
+                 bool fill) const override {
     ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(arguments));
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
@@ -260,10 +254,10 @@ class VirtualExecutable final : public PjRtLoadedExecutable {
     Wrap(outputs);
     return outputs;
   }
-  absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>> ExecutePortable(
-      absl::Span<PjRtBuffer* const> arguments, PjRtDevice* device,
-      const ExecuteOptions& options, std::optional<Future<>>& future,
-      bool fill) const override {
+  absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>>
+  ExecutePortable(absl::Span<PjRtBuffer *const> arguments, PjRtDevice *device,
+                  const ExecuteOptions &options,
+                  std::optional<Future<>> &future, bool fill) const override {
     ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(arguments));
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
@@ -272,110 +266,96 @@ class VirtualExecutable final : public PjRtLoadedExecutable {
     return outputs;
   }
 
- private:
-  absl::StatusOr<std::vector<PjRtBuffer*>> Unwrap(
-      absl::Span<PjRtBuffer* const> arguments) const {
+private:
+  absl::StatusOr<std::vector<PjRtBuffer *>>
+  Unwrap(absl::Span<PjRtBuffer *const> arguments) const {
     if (arguments.size() != signature_.parameters_size()) {
       return absl::InvalidArgumentError(
           "Virtual executable argument count mismatch");
     }
-    std::vector<PjRtBuffer*> result;
+    std::vector<PjRtBuffer *> result;
     for (int i = 0; i < arguments.size(); ++i) {
-      PjRtBuffer* buffer = arguments[i];
-      const Shape& expected = signature_.parameters(i);
-      auto* virtual_buffer = dynamic_cast<VirtualBuffer*>(buffer);
+      PjRtBuffer *buffer = arguments[i];
+      const Shape &expected = signature_.parameters(i);
+      auto *virtual_buffer = dynamic_cast<VirtualBuffer *>(buffer);
       if (!ShapeUtil::Compatible(buffer->on_device_shape(), expected) ||
-          (Large(expected, limit_) != (virtual_buffer != nullptr))) {
+          !virtual_buffer) {
         return absl::InvalidArgumentError(
             "Virtual executable argument storage or shape mismatch");
       }
-      result.push_back(virtual_buffer ? virtual_buffer->storage() : buffer);
+      result.push_back(virtual_buffer->storage());
     }
     return result;
   }
-  void Wrap(std::vector<std::unique_ptr<PjRtBuffer>>& outputs) const {
+  void Wrap(std::vector<std::unique_ptr<PjRtBuffer>> &outputs) const {
     for (int i = 0; i < outputs.size(); ++i) {
-      const Shape& shape = signature_.result().IsTuple()
+      const Shape &shape = signature_.result().IsTuple()
                                ? signature_.result().tuple_shapes(i)
                                : signature_.result();
-      if (!ShapeUtil::Compatible(shape, PhysicalShape(shape, limit_))) {
-        outputs[i] =
-            std::make_unique<VirtualBuffer>(std::move(outputs[i]), shape);
-      }
+      outputs[i] =
+          std::make_unique<VirtualBuffer>(std::move(outputs[i]), shape);
     }
   }
   std::unique_ptr<PjRtLoadedExecutable> physical_;
   mutable LogicalExecutable metadata_;
   ProgramShape signature_;
-  int64_t limit_;
 };
-}  // namespace
+} // namespace
 
-absl::Status VirtualizeModule(HloModule& module, int64_t limit) {
-  if (limit < 16)
-    return absl::InvalidArgumentError(
-        "Virtual storage limit must be at least 16 bytes");
-  // Small arrays retain CPU storage, including logits used by the sampler.
-  // Validate shape limits before mutation; operations consuming scalar-backed
-  // large arrays are checked below when their signatures change.
-  for (HloComputation* computation : module.computations()) {
-    for (HloInstruction* instruction : computation->instructions()) {
+absl::Status VirtualizeModule(HloModule &module) {
+  for (HloComputation *computation : module.computations()) {
+    for (HloInstruction *instruction : computation->instructions()) {
       ABSL_RETURN_IF_ERROR(ShapeUtil::ForEachSubshapeWithStatus(
           instruction->shape(),
-          [&](const Shape& shape, const ShapeIndex&) -> absl::Status {
+          [&](const Shape &shape, const ShapeIndex &) -> absl::Status {
             if (shape.is_dynamic())
               return absl::UnimplementedError(
-                  "Virtual storage requires static shapes");
-            if (Large(shape, limit) && !HasFloat(shape)) {
-              return absl::ResourceExhaustedError(
-                  "Nonfloating tensor exceeds virtual storage materialization "
-                  "limit");
-            }
+                  "Virtual HBM requires static shapes");
             return absl::OkStatus();
           }));
     }
   }
   // Mutate shapes first, then replace nonstructural operations whose signatures
   // changed. Keep unused operands until iteration ends so pointers stay valid.
-  for (HloComputation* computation : module.MakeComputationPostOrder()) {
+  for (HloComputation *computation : module.MakeComputationPostOrder()) {
     auto instructions = computation->MakeInstructionPostOrder();
-    std::vector<HloInstruction*> replace;
-    for (HloInstruction* instruction : instructions) {
+    std::vector<HloInstruction *> replace;
+    for (HloInstruction *instruction : instructions) {
       bool changed = !ShapeUtil::Compatible(
-          instruction->shape(), PhysicalShape(instruction->shape(), limit));
-      for (HloInstruction* operand : instruction->operands()) {
-        changed |= !ShapeUtil::Compatible(
-            operand->shape(), PhysicalShape(operand->shape(), limit));
+          instruction->shape(), PhysicalShape(instruction->shape()));
+      for (HloInstruction *operand : instruction->operands()) {
+        changed |= !ShapeUtil::Compatible(operand->shape(),
+                                          PhysicalShape(operand->shape()));
       }
-      if (!changed) continue;
+      if (!changed)
+        continue;
       switch (instruction->opcode()) {
-        case HloOpcode::kParameter:
-        case HloOpcode::kTuple:
-        case HloOpcode::kGetTupleElement:
-        case HloOpcode::kCall:
-        case HloOpcode::kWhile:
-        case HloOpcode::kConditional:
-          break;
-        default:
-          if (!AllFloat(instruction->shape()) ||
-              (instruction->HasSideEffect() && !IsShardingAnnotation(*instruction))) {
-            return absl::UnimplementedError(absl::StrCat(
-                "Unsupported virtual operation: ", instruction->ToString()));
-          }
-          replace.push_back(instruction);
+      case HloOpcode::kParameter:
+      case HloOpcode::kTuple:
+      case HloOpcode::kGetTupleElement:
+      case HloOpcode::kCall:
+      case HloOpcode::kWhile:
+      case HloOpcode::kConditional:
+        break;
+      default:
+        if (instruction->HasSideEffect() &&
+            !IsShardingAnnotation(*instruction)) {
+          return absl::UnimplementedError(absl::StrCat(
+              "Unsupported virtual operation: ", instruction->ToString()));
+        }
+        replace.push_back(instruction);
       }
     }
-    for (HloInstruction* instruction : instructions) {
-      *instruction->mutable_shape() =
-          PhysicalShape(instruction->shape(), limit);
+    for (HloInstruction *instruction : instructions) {
+      *instruction->mutable_shape() = PhysicalShape(instruction->shape());
       instruction->clear_sharding();
     }
-    for (HloInstruction* instruction : replace) {
-      ABSL_ASSIGN_OR_RETURN(
-          bool replaced,
-          computation->ReplaceInstructionWithDifferentShape(
-              instruction, Zero(computation, instruction->shape()), false, true,
-              false));
+    for (HloInstruction *instruction : replace) {
+      ABSL_ASSIGN_OR_RETURN(bool replaced,
+                            computation->ReplaceInstructionWithDifferentShape(
+                                instruction,
+                                Zero(computation, instruction->shape()), false,
+                                true, false));
       (void)replaced;
     }
   }
@@ -384,29 +364,29 @@ absl::Status VirtualizeModule(HloModule& module, int64_t limit) {
   return absl::OkStatus();
 }
 
-absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>> CompileVirtual(
-    PjRtClient* client, std::unique_ptr<HloModule> module,
-    CompileOptions options, int64_t limit) {
+absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>>
+CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,
+               CompileOptions options) {
   if (options.executable_build_options.num_replicas() != 1 ||
       options.parameter_is_tupled_arguments) {
     return absl::UnimplementedError(
-        "Virtual storage requires one replica and untupled "
+        "Virtual HBM requires one replica and untupled "
         "parameters");
   }
-  for (const HloInstruction* parameter :
+  for (const HloInstruction *parameter :
        module->entry_computation()->parameter_instructions()) {
     if (parameter->shape().IsTuple()) {
       return absl::UnimplementedError(
-          "Virtual storage does not support tuple parameters");
+          "Virtual HBM does not support tuple parameters");
     }
   }
-  const Shape& result =
+  const Shape &result =
       module->entry_computation()->root_instruction()->shape();
   if (result.IsTuple()) {
-    for (const Shape& child : result.tuple_shapes()) {
+    for (const Shape &child : result.tuple_shapes()) {
       if (child.IsTuple()) {
         return absl::UnimplementedError(
-            "Virtual storage does not support nested tuple results");
+            "Virtual HBM does not support nested tuple results");
       }
     }
   }
@@ -419,54 +399,54 @@ absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>> CompileVirtual(
           "Virtual argument layout count mismatch");
     }
     for (int i = 0; i < options.argument_layouts->size(); ++i) {
-      const Shape& shape = (*options.argument_layouts)[i];
+      const Shape &shape = (*options.argument_layouts)[i];
       if (LayoutUtil::HasLayout(shape)) {
         *logical->mutable_entry_computation_layout()->mutable_parameter_layout(
             i) = ShapeLayout(shape);
       }
     }
   }
-  if (const Shape* shape = options.executable_build_options.result_layout();
+  if (const Shape *shape = options.executable_build_options.result_layout();
       shape && LayoutUtil::HasLayout(*shape)) {
     *logical->mutable_entry_computation_layout()->mutable_result_layout() =
         ShapeLayout(*shape);
   }
   CompileOptions logical_options = options;
-  ABSL_RETURN_IF_ERROR(VirtualizeModule(*module, limit));
+  ABSL_RETURN_IF_ERROR(VirtualizeModule(*module));
   if (options.argument_layouts) {
-    for (Shape& shape : *options.argument_layouts)
-      shape = PhysicalShape(shape, limit);
+    for (Shape &shape : *options.argument_layouts)
+      shape = PhysicalShape(shape);
   }
-  if (const Shape* layout = options.executable_build_options.result_layout()) {
-    options.executable_build_options.set_result_layout(
-        PhysicalShape(*layout, limit));
+  if (const Shape *layout = options.executable_build_options.result_layout()) {
+    options.executable_build_options.set_result_layout(PhysicalShape(*layout));
   }
   ABSL_ASSIGN_OR_RETURN(
       auto physical, client->CompileAndLoad(XlaComputation(module->ToProto()),
                                             std::move(options)));
-  return std::make_unique<VirtualExecutable>(std::move(physical),
-                                             std::move(logical),
-                                             std::move(logical_options), limit);
+  return std::make_unique<VirtualExecutable>(
+      std::move(physical), std::move(logical), std::move(logical_options));
 }
 
-PJRT_Error* VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args* args,
-                            int64_t limit) {
-  if (limit == 0) return pjrt::PJRT_Client_BufferFromHostBuffer(args);
+PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args) {
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
       "PJRT_Client_BufferFromHostBuffer_Args",
       PJRT_Client_BufferFromHostBuffer_Args_STRUCT_SIZE, args->struct_size));
   PJRT_ASSIGN_OR_RETURN(Shape shape, pjrt::BuildXlaShapeFromC(
                                          args->type, args->dims, args->num_dims,
                                          args->device_layout));
-  if (!Large(shape, limit)) return pjrt::PJRT_Client_BufferFromHostBuffer(args);
-  if (!HasFloat(shape))
-    return pjrt::StatusToPjRtError(absl::ResourceExhaustedError(
-        "Nonfloating tensor exceeds virtual storage materialization limit"));
+  if (!HasFloat(shape)) {
+    // Control values live on the host, but retain the same Virtual HBM API.
+    if (auto *error = pjrt::PJRT_Client_BufferFromHostBuffer(args))
+      return error;
+    args->buffer->buffer = std::make_unique<VirtualBuffer>(
+        std::move(args->buffer->buffer), std::move(shape));
+    return nullptr;
+  }
   // The source payload is intentionally never read. CPU copies the scalar
   // during this call, so neither the local zero nor the host source is
   // retained.
   uint64_t zero = 0;
-  PjRtMemorySpace* memory;
+  PjRtMemorySpace *memory;
   if (args->memory)
     memory = PjRtMemorySpace::FromC(args->memory);
   else {
@@ -484,7 +464,7 @@ PJRT_Error* VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args* args,
   args->done_with_host_buffer = new PJRT_Event{Future<>(absl::OkStatus())};
   return nullptr;
 }
-absl::Status CheckMaterialized(PjRtBuffer* buffer) {
-  return dynamic_cast<VirtualBuffer*>(buffer) ? NoData() : absl::OkStatus();
+absl::Status CheckMaterialized(PjRtBuffer *buffer) {
+  return dynamic_cast<VirtualBuffer *>(buffer) ? NoData() : absl::OkStatus();
 }
-}  // namespace xla::sim
+} // namespace xla::sim

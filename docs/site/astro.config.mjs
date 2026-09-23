@@ -18,11 +18,10 @@ export default defineConfig({
           { label: '快速开始', slug: 'getting-started' },
         ] },
         { label: '使用指南', items: [
-          { label: '虚拟存储', slug: 'guides/virtual-storage' },
+          { label: 'Virtual HBM', slug: 'guides/virtual-hbm' },
           { label: '张量并行与重新分片', slug: 'guides/tensor-parallelism' },
-          { label: 'Pallas 内核成本', slug: 'guides/pallas' },
+          { label: 'Pallas 内核', slug: 'guides/pallas' },
           { label: 'XProf 性能分析', slug: 'guides/profiling' },
-          { label: '离线重放与设备负载', slug: 'guides/replay' },
         ] },
         { label: '原理与参考', items: [
           { label: '架构与执行流程', slug: 'architecture' },

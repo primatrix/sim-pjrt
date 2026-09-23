@@ -3,11 +3,11 @@ title: 路线图
 description: 从已有基础到调度、通信、内存与真实硬件校准。
 ---
 
-当前基础已包含声明式 Pallas 成本、单主机虚拟存储、SPMD 张量并行、在线资源预留和离线重放。以下工作仍需逐步验证。
+当前仅保留 libtpu → bundles 计时、CPU 输出模拟、Virtual HBM 和原生 XProf。
 
-## 内核覆盖
+## Bundle 语义覆盖
 
-为没有成本元数据的 paged/ragged attention 增加有依据的适配。动态工作量需要实际序列长度和 batch 组成；分配的 KV 容量不能直接当作本次访问量。
+补齐 scalar 控制流、动态循环与谓词、指令延迟、DMA 和 collective 同步协议。静态 bundle 数不等于实际执行次数；先覆盖语义，再拟合硬件参数。
 
 ## 虚拟时间驱动调度
 
@@ -25,4 +25,4 @@ description: 从已有基础到调度、通信、内存与真实硬件校准。
 
 CPU wall-clock 不能作为 TPU 观测值。只有可辨识的参数才能拟合，覆盖 compute-bound 内核并不能独立确定 HBM 带宽。
 
-详细验收计划保留在 `docs/performance-plan.md`，迭代证据保留在 `docs/iterations.md`。
+当前结构见[架构](/architecture/)。

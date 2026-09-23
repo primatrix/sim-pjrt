@@ -1,14 +1,14 @@
-#include "src/virtual_storage.h"
+#include "src/virtual_hbm.h"
 
 #include "absl/status/status.h"
-#include "gtest/gtest.h"
+#include "tsl/platform/status_matchers.h"
 #include "xla/hlo/parser/hlo_parser.h"
 #include "xla/service/hlo_verifier.h"
-#include "tsl/platform/status_matchers.h"
+#include "gtest/gtest.h"
 
 namespace xla::sim {
 namespace {
-TEST(VirtualStorageTest, KeepsLoopControlAndShrinksCarriedTensor) {
+TEST(VirtualHbmTest, KeepsLoopControlAndShrinksCarriedTensor) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
     HloModule loop
     condition {
@@ -33,7 +33,7 @@ TEST(VirtualStorageTest, KeepsLoopControlAndShrinksCarriedTensor) {
       ROOT loop = (s32[], f32[1073741824]) while(initial), condition=condition, body=body
     }
   )"));
-  ASSERT_OK(VirtualizeModule(*module, 1024));
+  ASSERT_OK(VirtualizeModule(*module));
   EXPECT_EQ(module->entry_computation()
                 ->parameter_instruction(0)
                 ->shape()
@@ -47,7 +47,7 @@ TEST(VirtualStorageTest, KeepsLoopControlAndShrinksCarriedTensor) {
             0);
   ASSERT_OK(HloVerifier(false, false).Run(module.get()).status());
 }
-TEST(VirtualStorageTest, ShrinksSmallOutputWithLargeInput) {
+TEST(VirtualHbmTest, ShrinksSmallOutputWithLargeInput) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
     HloModule slice
     ENTRY main {
@@ -55,13 +55,15 @@ TEST(VirtualStorageTest, ShrinksSmallOutputWithLargeInput) {
       ROOT slice = f32[4] slice(x), slice={[0:4]}
     }
   )"));
-  ASSERT_OK(VirtualizeModule(*module, 1024));
+  ASSERT_OK(VirtualizeModule(*module));
   ASSERT_OK(HloVerifier(false, false).Run(module.get()).status());
-  EXPECT_EQ(
-      module->entry_computation()->root_instruction()->shape().dimensions(0),
-      4);
+  EXPECT_EQ(module->entry_computation()
+                ->root_instruction()
+                ->shape()
+                .dimensions_size(),
+            0);
 }
-TEST(VirtualStorageTest, AllowsControlFromSmallSimulatedFloats) {
+TEST(VirtualHbmTest, AllowsControlFromSmallSimulatedFloats) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
     HloModule control
     ENTRY main {
@@ -70,18 +72,20 @@ TEST(VirtualStorageTest, AllowsControlFromSmallSimulatedFloats) {
       ROOT index = s32[1] convert(first)
     }
   )"));
-  ASSERT_OK(VirtualizeModule(*module, 1024));
+  ASSERT_OK(VirtualizeModule(*module));
   ASSERT_OK(HloVerifier(false, false).Run(module.get()).status());
 }
-TEST(VirtualStorageTest, RejectsLargeIntegerAllocation) {
+TEST(VirtualHbmTest, PreservesIntegerControlShapeWithoutSizeLimit) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
     HloModule integer
     ENTRY main {
       ROOT i = s32[1073741824] iota(), iota_dimension=0
     }
   )"));
-  EXPECT_EQ(VirtualizeModule(*module, 1024).code(),
-            absl::StatusCode::kResourceExhausted);
+  ASSERT_OK(VirtualizeModule(*module));
+  EXPECT_EQ(
+      module->entry_computation()->root_instruction()->shape().dimensions(0),
+      1073741824);
 }
-}  // namespace
-}  // namespace xla::sim
+} // namespace
+} // namespace xla::sim

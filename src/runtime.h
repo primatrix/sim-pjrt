@@ -18,9 +18,6 @@
 namespace xla::sim {
 
 struct RuntimeConfig {
-  // Device storage is virtual by default; keep only small CPU/control backing.
-  // Zero explicitly selects the legacy fully materialized CPU mode.
-  int64_t max_materialized_bytes = 16 * 1024 * 1024;
   double host_bytes_per_second = 32e9;
   double link_bytes_per_second = 100e9;
   int64_t launch_ns = 1000;
@@ -41,9 +38,6 @@ struct Completion {
 class SimRuntime {
  public:
   explicit SimRuntime(RuntimeConfig config);
-  int64_t max_materialized_bytes() const {
-    return config_.max_materialized_bytes;
-  }
   ~SimRuntime();
   SimRuntime(const SimRuntime&) = delete;
   SimRuntime& operator=(const SimRuntime&) = delete;

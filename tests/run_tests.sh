@@ -15,11 +15,11 @@ bazel test //... --jobs="${SIM_BUILD_JOBS:-32}" --noannounce_rc
 export JAX_PLATFORMS=tpu JAX_ENABLE_COMPILATION_CACHE=false
 export PJRT_NAMES_AND_LIBRARY_PATHS="tpu:$sim_root/bazel-bin/pjrt_sim_plugin.so"
 export PJRT_SIM_DEVICE_COUNT=1
-unset PJRT_SIM_TRACE PJRT_SIM_MAX_MATERIALIZED_BYTES
+unset PJRT_SIM_TRACE
 "$sim_python" tests/python/smoke_test.py -v
 PJRT_SIM_TEST_LIBTPU_PATH="$PJRT_SIM_LIBTPU_PATH" "$sim_python" tests/python/tpu_compilation_test.py -v
 "$sim_python" tests/python/online_runtime_test.py -v
-"$sim_python" tests/python/virtual_storage_test.py -v
+"$sim_python" tests/python/virtual_hbm_test.py -v
 "$sim_python" tests/python/pallas_smoke_test.py -v
 for sim_devices in ${SIM_TP_SIZES:-2 4}; do
   if ((sim_devices < 2)); then continue; fi

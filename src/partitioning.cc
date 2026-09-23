@@ -11,7 +11,7 @@
 #include "xla/service/spmd/stateful_rng_spmd_partitioner.h"
 
 namespace xla::sim {
-absl::Status PartitionForVirtualStorage(HloModule& module,
+absl::Status PartitionForVirtualHbm(HloModule& module,
                                         CompileOptions& options) {
   auto& build = options.executable_build_options;
   if (build.num_partitions() == 1) return absl::OkStatus();
