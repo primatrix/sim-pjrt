@@ -20,13 +20,29 @@ Install its CPU runtime dependencies and the optional XProf dependencies in
 tools; it does not install this runtime environment.
 
 Set the environment in [README](../README.md#use) before importing JAX.
-`PJRT_SIM_LIBTPU_PATH`, `PJRT_SIM_TPU_TOPOLOGY` and `PJRT_SIM_BUNDLE_PROFILE`
-are required. The selected topology must contain all simulated devices.
+`PJRT_SIM_LIBTPU_PATH` and `PJRT_SIM_TPU_TOPOLOGY` are required. Timing mode also
+requires `PJRT_SIM_BUNDLE_PROFILE`. The selected topology must contain all simulated devices.
 
 The example bundle profile explicitly permits partial, uncalibrated estimates.
 A strict profile omits `allow_partial` or sets it to false. Unresolved control
 flow, DMA/wait or instruction semantics then reject compilation. There is no
 fallback estimator. See [bundle timing](bundle-timing.md).
+
+## Export JIT artifacts without timing
+
+```sh
+spjrt compile --output ./llo workload.py --batch-size 4
+```
+
+`spjrt` is an alias for `sim-pjrt`; CLI defaults are `tpu7x:2x2x1` and 8 devices.
+Tool options precede the script; all arguments after it are passed through.
+`.py` files use the current Python interpreter; `--` is an optional separator.
+The workload needs no code changes. Each process writes TPU Final LLO and a
+per-compilation `*.manifest.json` under the output directory (no whitespace or quotes). Timing analysis,
+launch delays and transfer delays are skipped; no timing profile is required.
+Direct plugin users can set `PJRT_SIM_DUMP_DIR` to enable the same mode.
+Only reached JIT compilations are captured. Execution still uses Virtual HBM
+placeholders, so data-dependent paths need not match real model execution.
 
 ## Storage and execution
 

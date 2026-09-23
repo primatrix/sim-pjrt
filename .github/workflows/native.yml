@@ -49,11 +49,15 @@ jobs:
       - name: Build and validate manylinux wheel
         id: native-build
         timeout-minutes: 330
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          BUILDBUDDY_UPLOAD: 'false'
         run: |
           docker build -f docker/Dockerfile.manylinux \
             --build-arg BUILD_UID="$(id -u)" --build-arg BUILD_GID="$(id -g)" \
             -t sim-pjrt-manylinux .
-          docker run --rm --init -v "$PWD:/workspace" sim-pjrt-manylinux
+          docker run --rm --init -v "$PWD:/workspace" \
+            -e BUILDBUDDY_API_KEY -e BUILDBUDDY_UPLOAD sim-pjrt-manylinux
       # Ordinary build failures and step timeouts must not discard completed work.
       # Branch/tag snapshots remain subject to GitHub's cache access scope.
       - name: Save Bazel progress even when the build fails

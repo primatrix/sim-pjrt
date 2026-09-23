@@ -14,6 +14,7 @@ dependencies = ["jax[tpu]==0.11.1"]
 
 [project.scripts]
 sim-pjrt = "sim_pjrt.cli:main"
+spjrt = "sim_pjrt.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "python"}
