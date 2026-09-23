@@ -463,13 +463,13 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
                   << ",\"num_devices\":" << args->num_devices
                   << ",\"num_replicas\":" << work.num_replicas
                   << ",\"num_partitions\":" << work.num_partitions
-                  << ",\"analysis_source\":" << std::quoted("libtpu_bundles")
+                  << ",\"analysis_source\":" << std::quoted(DumpOnly() ? "libtpu_compile" : "libtpu_bundles")
                   << ",\"program_id\":" << work.program_id
                   << ",\"correlation_id\":"
                   << profile.activity().correlation_id()
                   << ",\"work_scope\":" << std::quoted("per_partition")
                   << ",\"substituted_ops\":" << work.substituted_ops;
-    State().trace << ",\"bundle_duration_ns\":"
+    if (!DumpOnly()) State().trace << ",\"bundle_duration_ns\":"
                   << work.bundle_timing.duration_ns
                   << ",\"bundle_count\":" << work.bundle_timing.bundles
                   << ",\"bundle_cost_gaps\":" << work.bundle_timing.cost_gaps;

@@ -24,8 +24,8 @@ struct TpuTopology {
 absl::StatusOr<TpuTopology> DescribeTpuTopology(const char* library,
                                                 const char* topology);
 // Compile the untouched input with libtpu's offline PJRT compiler. No TPU
-// client or physical device is created. Collect expanded assembly and estimate
-// it directly; never request the optimized TPU HLO.
+// client or physical device is created. Export Final LLO and optionally estimate
+// its timing; TPU HLO is only used for metadata.
 absl::StatusOr<BundleCompilation> CompileTpuBundles(
     const CompilationInput& input, const char* library, const char* topology);
 }  // namespace xla::sim

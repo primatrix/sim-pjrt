@@ -19,6 +19,7 @@
 namespace xla::sim {
 
 struct RuntimeConfig {
+  bool simulate_timing = true;
   double host_bytes_per_second = 32e9;
   double link_bytes_per_second = 100e9;
   int64_t launch_ns = 1000;

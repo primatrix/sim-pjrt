@@ -74,6 +74,11 @@ absl::StatusOr<RuntimeConfig> RuntimeConfig::FromProfile(
 }
 
 absl::StatusOr<RuntimeConfig> RuntimeConfig::FromEnvironment() {
+  if (DumpOnly()) {
+    RuntimeConfig config;
+    config.simulate_timing = false;
+    return config;
+  }
   // One timing configuration: both runtime and bundle estimator read this file.
   const char* path = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
   if (!path || !*path)
@@ -158,6 +163,11 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
     int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
     const std::vector<Completion>& inputs, const ProfileActivity& profile,
     const std::string& name, std::shared_ptr<const std::vector<BundleActivity>> activities) {
+  if (!config_.simulate_timing) {
+    std::vector<Future<>> predecessors;
+    for (const auto& input : inputs) predecessors.push_back(input.future);
+    return std::vector<Completion>(devices.size(), {0, JoinFutures(predecessors)});
+  }
   std::lock_guard<std::mutex> lock(mutex_);
   int64_t release = Now();
   std::vector<Future<>> predecessors;
@@ -195,6 +205,7 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
 Completion SimRuntime::Transfer(int64_t source, int64_t destination,
                                 int64_t bytes, const Completion& input,
                                 const ProfileActivity& profile) {
+  if (!config_.simulate_timing) return input;
   std::lock_guard<std::mutex> lock(mutex_);
   const bool host = source < 0 || destination < 0;
   const int64_t device = destination < 0 ? source : destination;

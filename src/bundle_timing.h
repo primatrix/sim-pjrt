@@ -41,10 +41,12 @@ struct BundleCompilation {
   std::string report_json;
 };
 
+// Dump-only mode exports compiler artifacts and skips all modeled delays.
+bool DumpOnly();
 // Process-private libtpu dump directory, created before plugin initialization.
 const absl::StatusOr<std::string>& BundleDumpDirectory();
-// Final LLO timing with optional SparseCore calibration and compiler labels.
-absl::StatusOr<BundleCompilation> EstimateFinalBundles(
+// Write a compilation manifest; estimate timing unless dump-only mode is active.
+absl::StatusOr<BundleCompilation> FinalizeBundles(
     const std::vector<std::string>& files);
 }  // namespace xla::sim
 #endif
