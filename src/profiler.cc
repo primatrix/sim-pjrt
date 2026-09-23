@@ -3,12 +3,13 @@
 #include <algorithm>
 #include <atomic>
 #include <limits>
+#include <map>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-#include "xla/tsl/profiler/utils/xplane_builder.h"
 #include "tsl/platform/env.h"
 #include "tsl/profiler/protobuf/xplane.pb.h"
+#include "xla/tsl/profiler/utils/xplane_builder.h"
 
 namespace xla::sim {
 namespace {
@@ -80,14 +81,25 @@ void ProfileSession::SetLinks(size_t index, std::string inputs,
 std::string ProfileSession::Serialize() const {
   std::lock_guard<std::mutex> lock(mutex_);
   tensorflow::profiler::XSpace space;
-  // CUSTOM planes are visible in Trace Viewer without claiming TPU counters.
-  // Plane 0 is host API calls; plane d+1 is pending activity targeting device
-  // d.
-  for (const ProfileEvent& event : events_) {
-    if (stopped_ns_ && event.start_ns > stopped_ns_) continue;
-    const int64_t plane_id = !event.track.empty() ? 1000 + event.device_id
-                             : event.pending      ? event.device_id + 2
-                                                  : 0;
+  // Serialize chronologically. Async intervals need independent lanes: XPlane
+  // lines represent stacks, so crossing intervals must never share a line.
+  std::vector<const ProfileEvent*> ordered;
+  for (const auto& event : events_) {
+    if (!stopped_ns_ || event.start_ns <= stopped_ns_)
+      ordered.push_back(&event);
+  }
+  std::stable_sort(ordered.begin(), ordered.end(),
+                   [](auto a, auto b) { return a->start_ns < b->start_ns; });
+  using Track = std::pair<int64_t, std::string>;
+  std::map<Track, std::vector<std::pair<int64_t, int64_t>>> lanes;
+  std::map<int64_t, int64_t> next_line;
+  for (const ProfileEvent* pointer : ordered) {
+    const ProfileEvent& event = *pointer;
+    const bool device = event.simulated;
+    const bool asynchronous = event.pending || !event.track.empty();
+    const int64_t plane_id = device         ? 1000 + event.device_id
+                             : asynchronous ? 100 + event.device_id + 1
+                                            : 0;
     tensorflow::profiler::XPlane* plane = nullptr;
     for (auto& candidate : *space.mutable_planes()) {
       if (candidate.id() == plane_id) plane = &candidate;
@@ -95,32 +107,30 @@ std::string ProfileSession::Serialize() const {
     if (!plane) {
       plane = space.add_planes();
       plane->set_id(plane_id);
-      plane->set_name(absl::StrCat("/device:CUSTOM:", plane_id,
-                                   !event.track.empty() ? " Simulated TPU"
-                                   : event.pending
-                                       ? " PJRT pending (CPU wall time)"
-                                       : " PJRT host (CPU wall time)"));
+      plane->set_name(absl::StrCat(
+          "/device:CUSTOM:", plane_id, " ",
+          device ? absl::StrCat("Simulated TPU ", event.device_id)
+          : asynchronous
+              ? absl::StrCat("Host completion / device ", event.device_id)
+              : "PJRT host API"));
     }
     tsl::profiler::XPlaneBuilder builder(plane);
-    int64_t line_id = event.thread_id;
-    if (!event.track.empty()) {
-      const std::vector<std::string> tracks = {"Executions",
-                                               "Launch",
-                                               "HLO",
-                                               "DMA",
-                                               "Communication",
-                                               "CPU readiness",
-                                               "Runtime notification"};
-      line_id =
-          std::find(tracks.begin(), tracks.end(), event.track) - tracks.begin();
+    const std::string track = !event.track.empty() ? event.track
+                              : event.pending
+                                  ? event.name
+                                  : absl::StrCat("thread ", event.thread_id);
+    auto& available = lanes[{plane_id, track}];
+    size_t lane = 0;
+    if (asynchronous) {
+      while (lane < available.size() && available[lane].second > event.start_ns)
+        ++lane;
     }
-    auto line = builder.GetOrCreateLine(line_id);
+    if (lane == available.size())
+      available.push_back({next_line[plane_id]++, 0});
+    available[lane].second = event.end_ns;
+    auto line = builder.GetOrCreateLine(available[lane].first);
     line.SetTimestampNs(start_ns_);
-    line.SetName(!event.track.empty()
-                     ? event.track
-                     : absl::StrCat(event.pending ? "submit-to-ready; thread "
-                                                  : "thread ",
-                                    event.thread_id));
+    line.SetName(lane ? absl::StrCat(track, " [", lane + 1, "]") : track);
     auto out = line.AddEvent(*builder.GetOrCreateEventMetadata(event.name));
     out.SetTimestampNs(event.start_ns);
     out.SetDurationNs(std::max<int64_t>(0, event.end_ns - event.start_ns));
@@ -131,36 +141,15 @@ std::string ProfileSession::Serialize() const {
                        "runtime_realtime");
       out.AddStatValue(*builder.GetOrCreateStatMetadata("device"),
                        event.device_id);
-      out.AddStatValue(*builder.GetOrCreateStatMetadata("framework_op"),
-                       event.framework_op);
-      out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_gap"),
-                       event.cost_gap);
-      if (!event.cost_source.empty()) {
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_source"),
-                         event.cost_source);
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("kernel_flops"),
-                         event.flops);
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("transcendentals"),
-                         event.transcendentals);
-      }
-      if (event.track == "HLO" && !event.cost_gap.empty()) {
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_status"),
-                         "unknown");
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("logical_bytes"),
-                         "null");
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("dot_flops"), "null");
-      } else {
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_status"),
-                         !event.cost_source.empty() || event.logical_bytes ||
-                                 event.flops || event.transcendentals
-                             ? "estimated"
-                             : "structural");
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("logical_bytes"),
-                         event.logical_bytes);
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("dot_flops"),
-                         event.cost_source.empty() ? event.flops : 0.0);
-      }
-      if (event.track == "Executions")
+      if (!event.cost_gap.empty())
+        out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_gap"),
+                         event.cost_gap);
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_status"),
+                       !event.simulated          ? "observed"
+                       : !event.cost_gap.empty() ? "partial"
+                       : event.track == "Launch" ? "structural"
+                                                 : "estimated");
+      if (event.track == "Bundles")
         out.AddStatValue(*builder.GetOrCreateStatMetadata("annotation_kind"),
                          "executable_scope");
     }
@@ -268,18 +257,6 @@ void ProfileActivity::SetProgram(uint64_t id, int64_t devices,
   if (session_) session_->SetProgram(index_, id, devices, replicas);
 }
 
-ProfileActivity ProfileActivity::Child(const char* name) const {
-  ProfileActivity child;
-  if (!session_) return child;
-  child.session_ = session_;
-  child.event_ = event_;
-  child.event_.name = name;
-  child.event_.start_ns = Now();
-  child.event_.thread_id = tsl::Env::Default()->GetCurrentThreadId();
-  child.index_ = session_->Begin(child.event_);
-  return child;
-}
-
 void ProfileActivity::SetLinks(std::string inputs, std::string outputs) const {
   if (session_)
     session_->SetLinks(index_, std::move(inputs), std::move(outputs));
@@ -304,10 +281,8 @@ void ProfileActivity::Ready(const Future<>& future, const char* name,
 void ProfileActivity::Interval(const std::string& name, int64_t start,
                                int64_t end, int64_t device,
                                const std::string& track,
-                               const std::string& framework_op,
-                               const std::string& cost_gap, double bytes,
-                               double flops, double transcendentals,
-                               const std::string& cost_source) const {
+                               const std::string& cost_gap,
+                               int64_t bytes) const {
   if (!session_) return;
   ProfileEvent event = event_;
   event.name = name;
@@ -315,13 +290,9 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
   event.end_ns = end;
   event.device_id = device;
   event.track = track;
-  event.framework_op = framework_op;
   event.cost_gap = cost_gap;
-  event.logical_bytes = bytes;
-  event.flops = flops;
-  event.transcendentals = transcendentals;
-  event.cost_source = cost_source;
-  event.simulated = track != "CPU readiness" && track != "Runtime notification";
+  event.bytes = bytes;
+  event.simulated = true;
   session_->Begin(std::move(event), index_);
 }
 

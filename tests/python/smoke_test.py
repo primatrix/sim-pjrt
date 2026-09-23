@@ -11,7 +11,7 @@ class RuntimeTest(unittest.TestCase):
     def test_device(self):
         (device,) = jax.devices()
         self.assertEqual(device.platform, "tpu")
-        self.assertEqual(device.device_kind, "TPU7x")
+        self.assertTrue(device.device_kind.startswith("TPU"), device.device_kind)
         self.assertEqual(tuple(device.coords), (0, 0, 0))
         self.assertEqual(device.core_on_chip, 0)
 

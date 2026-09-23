@@ -19,7 +19,8 @@ absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>> CompileVirtual(
     CompileOptions options, int64_t limit);
 PJRT_Error* VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args* args,
                             int64_t limit);
-// Reject before host size queries or pointer export can expose scalar storage.
+// Reject pointer export that would expose scalar backing as logical storage.
+// Host reads instead materialize simulated data through the buffer's D2H APIs.
 absl::Status CheckMaterialized(PjRtBuffer* buffer);
 }  // namespace xla::sim
 #endif  // XLA_PJRT_SIM_VIRTUAL_STORAGE_H_

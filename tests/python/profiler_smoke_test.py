@@ -39,7 +39,6 @@ def capture(output):
         "H2D submit-to-ready",
         "PJRT copy submit",
         "Copy submit-to-ready",
-        "PJRT buffer destroy",
     ):
         assert any(e["name"] == name for e in events), (name, events)
     h2d = next(e for e in events if e["name"] == "PJRT H2D submit")
@@ -54,16 +53,16 @@ def capture(output):
     }
     assert all(e["args"]["correlation_id"] in submissions for e in pending)
     assert all(int(e["args"]["incomplete"]) == 0 for e in pending)
-    for name in (
+    noisy = {
+        "PJRT buffer destroy",
         "PJRT buffer ready event",
         "PJRT Event callback registration",
         "PJRT Event callback",
-    ):
-        assert any(e["name"] == name for e in events), (name, events)
-    assert any(
-        e["name"] in ("PJRT D2H submit", "PJRT buffer external reference")
-        for e in events
-    ), events
+        "Runtime notification lag",
+        "CPU readiness observation lag",
+    }
+    assert not any(e["name"] in noisy for e in events)
+    assert any(e["name"] == "PJRT D2H submit" for e in events)
     steps = [
         e
         for e in events

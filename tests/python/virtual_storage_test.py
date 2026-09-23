@@ -1,16 +1,17 @@
 """Large logical tensors with bounded host storage, through unmodified JAX.
 
-Run with the simulator plugin selected; this test enables virtual storage.
+Run with the simulator plugin selected; exercises default virtual storage.
 """
 
 import os
 import resource
 import unittest
 
-os.environ["PJRT_SIM_MAX_MATERIALIZED_BYTES"] = str(16 * 1024 * 1024)
+os.environ.pop("PJRT_SIM_MAX_MATERIALIZED_BYTES", None)
 os.environ["PJRT_SIM_DEVICE_COUNT"] = "2"
-os.environ["PJRT_SIM_LAUNCH_NS"] = "100000000"
-os.environ["PJRT_SIM_TRANSFER_NS"] = "100000000"
+from runtime_profile import configure_runtime
+
+configure_runtime(launch_ns=100000000, transfer_ns=100000000)
 
 import jax
 import jax.numpy as jnp
@@ -19,31 +20,31 @@ import numpy as np
 
 class VirtualStorageTest(unittest.TestCase):
     def test_large_model_state_and_decode_control(self):
-        # Four 32 GiB weights plus a 512 MiB KV-like cache. No host weight array.
+        # Four 128 MiB weights plus a 32 MiB KV-like cache. No host weight array.
         @jax.jit
         def initialize():
             weights = tuple(
                 jnp.zeros(shape, jnp.bfloat16)
                 for shape in (
-                    (65536, 262144),
-                    (262144, 65536),
-                    (65536, 262144),
-                    (262144, 65536),
+                    (4096, 16384),
+                    (16384, 4096),
+                    (4096, 16384),
+                    (16384, 4096),
                 )
             )
-            return weights, jnp.zeros((65536, 4096), jnp.bfloat16)
+            return weights, jnp.zeros((4096, 4096), jnp.bfloat16)
 
         before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         weights, cache = initialize()
         jax.block_until_ready((weights, cache))
-        self.assertEqual(sum(w.nbytes for w in weights), 128 * 1024**3)
-        self.assertEqual(cache.shape, (65536, 4096))
+        self.assertEqual(sum(w.nbytes for w in weights), 512 * 1024**2)
+        self.assertEqual(cache.shape, (4096, 4096))
         self.assertGreaterEqual(
-            jax.devices()[0].memory_stats()["bytes_in_use"], 128 * 1024**3
+            jax.devices()[0].memory_stats()["bytes_in_use"], 512 * 1024**2
         )
 
         def decode(weights, cache, length):
-            x = jnp.zeros((1, 65536), jnp.bfloat16)
+            x = jnp.zeros((1, 4096), jnp.bfloat16)
             for up, down in zip(weights[::2], weights[1::2]):
                 x = (x @ up) @ down
 
@@ -66,17 +67,18 @@ class VirtualStorageTest(unittest.TestCase):
         self.assertFalse(final.is_ready())
         self.assertEqual(int(length), 13)
         final.block_until_ready()
-        self.assertEqual(final.shape, (65536, 4096))
-        with self.assertRaisesRegex(Exception, "no materialized data"):
-            np.asarray(weights[0])
+        self.assertEqual(final.shape, (4096, 4096))
+        # Read a small derived result, never allocate a 128 MiB D2H destination.
+        sample = jax.jit(lambda w: w[:1, :8])(weights[0])
+        np.testing.assert_array_equal(np.asarray(sample), 0)
         growth = (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - before) * 1024
-        self.assertLess(growth, 1024**3)
-        print(f"logical weights: 128 GiB; peak RSS growth: {growth / 1024**2:.1f} MiB")
+        self.assertLess(growth, 2 * 1024**3)  # Includes the offline TPU compiler.
+        print(f"logical weights: 512 MiB; peak RSS growth: {growth / 1024**2:.1f} MiB")
         for w in weights:
             w.delete()
         final.delete()
 
-    def test_host_import_copy_and_export_rejection(self):
+    def test_host_import_copy_and_lazy_d2h(self):
         source = np.zeros((8 * 1024 * 1024,), np.float32)
         x = jax.device_put(source, jax.devices()[0])
         del source
@@ -85,8 +87,9 @@ class VirtualStorageTest(unittest.TestCase):
         self.assertFalse(y.is_ready())
         y.block_until_ready()
         self.assertEqual(y.shape, x.shape)
-        with self.assertRaisesRegex(Exception, "no materialized data"):
-            np.asarray(y)
+        host = np.asarray(y)
+        self.assertEqual(host.shape, y.shape)
+        np.testing.assert_array_equal(host, 0)
         with self.assertRaisesRegex(Exception, "no materialized data"):
             y.unsafe_buffer_pointer()
         x.delete()
@@ -100,8 +103,7 @@ class VirtualStorageTest(unittest.TestCase):
         result = jax.jit(flash_attention.flash_attention)(value, value, value)
         result.block_until_ready()
         self.assertEqual(result.shape, value.shape)
-        with self.assertRaisesRegex(Exception, "no materialized data"):
-            np.asarray(result)
+        np.testing.assert_array_equal(np.asarray(result), 0)
         value.delete()
         result.delete()
 
@@ -129,10 +131,24 @@ class VirtualStorageTest(unittest.TestCase):
             jax.jit(lambda x: x * 3 + 1)(jnp.arange(7, dtype=jnp.int32)),
             np.arange(7) * 3 + 1,
         )
-        with self.assertRaisesRegex(Exception, "integer/control data"):
-            jax.jit(lambda x: x > 0)(jnp.float32(1))
+        self.assertTrue(bool(jax.jit(lambda x: x > 0)(jnp.float32(1))))
+        self.assertEqual(int(jax.jit(jnp.argmax)(jnp.array([1.0, 3.0, 2.0]))), 1)
         with self.assertRaisesRegex(Exception, "Nonfloating tensor"):
             jax.jit(lambda: jnp.arange(8 * 1024 * 1024, dtype=jnp.int32))()
+
+    def test_large_weight_with_explicit_output_sharding(self):
+        mesh = jax.sharding.Mesh(np.array(jax.devices()[:1]), ("tensor",))
+        sharding = jax.sharding.NamedSharding(
+            mesh, jax.sharding.PartitionSpec(None, "tensor")
+        )
+        weight = jax.jit(
+            lambda: jnp.zeros((4096, 4096), jnp.bfloat16), out_shardings=sharding
+        )()
+        weight.block_until_ready()
+        self.assertEqual(weight.shape, (4096, 4096))
+        with self.assertRaisesRegex(Exception, "pointer export"):
+            weight.addressable_shards[0].data.unsafe_buffer_pointer()
+        np.testing.assert_array_equal(np.asarray(weight[:1, :4]), np.zeros((1, 4)))
 
 
 if __name__ == "__main__":

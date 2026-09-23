@@ -1,7 +1,6 @@
 // A C API adapter over the CPU functional backend. Ownership and numerical
 // control semantics remain upstream; SimRuntime gates public readiness using
-// original-HLO work estimates. Optional virtual storage bounds large arrays.
-#include <array>
+// libtpu bundle durations. Virtual storage bounds large arrays by default.
 #include <cstdlib>
 #include <memory>
 #include <utility>
@@ -10,39 +9,34 @@
 #include "absl/status/status_macros.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
-#include "mlir/IR/MLIRContext.h"
-#include "xla/hlo/builder/xla_computation.h"
-#include "xla/hlo/ir/hlo_module.h"
+#include "src/compilation.h"
+#include "src/instrumentation.h"
+#include "src/profiler.h"
+#include "src/tpu_compilation.h"
 #include "xla/pjrt/c/pjrt_c_api.h"
 #include "xla/pjrt/c/pjrt_c_api_cpu_internal.h"
 #include "xla/pjrt/c/pjrt_c_api_helpers.h"
 #include "xla/pjrt/c/pjrt_c_api_layouts_extension.h"
 #include "xla/pjrt/c/pjrt_c_api_status_utils.h"
 #include "xla/pjrt/c/pjrt_c_api_wrapper_impl.h"
-#include "xla/pjrt/mlir_to_hlo.h"
 #include "xla/pjrt/plugin/xla_cpu/cpu_client_options.h"
 #include "xla/pjrt/plugin/xla_cpu/xla_cpu_pjrt_client.h"
 #include "xla/pjrt/proto/compile_options.pb.h"
-#include "src/hlo_model.h"
-#include "src/instrumentation.h"
-#include "src/partitioning.h"
-#include "src/profiler.h"
-#include "src/program_snapshot.h"
-#include "src/virtual_storage.h"
 
 namespace xla::sim {
 namespace {
 
 const PJRT_Api* Api();
 
-// A synthetic single-host topology, with two chiplets per chip. Coordinates
-// have process lifetime because PJRT_NamedValue holds non-owning pointers.
+const absl::StatusOr<TpuTopology>& TargetTopology() {
+  static const auto target = []() -> absl::StatusOr<TpuTopology> {
+    const char* library = std::getenv("PJRT_SIM_LIBTPU_PATH");
+    return DescribeTpuTopology(library, std::getenv("PJRT_SIM_TPU_TOPOLOGY"));
+  }();
+  return target;
+}
+
 constexpr int kMaxDevices = 256;
-const auto kCoordinates = [] {
-  std::array<std::array<int64_t, 3>, kMaxDevices> coordinates{};
-  for (int i = 0; i < kMaxDevices; ++i) coordinates[i] = {i / 2, 0, 0};
-  return coordinates;
-}();
 
 PJRT_Error* Create(PJRT_Client_Create_Args* args) {
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
@@ -61,6 +55,11 @@ PJRT_Error* Create(PJRT_Client_Create_Args* args) {
   }
   options.cpu_device_count = device_count;
   options.asynchronous = true;
+  const auto& target = TargetTopology();
+  PJRT_RETURN_IF_ERROR(target.status());
+  if (device_count > target->devices.size())
+    return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
+        "PJRT_SIM_DEVICE_COUNT exceeds the libtpu topology device count"));
   if (args->num_options != 0) {
     return pjrt::StatusToPjRtError(
         absl::InvalidArgumentError("Simulator does not accept client options"));
@@ -76,7 +75,7 @@ PJRT_Error* Create(PJRT_Client_Create_Args* args) {
     coordinates.name = "coords";
     coordinates.name_size = 6;
     coordinates.type = PJRT_NamedValue_kInt64List;
-    coordinates.int64_array_value = kCoordinates[i].data();
+    coordinates.int64_array_value = target->devices[i].coords.data();
     coordinates.value_size = 3;
     auto& attributes = args->client->owned_devices[i].description.attributes;
     attributes.push_back(coordinates);
@@ -86,7 +85,8 @@ PJRT_Error* Create(PJRT_Client_Create_Args* args) {
       value.name = name.data();
       value.name_size = name.size();
       value.type = PJRT_NamedValue_kInt64;
-      value.int64_value = name == "core_on_chip" ? i % 2 : 0;
+      value.int64_value =
+          name == "core_on_chip" ? target->devices[i].core_on_chip : 0;
       value.value_size = 1;
       attributes.push_back(value);
     }
@@ -107,12 +107,14 @@ PJRT_Error* DeviceKind(PJRT_DeviceDescription_Kind_Args* args) {
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
       "PJRT_DeviceDescription_Kind_Args",
       PJRT_DeviceDescription_Kind_Args_STRUCT_SIZE, args->struct_size));
-  args->device_kind = "TPU7x";
-  args->device_kind_size = 5;
+  const auto& target = TargetTopology();
+  PJRT_RETURN_IF_ERROR(target.status());
+  args->device_kind = target->kind.data();
+  args->device_kind_size = target->kind.size();
   return nullptr;
 }
 
-// Cached CPU executables do not contain the original work estimate. Until the
+// Cached CPU executables do not contain the bundle timing metadata. Until the
 // simulator has its own serialization format, always compile through this API.
 PJRT_Error* Deserialize(PJRT_Executable_DeserializeAndLoad_Args*) {
   return pjrt::StatusToPjRtError(absl::UnimplementedError(
@@ -129,74 +131,6 @@ PJRT_Error* Load(PJRT_Client_Load_Args*) {
       "Simulator executables must be created by Compile"));
 }
 
-absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>> CompileProgram(
-    PJRT_Client_Compile_Args* args, ExecutableWork& work,
-    std::string& program_json) {
-  CompileOptionsProto proto;
-  if (!proto.ParseFromArray(args->compile_options,
-                            args->compile_options_size)) {
-    return absl::InvalidArgumentError("Invalid simulator compile options");
-  }
-  ABSL_ASSIGN_OR_RETURN(CompileOptions options,
-                        CompileOptions::FromProto(proto));
-  const auto& build = options.executable_build_options;
-  if (build.num_replicas() * build.num_partitions() >
-      args->client->client->addressable_device_count()) {
-    return absl::InvalidArgumentError(
-        "Executable needs more devices than PJRT_SIM_DEVICE_COUNT");
-  }
-  XlaComputation computation;
-  const absl::string_view format(args->program->format,
-                                 args->program->format_size);
-  if (format == "mlir") {
-    mlir::MLIRContext context;
-    ABSL_ASSIGN_OR_RETURN(
-        auto module,
-        ParseMlirModuleString({args->program->code, args->program->code_size},
-                              context));
-    ABSL_RETURN_IF_ERROR(MlirToXlaComputation(
-        *module, computation, options.parameter_is_tupled_arguments,
-        /*return_tuple=*/false, &options.executable_build_options));
-  } else if (format == "hlo") {
-    HloModuleProto module;
-    if (!module.ParseFromArray(args->program->code, args->program->code_size)) {
-      return absl::InvalidArgumentError("Invalid simulator HLO input");
-    }
-    computation = XlaComputation(module);
-  } else {
-    return absl::UnimplementedError("Expected MLIR or HLO program");
-  }
-  ABSL_ASSIGN_OR_RETURN(HloModuleConfig config,
-                        HloModule::CreateModuleConfigFromProto(
-                            computation.proto(), build.debug_options()));
-  ABSL_ASSIGN_OR_RETURN(
-      std::unique_ptr<HloModule> module,
-      HloModule::CreateFromProto(computation.proto(), config));
-  const int64_t storage_limit = MaxMaterializedBytes(args->client);
-  const bool partitioned = storage_limit > 0 && build.num_partitions() > 1;
-  if (partitioned) {
-    ABSL_RETURN_IF_ERROR(PartitionForVirtualStorage(*module, options));
-  }
-  auto plan = std::make_shared<ExecutionPlan>(
-      BuildExecutionPlan(*module, build.num_partitions(), partitioned));
-  if (std::getenv("PJRT_SIM_TRACE") != nullptr) {
-    ABSL_ASSIGN_OR_RETURN(
-        program_json, CaptureProgramSnapshot(
-                          *module, *plan, build.num_partitions(), partitioned));
-  }
-  ABSL_ASSIGN_OR_RETURN(work.estimate, PrepareForSimulation(*module));
-  work.partitioned = partitioned;
-  work.num_replicas = build.num_replicas();
-  work.plan = std::move(plan);
-  work.num_partitions = build.num_partitions();
-  if (storage_limit > 0) {
-    return CompileVirtual(args->client->client.get(), std::move(module),
-                          std::move(options), storage_limit);
-  }
-  return args->client->client->CompileAndLoad(XlaComputation(module->ToProto()),
-                                              std::move(options));
-}
-
 PJRT_Error* Compile(PJRT_Client_Compile_Args* args) {
   ProfileCall profile("PJRT Compile");
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
@@ -204,22 +138,39 @@ PJRT_Error* Compile(PJRT_Client_Compile_Args* args) {
       args->struct_size));
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
       "PJRT_Program", PJRT_Program_STRUCT_SIZE, args->program->struct_size));
-  ExecutableWork work;
-  std::string program_json;
-  auto compiled = CompileProgram(args, work, program_json);
+  CompileOptionsProto proto;
+  if (!proto.ParseFromArray(args->compile_options,
+                            args->compile_options_size)) {
+    const auto status =
+        absl::InvalidArgumentError("Invalid simulator compile options");
+    profile.activity().Finish(status);
+    return pjrt::StatusToPjRtError(status);
+  }
+  auto options = CompileOptions::FromProto(proto);
+  if (!options.ok()) {
+    profile.activity().Finish(options.status());
+    return pjrt::StatusToPjRtError(options.status());
+  }
+  CompilationInput input{{args->program->format, args->program->format_size},
+                         {args->program->code, args->program->code_size},
+                         std::move(*options)};
+  auto compiled = CompileProgram(input, args->client->client.get(),
+                                 MaxMaterializedBytes(args->client),
+                                 std::getenv("PJRT_SIM_TRACE") != nullptr);
   if (!compiled.ok()) {
     profile.activity().Finish(compiled.status());
     return pjrt::StatusToPjRtError(compiled.status());
   }
   args->executable =
-      new PJRT_LoadedExecutable(std::move(*compiled), args->client);
-  RegisterWork(args->executable, std::move(work), program_json);
+      new PJRT_LoadedExecutable(std::move(compiled->executable), args->client);
+  RegisterWork(args->executable, std::move(compiled->work),
+               compiled->program_json);
   return nullptr;
 }
 
 const PJRT_Api* Api() {
   // Expose only extensions implemented by this adapter. In particular, phased
-  // compilation must not bypass PrepareForSimulation via the CPU extension.
+  // compilation must not bypass CompileProgram via the CPU extension.
   static PJRT_Layouts_Extension layouts =
       pjrt::CreateLayoutsExtension(&ProfilerExtension()->base);
   static const PJRT_Api api = [] {

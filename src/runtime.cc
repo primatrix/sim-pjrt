@@ -4,12 +4,17 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
+#include <iterator>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/status_macros.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "google/protobuf/struct.pb.h"
+#include "google/protobuf/util/json_util.h"
 #include "tsl/platform/env.h"
 
 namespace xla::sim {
@@ -24,60 +29,77 @@ int64_t Duration(double seconds) {
   // Bound pathological shapes/configurations before converting to integer ns.
   return static_cast<int64_t>(std::ceil(std::min(seconds, 86400.0) * 1e9));
 }
-absl::Status ReadScale(const char* name, double& value) {
-  const char* text = std::getenv(name);
-  if (text && (!absl::SimpleAtod(text, &value) || !std::isfinite(value) ||
-               value <= 0 || value > 1e6))
-    return absl::InvalidArgumentError(
-        absl::StrCat(name, " must be in (0, 1000000]"));
-  return absl::OkStatus();
-}
-absl::Status ReadLatency(const char* name, int64_t& value) {
-  const char* text = std::getenv(name);
-  if (text &&
-      (!absl::SimpleAtoi(text, &value) || value < 0 || value > 1000000000))
-    return absl::InvalidArgumentError(
-        absl::StrCat(name, " must be in [0, 1000000000] ns"));
-  return absl::OkStatus();
-}
-absl::Status ReadRate(const char* name, double& value) {
-  const char* text = std::getenv(name);
-  if (text && (!absl::SimpleAtod(text, &value) || !std::isfinite(value) ||
-               value <= 0 || value > 1e30))
-    return absl::InvalidArgumentError(
-        absl::StrCat(name, " must be in (0, 1e30]"));
-  return absl::OkStatus();
-}
 }  // namespace
 
-absl::StatusOr<RuntimeConfig> RuntimeConfig::FromEnvironment() {
+absl::StatusOr<RuntimeConfig> RuntimeConfig::FromProfile(
+    absl::string_view json) {
+  google::protobuf::Struct profile;
+  ABSL_RETURN_IF_ERROR(
+      google::protobuf::util::JsonStringToMessage(json, &profile));
   RuntimeConfig config;
+  auto section = profile.fields().find("runtime");
+  if (section == profile.fields().end()) return config;
+  if (!section->second.has_struct_value())
+    return absl::InvalidArgumentError("profile.runtime must be an object");
+  for (const auto& [name, field] : section->second.struct_value().fields()) {
+    auto read = [&](auto& value, double maximum,
+                    bool zero = false) -> absl::Status {
+      using T = std::decay_t<decltype(value)>;
+      const double number = field.number_value();
+      if (!field.has_number_value() || !std::isfinite(number) || number < 0 ||
+          (!zero && number == 0) || number > maximum ||
+          (std::is_integral_v<T> && std::floor(number) != number))
+        return absl::InvalidArgumentError(
+            absl::StrCat("Invalid profile.runtime.", name));
+      value = static_cast<T>(number);
+      return absl::OkStatus();
+    };
+    if (name == "launch_ns") {
+      ABSL_RETURN_IF_ERROR(read(config.launch_ns, 1e9, true));
+    } else if (name == "transfer_ns") {
+      ABSL_RETURN_IF_ERROR(read(config.transfer_ns, 1e9, true));
+    } else if (name == "link_ns") {
+      ABSL_RETURN_IF_ERROR(read(config.link_ns, 1e9, true));
+    } else if (name == "host_bytes_per_second") {
+      ABSL_RETURN_IF_ERROR(read(config.host_bytes_per_second, 1e30));
+    } else if (name == "link_bytes_per_second") {
+      ABSL_RETURN_IF_ERROR(read(config.link_bytes_per_second, 1e30));
+    } else if (name == "communication_scale") {
+      ABSL_RETURN_IF_ERROR(read(config.communication_scale, 1e6));
+    } else
+      return absl::InvalidArgumentError(
+          absl::StrCat("Unknown profile.runtime field: ", name));
+  }
+  return config;
+}
+
+absl::StatusOr<RuntimeConfig> RuntimeConfig::FromEnvironment() {
+  // One timing configuration: both runtime and bundle estimator read this file.
+  const char* path = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
+  if (!path || !*path)
+    return absl::InvalidArgumentError("PJRT_SIM_BUNDLE_PROFILE is required");
+  std::ifstream file(path);
+  if (!file)
+    return absl::InvalidArgumentError(
+        absl::StrCat("Cannot read profile: ", path));
+  std::string json(std::istreambuf_iterator<char>{file}, {});
+  ABSL_ASSIGN_OR_RETURN(auto config, FromProfile(json));
+  for (const char* old :
+       {"PJRT_SIM_LAUNCH_NS", "PJRT_SIM_TRANSFER_NS", "PJRT_SIM_LINK_NS",
+        "PJRT_SIM_HOST_BYTES_PER_SECOND", "PJRT_SIM_LINK_BYTES_PER_SECOND",
+        "PJRT_SIM_COMMUNICATION_SCALE"}) {
+    if (std::getenv(old))
+      return absl::InvalidArgumentError(absl::StrCat(
+          old,
+          " was removed; use the runtime object in PJRT_SIM_BUNDLE_PROFILE"));
+  }
   if (const char* value = std::getenv("PJRT_SIM_MAX_MATERIALIZED_BYTES")) {
     if (!absl::SimpleAtoi(value, &config.max_materialized_bytes) ||
         (config.max_materialized_bytes != 0 &&
-         config.max_materialized_bytes < 16)) {
+         config.max_materialized_bytes < 16))
       return absl::InvalidArgumentError(
-          "PJRT_SIM_MAX_MATERIALIZED_BYTES must be 0 (disabled) or at least 16 "
-          "bytes");
-    }
+          "PJRT_SIM_MAX_MATERIALIZED_BYTES must be 0 or at least 16");
   }
-  ABSL_RETURN_IF_ERROR(
-      ReadScale("PJRT_SIM_COMPUTE_SCALE", config.compute_scale));
-  ABSL_RETURN_IF_ERROR(
-      ReadScale("PJRT_SIM_COMMUNICATION_SCALE", config.communication_scale));
-  ABSL_RETURN_IF_ERROR(ReadLatency("PJRT_SIM_LAUNCH_NS", config.launch_ns));
-  ABSL_RETURN_IF_ERROR(ReadLatency("PJRT_SIM_TRANSFER_NS", config.transfer_ns));
-  ABSL_RETURN_IF_ERROR(ReadLatency("PJRT_SIM_LINK_NS", config.link_ns));
-  ABSL_RETURN_IF_ERROR(
-      ReadRate("PJRT_SIM_FLOPS_PER_SECOND", config.flops_per_second));
-  ABSL_RETURN_IF_ERROR(ReadRate("PJRT_SIM_TRANSCENDENTALS_PER_SECOND",
-                                config.transcendentals_per_second));
-  ABSL_RETURN_IF_ERROR(
-      ReadRate("PJRT_SIM_HBM_BYTES_PER_SECOND", config.hbm_bytes_per_second));
-  ABSL_RETURN_IF_ERROR(
-      ReadRate("PJRT_SIM_HOST_BYTES_PER_SECOND", config.host_bytes_per_second));
-  ABSL_RETURN_IF_ERROR(
-      ReadRate("PJRT_SIM_LINK_BYTES_PER_SECOND", config.link_bytes_per_second));
   return config;
 }
 
@@ -139,109 +161,38 @@ int64_t SimRuntime::Reserve(int64_t start, int64_t duration,
   return start;
 }
 
-std::vector<Completion> SimRuntime::Execute(
-    const ExecutionPlan& plan, const std::vector<int64_t>& devices,
+std::vector<Completion> SimRuntime::ExecuteTimed(
+    int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
     const std::vector<Completion>& inputs, const ProfileActivity& profile,
     const std::string& name) {
   std::lock_guard<std::mutex> lock(mutex_);
   int64_t release = Now();
-  for (const Completion& input : inputs)
-    release = std::max(release, input.end_ns);
-  std::vector<int64_t> starts, launch;
   std::vector<Future<>> predecessors;
-  for (const Completion& input : inputs) predecessors.push_back(input.future);
+  std::vector<std::string> resources;
+  for (const auto& input : inputs) {
+    release = std::max(release, input.end_ns);
+    predecessors.push_back(input.future);
+  }
   for (int64_t device : devices) {
-    const int64_t start = std::max(release, execution_tail_[device].end_ns);
+    release = std::max(release, execution_tail_[device].end_ns);
     predecessors.push_back(execution_tail_[device].future);
-    starts.push_back(start);
-    launch.push_back(start + config_.launch_ns);
-    profile.Interval("device launch", Epoch(start), Epoch(launch.back()),
-                     device, "Launch");
+    resources.push_back(absl::StrCat("compute:", device));
+    resources.push_back(absl::StrCat("hbm:", device));
   }
-  std::vector<std::vector<int64_t>> ends;
-  for (const PlanNode& node : plan.nodes) {
-    std::vector<int64_t> ready = launch;
-    for (int dependency : node.dependencies)
-      for (int d = 0; d < devices.size(); ++d)
-        ready[d] = std::max(ready[d], ends[dependency][d]);
-    if (node.kind == PlanNode::Kind::kTransfers) {
-      // Conservative group barrier over directed logical links. This models
-      // payload movement, not a calibrated physical TPU routing algorithm.
-      const int64_t release = *std::max_element(ready.begin(), ready.end());
-      int64_t end = release;
-      const int64_t duration = Duration(
-          config_.communication_scale *
-          (config_.link_ns / 1e9 + node.bytes / config_.link_bytes_per_second));
-      for (const auto& [source, target] : node.transfers) {
-        const int64_t src = devices[source], dst = devices[target];
-        const int64_t start =
-            Reserve(release, duration, {absl::StrCat("link:", src, ":", dst)});
-        end = std::max(end, start + duration);
-        profile.Interval(node.name, Epoch(start), Epoch(start + duration), src,
-                         "Communication", node.framework_op, {}, node.bytes);
-      }
-      std::fill(ready.begin(), ready.end(), end);
-    } else if ((node.kind == PlanNode::Kind::kAllReduce ||
-                node.kind == PlanNode::Kind::kAllGather ||
-                node.kind == PlanNode::Kind::kReduceScatter) &&
-               devices.size() > 1) {
-      // Declared synthetic directed ring; no claim about a physical v7x slice.
-      const int count = devices.size();
-      int64_t round_start = *std::max_element(ready.begin(), ready.end());
-      const double chunk = node.kind == PlanNode::Kind::kAllGather
-                               ? node.bytes
-                               : std::ceil(node.bytes / count);
-      const int rounds =
-          (count - 1) * (node.kind == PlanNode::Kind::kAllReduce ? 2 : 1);
-      const int64_t duration = Duration(
-          config_.communication_scale *
-          (config_.link_ns / 1e9 + chunk / config_.link_bytes_per_second));
-      for (int round = 0; round < rounds; ++round) {
-        int64_t round_end = round_start;
-        for (int d = 0; d < count; ++d) {
-          const int64_t src = devices[d], dst = devices[(d + 1) % count];
-          const int64_t start = Reserve(round_start, duration,
-                                        {absl::StrCat("link:", src, ":", dst)});
-          round_end = std::max(round_end, start + duration);
-          profile.Interval(node.name, Epoch(start), Epoch(start + duration),
-                           src, "Communication", node.framework_op, {}, chunk);
-        }
-        round_start = round_end;
-      }
-      std::fill(ready.begin(), ready.end(), round_start);
-    } else {
-      const int64_t duration =
-          node.kind != PlanNode::Kind::kCompute
-              ? 0
-              : Duration(config_.compute_scale *
-                         std::max({node.flops / config_.flops_per_second,
-                                   node.transcendentals /
-                                       config_.transcendentals_per_second,
-                                   node.bytes / config_.hbm_bytes_per_second}));
-      for (int d = 0; d < devices.size(); ++d) {
-        const int64_t device = devices[d];
-        const int64_t start = Reserve(
-            ready[d], duration,
-            {absl::StrCat("compute:", device), absl::StrCat("hbm:", device)});
-        ready[d] = start + duration;
-        profile.Interval(node.name, Epoch(start), Epoch(ready[d]), device,
-                         "HLO", node.framework_op, node.cost_gap, node.bytes,
-                         node.flops, node.transcendentals, node.cost_source);
-      }
-    }
-    ends.push_back(std::move(ready));
-  }
+  const int64_t start =
+      Reserve(release + config_.launch_ns, duration_ns, resources);
+  const int64_t end = start + duration_ns;
   std::vector<Completion> result;
-  for (int d = 0; d < devices.size(); ++d) {
-    const int64_t end = plan.root < 0 ? launch[d] : ends[plan.root][d];
-    profile.Interval(name, Epoch(starts[d]), Epoch(end), devices[d],
-                     "Executions", {},
-                     plan.cost_gaps ? "partial HLO cost coverage" : "");
+  for (int64_t device : devices) {
+    profile.Interval("device launch", Epoch(release),
+                     Epoch(release + config_.launch_ns), device, "Launch");
+    profile.Interval(name, Epoch(start), Epoch(end), device, "Bundles",
+                     partial ? "partial bundle cost coverage" : "");
     Completion completion = CompleteAt(end);
-    std::vector<Future<>> waits = predecessors;
+    auto waits = predecessors;
     waits.push_back(completion.future);
     completion.future = JoinFutures(waits);
-    execution_tail_[devices[d]] = completion;
+    execution_tail_[device] = completion;
     result.push_back(std::move(completion));
   }
   return result;
@@ -267,34 +218,11 @@ Completion SimRuntime::Transfer(int64_t source, int64_t destination,
   profile.Interval(source < 0        ? "H2D"
                    : destination < 0 ? "D2H"
                                      : "Device copy",
-                   Epoch(start), Epoch(start + duration), device, "DMA", {}, {},
+                   Epoch(start), Epoch(start + duration), device, "DMA", {},
                    bytes);
   Completion completion = CompleteAt(start + duration);
   completion.future = JoinFutures({input.future, completion.future});
   return completion;
-}
-
-Future<> SimRuntime::WithCpu(const Completion& completion, Future<> cpu,
-                             const ProfileActivity& profile,
-                             int64_t device) const {
-  const int64_t end = Epoch(completion.end_ns);
-  if (profile) {
-    cpu.OnReady([profile, device, end](absl::Status status) {
-      const int64_t now = tsl::Env::Default()->NowNanos();
-      if (now > end)
-        profile.Interval("CPU readiness observation lag", end, now, device,
-                         "CPU readiness", {},
-                         status.ok() ? "" : status.ToString());
-    });
-    completion.future.OnReady([profile, device, end](absl::Status status) {
-      const int64_t now = tsl::Env::Default()->NowNanos();
-      if (now > end)
-        profile.Interval("Runtime notification lag", end, now, device,
-                         "Runtime notification", {},
-                         status.ok() ? "" : status.ToString());
-    });
-  }
-  return JoinFutures({completion.future, std::move(cpu)});
 }
 
 }  // namespace xla::sim

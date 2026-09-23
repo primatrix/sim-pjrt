@@ -4,18 +4,6 @@ load("@xla//xla:xla.default.bzl", "xla_cc_binary", "xla_cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
-# Load the canonical XSpace schema in Python without TensorFlow or a checked-in
-# generated protobuf module tied to a particular protobuf runtime version.
-genrule(
-    name = "xplane_descriptor",
-    srcs = ["@tsl//tsl/profiler/protobuf:xplane.proto"],
-    outs = ["xplane.descriptor.pb"],
-    cmd = "$(execpath @com_google_protobuf//:protoc) " +
-          "--proto_path=$$(dirname $(location @tsl//tsl/profiler/protobuf:xplane.proto)) " +
-          "--descriptor_set_out=$@ $(location @tsl//tsl/profiler/protobuf:xplane.proto)",
-    tools = ["@com_google_protobuf//:protoc"],
-)
-
 cc_library(
     name = "profiler",
     srcs = ["src/profiler.cc"],
@@ -47,29 +35,15 @@ xla_cc_test(
 )
 
 xla_cc_test(
-    name = "hlo_model_test",
-    srcs = ["tests/cpp/hlo_model_test.cc"],
-    deps = [
-        ":hlo_model",
-        ":program_snapshot",
-        ":runtime",
-        "@xla//xla/hlo/parser:hlo_parser",
-        "@xla//xla/hlo/ir:hlo",
-        "@com_google_absl//absl/status",
-        "@tsl//tsl/platform:status_matchers",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-xla_cc_test(
     name = "instrumentation_test",
     srcs = ["tests/cpp/instrumentation_test.cc", "src/instrumentation.cc", "src/instrumentation.h"],
     deps = [
-        ":hlo_model",
+        ":executable_work",
         ":virtual_storage",
         ":runtime",
         ":profiler",
         "@xla//xla/pjrt/c:pjrt_c_api_cpu_internal",
+        "@xla//xla/pjrt/c:pjrt_c_api_helpers",
         "@xla//xla/pjrt/c:pjrt_c_api_status_utils",
         "@xla//xla/pjrt/c:pjrt_c_api_wrapper_impl",
         "@com_google_absl//absl/log",
@@ -80,39 +54,18 @@ xla_cc_test(
     ],
 )
 
-cc_library(
-    name = "hlo_model",
-    srcs = ["src/hlo_model.cc"],
-    hdrs = ["src/hlo_model.h"],
-    deps = [
-        ":hlo_utils",
-        "@xla//xla:literal_util",
-        "@xla//xla:shape_util",
-        "@xla//xla/hlo/ir:hlo",
-        "@xla//xla/service:hlo_cost_analysis",
-        "@com_google_absl//absl/status",
-        "@com_google_absl//absl/status:statusor",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/status:status_macros",
-    ],
-)
-
 xla_cc_binary(
     name = "pjrt_sim_plugin.so",
     srcs = ["src/plugin.cc", "src/instrumentation.cc", "src/instrumentation.h", "src/profiler_api.cc"],
     linkshared = True,
     deps = [
         "@tsl//tsl/profiler/protobuf:xplane_proto_cc",
-        ":hlo_model",
-        ":program_snapshot",
+        ":compilation",
+        ":executable_work",
         ":virtual_storage",
         ":runtime",
         ":profiler",
-        ":partitioning",
         "@xla//xla/backends/profiler/plugin:profiler_error",
-        "@xla//xla/hlo/builder:xla_computation",
-        "@xla//xla/hlo/ir:hlo",
-        "@xla//xla/pjrt:mlir_to_hlo",
         "@xla//xla/pjrt/c:pjrt_c_api_cpu_internal",
         "@xla//xla/pjrt/c:pjrt_c_api_helpers",
         "@xla//xla/pjrt/c:pjrt_c_api_hdrs",
@@ -126,25 +79,8 @@ xla_cc_binary(
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/strings",
-        "@llvm-project//mlir:IR",
         "@tsl//tsl/platform:env",
         "@tsl//tsl/profiler/protobuf:profiler_options_proto_cc",
-        "@com_google_absl//absl/status:status_macros",
-    ],
-)
-
-cc_library(
-    name = "execution_plan",
-    srcs = ["src/execution_plan.cc", "src/pallas_cost.cc"],
-    hdrs = ["src/execution_plan.h", "src/pallas_cost.h"],
-    deps = [
-        ":hlo_utils",
-        "@xla//xla:shape_util",
-        "@xla//xla/hlo/ir:hlo",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/status",
-        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/status:status_macros",
     ],
 )
@@ -154,7 +90,7 @@ cc_library(
     srcs = ["src/runtime.cc"],
     hdrs = ["src/runtime.h"],
     deps = [
-        ":execution_plan",
+        "@com_google_protobuf//:protobuf",
         ":profiler",
         "@xla//xla:future",
         "@com_google_absl//absl/status",
@@ -170,20 +106,8 @@ xla_cc_test(
     srcs = ["tests/cpp/runtime_test.cc"],
     deps = [
         ":runtime",
-        ":execution_plan",
         "@xla//xla:future",
         "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
-        "@tsl//tsl/platform:status_matchers",
-    ],
-)
-
-xla_cc_test(
-    name = "execution_plan_test",
-    srcs = ["tests/cpp/execution_plan_test.cc"],
-    deps = [
-        ":execution_plan",
-        "@xla//xla/hlo/parser:hlo_parser",
         "@com_google_googletest//:gtest_main",
         "@tsl//tsl/platform:status_matchers",
     ],
@@ -194,6 +118,7 @@ cc_library(
     srcs = ["src/virtual_storage.cc"],
     hdrs = ["src/virtual_storage.h"],
     deps = [
+        ":hlo_utils",
         "@xla//xla:literal_util",
         "@xla//xla:shape_util",
         "@xla//xla/hlo/ir:hlo",
@@ -250,36 +175,6 @@ cc_library(
     deps = ["@xla//xla/hlo/ir:hlo"],
 )
 
-cc_library(
-    name = "program_snapshot",
-    srcs = ["src/program_snapshot.cc"],
-    hdrs = ["src/program_snapshot.h"],
-    deps = [
-        ":execution_plan",
-        "@xla//xla/hlo/ir:hlo",
-        "@com_google_absl//absl/status:statusor",
-        "@com_google_absl//absl/status:status_macros",
-        "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-xla_cc_binary(
-    name = "plan_export",
-    srcs = ["src/plan_export.cc"],
-    deps = [
-        ":execution_plan",
-        ":program_snapshot",
-        "@xla//xla/hlo/ir:hlo",
-        "@xla//xla/hlo/parser:hlo_parser",
-        "@com_google_absl//absl/status",
-        "@com_google_absl//absl/status:statusor",
-        "@com_google_absl//absl/status:status_macros",
-        "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
 
 alias(name = "plugin", actual = ":pjrt_sim_plugin.so")
 
@@ -290,4 +185,94 @@ refresh_compile_commands(
     exclude_external_sources = True,
     exclude_headers = "external",
     tags = ["manual"],
+)
+
+cc_library(
+    name = "executable_work",
+    hdrs = ["src/executable_work.h"],
+    deps = [":bundle_timing"],
+)
+
+cc_library(
+    name = "output_simulation",
+    srcs = ["src/output_simulation.cc"],
+    hdrs = ["src/output_simulation.h"],
+    deps = [
+        ":hlo_utils",
+        "@xla//xla:literal_util",
+        "@xla//xla/hlo/ir:hlo",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/status:status_macros",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "compilation",
+    srcs = ["src/compilation.cc", "src/tpu_compilation.cc"],
+    hdrs = ["src/compilation.h", "src/tpu_compilation.h"],
+    linkopts = ["-ldl"],
+    deps = [
+        ":bundle_timing",
+        ":executable_work",
+        ":output_simulation",
+        ":partitioning",
+        ":virtual_storage",
+        "@xla//xla/hlo/builder:xla_computation",
+        "@xla//xla/hlo/ir:hlo",
+        "@xla//xla/pjrt:mlir_to_hlo",
+        "@xla//xla/pjrt/c:pjrt_c_api_hdrs",
+        "@xla//xla/pjrt/c:pjrt_c_api_status_utils",
+        "@xla//xla/pjrt/proto:compile_options_proto_cc",
+        "@xla//xla/pjrt:pjrt_client",
+        "@llvm-project//mlir:IR",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/status:status_macros",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "bundle_timing",
+    srcs = ["src/bundle_timing.cc"],
+    hdrs = ["src/bundle_timing.h"],
+    deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/status:status_macros",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+xla_cc_test(
+    name = "compilation_test",
+    srcs = ["tests/cpp/compilation_test.cc"],
+    deps = [
+        ":compilation",
+        "@xla//xla:literal",
+        "@xla//xla/hlo/parser:hlo_parser",
+        "@xla//xla/hlo/ir:hlo",
+        "@xla//xla/pjrt/plugin/xla_cpu:cpu_client_options",
+        "@xla//xla/pjrt/plugin/xla_cpu:xla_cpu_pjrt_client",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
+        "@tsl//tsl/platform:status_matchers",
+    ],
+)
+
+xla_cc_test(
+    name = "output_simulation_test",
+    srcs = ["tests/cpp/output_simulation_test.cc"],
+    deps = [
+        ":output_simulation",
+        "@xla//xla/hlo/parser:hlo_parser",
+        "@xla//xla/hlo/ir:hlo",
+        "@com_google_absl//absl/status",
+        "@tsl//tsl/platform:status_matchers",
+        "@com_google_googletest//:gtest_main",
+    ],
 )
