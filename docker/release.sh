@@ -3,11 +3,19 @@
 set -euo pipefail
 cd /workspace
 export XDG_CACHE_HOME=/workspace/.build/manylinux-cache
-bazel --batch test //:plugin //... \
-  --jobs=2 --local_resources=memory=10000 \
+# Stop Bazel before the hosted job limit so completed actions can be saved.
+# Bazel also gates scheduling on the memory budget; CPU count is the job ceiling.
+timeout --signal=INT --kill-after=2m 5h bazel --batch test //:plugin //... \
+  --jobs="$(nproc)" --local_resources=memory=10000 \
   --repository_cache=/workspace/.build/bazel-cache/repository \
   --disk_cache=/workspace/.build/bazel-cache/actions \
-  --experimental_disk_cache_gc_max_size=5G
+  --experimental_disk_cache_gc_max_size=5G || {
+    status=$?
+    if [[ "$status" == 124 || "$status" == 137 ]]; then
+      echo "::error::Bazel exceeded its build time budget; saving completed actions in CI. Rerun the workflow to reuse the cache."
+    fi
+    exit "$status"
+  }
 
 # Reuse the native artifact; do not invoke Bazel from setuptools again.
 python -m venv /tmp/wheel-build

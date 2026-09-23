@@ -37,23 +37,28 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
           df -h .
-      # The SHA identifies an immutable snapshot; the prefix reuses previous builds.
+      # Each attempt gets a fresh snapshot, including incomplete cold builds.
       - name: Restore Bazel dependencies and compiled actions
         id: bazel-cache
         uses: actions/cache/restore@v4
         with:
           path: .build/bazel-cache
-          key: native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-${{ github.sha }}
+          key: native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-
       - name: Build and validate manylinux wheel
+        id: native-build
+        timeout-minutes: 330
         run: |
           docker build -f docker/Dockerfile.manylinux \
             --build-arg BUILD_UID="$(id -u)" --build-arg BUILD_GID="$(id -g)" \
             -t sim-pjrt-manylinux .
           docker run --rm --init -v "$PWD:/workspace" sim-pjrt-manylinux
-      - name: Update shared Bazel cache on main
-        if: github.ref == 'refs/heads/main' && steps.bazel-cache.outputs.cache-hit != 'true'
+      # Ordinary build failures and step timeouts must not discard completed work.
+      # Branch/tag snapshots remain subject to GitHub's cache access scope.
+      - name: Save Bazel progress even when the build fails
+        if: always() && !cancelled() && steps.bazel-cache.outcome == 'success' && steps.native-build.outcome != 'skipped'
+        timeout-minutes: 25
         uses: actions/cache/save@v4
         with:
           path: .build/bazel-cache
