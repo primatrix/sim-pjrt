@@ -16,5 +16,6 @@ services:
         target: ${PWD}
     environment:
       XDG_CACHE_HOME: ${PWD}/.build/docker-cache
-    entrypoint: [bazel, --batch, '--output_user_root=${PWD}/.build/docker-cache/bazel']
+    # Nested Bazel invocations (e.g. clangd extraction) inherit XDG_CACHE_HOME.
+    entrypoint: [bazel, --batch]
     command: [build, '//:plugin']

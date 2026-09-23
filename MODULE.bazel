@@ -43,3 +43,13 @@ cuda = use_extension("@rules_ml_toolchain//extensions:cuda_configure.bzl", "cuda
 use_repo(cuda, "local_config_cuda")
 sycl = use_extension("@rules_ml_toolchain//extensions:sycl_configure.bzl", "sycl_configure_ext")
 use_repo(sycl, "local_config_sycl")
+
+# Editor tooling only; pinned independently of the XLA build dependencies.
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+archive_override(
+    module_name = "hedron_compile_commands",
+    urls = ["https://codeload.github.com/hedronvision/bazel-compile-commands-extractor/tar.gz/abb61a688167623088f8768cc9264798df6a9d10"],
+    type = "tar.gz",
+    strip_prefix = "bazel-compile-commands-extractor-abb61a688167623088f8768cc9264798df6a9d10",
+    integrity = "sha256-Gwir/7++ifbb7mpbM3U3kugAT2o283wPchFb7IbmhyQ=",
+)

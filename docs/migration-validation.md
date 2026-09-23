@@ -1,5 +1,27 @@
 # Validation record
 
+## clangd and checkout relocation — 2026-09-22
+
+- Checkout moved to `/home/yanko/lab/sim-pjrt`. The native Bazel output cache was
+  migrated to the new workspace hash, retaining a compatibility link at the old
+  cache location. Bazel refreshed the source links to the new checkout.
+- The pinned Hedron extractor generates the database with
+  `bazel run //:refresh_compile_commands`. All 28 project C++ source/header files
+  are covered; database working directories use the new checkout, and no external
+  C++ source entries are included. Referenced dependency headers are included.
+- Installed clangd 22.1.6 checked `src/plugin.cc` and `src/execution_plan.h` with
+  zero errors. The test translation unit `tests/cpp/hlo_model_test.cc` also parses
+  successfully. Its unrestricted clangd check hits ExtractFunction refactoring
+  probe failures on GoogleTest macros; restricting those extra probes to the
+  include region (`--check-lines=12-19`) completes with zero errors. This does
+  not disable parsing diagnostics for the translation unit.
+- `bazel test //... --jobs=32`: all nine targets passed in **36.134 seconds**,
+  with 18,314 action cache hits and 1,043 actions after cache relocation.
+- Compose batch and nested Bazel invocations were verified to use the same
+  persistent output base via `XDG_CACHE_HOME`. Full Docker compilation and Docker
+  clangd extraction were not repeated; the compilation database and clangd checks
+  above were run natively.
+
 ## Directory organization — 2026-09-22
 
 - Sources, Python tools, tests, configs, runtime requirements, and documentation
