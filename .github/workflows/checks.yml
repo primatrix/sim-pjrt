@@ -3,14 +3,14 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  python:
+  tests:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: ./scripts/test-python.sh
+      - name: Bazel Python tests in Docker
+        run: |
+          export BUILD_UID=$(id -u) BUILD_GID=$(id -g)
+          docker compose run --build --rm bazel test //xla/pjrt/sim:python_tests
   docs:
     runs-on: ubuntu-24.04
     defaults:
@@ -25,8 +25,3 @@ jobs:
           cache-dependency-path: xla/pjrt/sim/docs-site/package-lock.json
       - run: npm ci
       - run: npm run build
-  docker:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - run: ./scripts/docker.sh bash -c 'bazel --version && ./scripts/test-python.sh'

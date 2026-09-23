@@ -24,7 +24,7 @@ RUN cd /tmp/bazel-install \
     && install -m 0755 "bazel-${bazel_version}-linux-x86_64" /usr/local/bin/bazel \
     && rm -rf /tmp/bazel-install
 
-# Match the invoking Linux user's ownership for bind-mounted source and caches.
+# Compose can match the invoking Linux user's ownership for bind-mounted source and caches.
 ARG BUILD_UID=1000
 ARG BUILD_GID=1000
 RUN if ! getent group "${BUILD_GID}" >/dev/null; then groupadd --gid "${BUILD_GID}" builder; fi \

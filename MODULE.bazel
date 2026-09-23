@@ -1,0 +1,45 @@
+module(name = "sim_pjrt", version = "0.1.0")
+
+bazel_dep(name = "xla")
+archive_override(
+    module_name = "xla",
+    urls = ["https://codeload.github.com/openxla/xla/tar.gz/4426f247713c9f46bad35775cc032265d5795f04"],
+    type = "tar.gz",
+    strip_prefix = "xla-4426f247713c9f46bad35775cc032265d5795f04",
+    integrity = "sha256-AOOZDim993hqdNrDrt+SAOh2ZA2yci8UusXNb0dKiw0=",
+)
+
+# Direct dependencies of the plugin's BUILD targets.
+bazel_dep(name = "abseil-cpp", version = "20260526.0", repo_name = "com_google_absl")
+bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
+bazel_dep(name = "protobuf", version = "32.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "rules_cc", version = "0.2.20")
+bazel_dep(name = "rules_python", version = "2.2.0")
+bazel_dep(name = "rules_ml_toolchain")
+
+include("//third_party:xla_overrides.MODULE.bazel")
+
+tsl = use_extension("@xla//third_party/extensions:tsl.bzl", "tsl_extension")
+use_repo(tsl, "tsl")
+llvm = use_extension("@xla//third_party/extensions:llvm.bzl", "llvm_extension")
+use_repo(llvm, "llvm-project")
+
+# Preserve XLA's root-only Python repository override.
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+use_repo(pip, pypi = "xla_pypi")
+override_repo(pip, rules_ml_toolchain_pypi = "pypi")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = "3.11")
+python.toolchain(python_version = "3.11")
+use_repo(python, "pythons_hub")
+register_toolchains("@pythons_hub//:all")
+register_toolchains("@rules_ml_toolchain//cc:linux_x86_64_linux_x86_64")
+
+# XLA's C++ macros emit select() keys in the caller's repository mapping.
+rocm = use_extension("@xla//third_party/extensions:rocm_configure.bzl", "rocm_configure_ext")
+use_repo(rocm, "local_config_rocm")
+cuda = use_extension("@rules_ml_toolchain//extensions:cuda_configure.bzl", "cuda_configure_ext")
+use_repo(cuda, "local_config_cuda")
+sycl = use_extension("@rules_ml_toolchain//extensions:sycl_configure.bzl", "sycl_configure_ext")
+use_repo(sycl, "local_config_sycl")

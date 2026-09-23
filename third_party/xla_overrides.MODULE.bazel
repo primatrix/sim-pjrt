@@ -1,0 +1,63 @@
+# Root-only overrides required by the pinned XLA MODULE.bazel.
+# Keep in sync when upgrading XLA. Bazel requires these patch files to live in the root module.
+
+archive_override(
+    module_name = "rules_ml_toolchain",
+    integrity = "sha256-Ztgjtsa06m8J1572/knhgeUwF1nuB9F2psgqAeEifWs=",
+    strip_prefix = "rules_ml_toolchain-e8709f15382e4da1de5ca15672cb4412da3d989d",
+    urls = ["https://github.com/google-ml-infra/rules_ml_toolchain/archive/e8709f15382e4da1de5ca15672cb4412da3d989d.tar.gz"],
+)
+
+single_version_override(
+    module_name = "grpc",
+    patch_strip = 1,
+    patches = [
+        "//third_party/xla_patches:grpc/grpc.patch",
+    ],
+    version = "1.81.0",
+)
+
+single_version_override(
+    module_name = "abseil-cpp",
+    patch_strip = 1,
+    patches = [
+        "//third_party/xla_patches:absl/btree.patch",
+        "//third_party/xla_patches:absl/endian.patch",
+        "//third_party/xla_patches:absl/raw_hash_set.patch",
+    ],
+    version = "20260526.0",
+)
+
+single_version_override(
+    module_name = "protobuf",
+    patch_strip = 1,
+    patches = [
+        "//third_party/xla_patches:protobuf/protobuf_arena.patch",
+        "//third_party/xla_patches:protobuf/fix_message_lite_incomplete_type.patch",
+        # The following patch is needed to fix package loading for `bazel query "deps(//xla/...)"`.
+        "//third_party/xla_patches:protobuf/fix_python_dist_package.patch",
+    ],
+    version = "32.1",
+)
+
+archive_override(
+    module_name = "googletest",
+    integrity = "sha256-8lPKGgcmL4796DKOSyxol55A3fz8AB9w0dX2EsfeKXQ=",
+    patch_strip = 1,
+    patches = [
+        "//third_party/xla_patches:googletest/0001-Add-ASSERT_OK-EXPECT_OK-ASSERT_OK_AND_ASSIGN-macros.patch",
+        "//third_party/xla_patches:googletest/googletest.patch",
+    ],
+    strip_prefix = "googletest-28e9d1f26771c6517c3b4be10254887673c94018",
+    urls = ["https://github.com/google/googletest/archive/28e9d1f26771c6517c3b4be10254887673c94018.zip"],
+)
+
+single_version_override(
+    module_name = "rules_python",
+    patch_strip = 1,
+    patches = [
+        "//third_party/xla_patches:py/rules_python_freethreaded.patch",
+        "//third_party/xla_patches:py/rules_python_scope.patch",
+    ],
+    version = "2.2.0",
+)
