@@ -25,21 +25,23 @@ Shape PhysicalShape(Shape shape) {
     for (Shape &child : *shape.mutable_tuple_shapes())
       child = PhysicalShape(child);
   } else if (shape.IsArray() &&
-             primitive_util::IsFloatingPointType(shape.element_type())) {
+             primitive_util::IsFloatingPointType(shape.element_type()) &&
+             ShapeUtil::ElementsIn(shape) != 1) {
     return ShapeUtil::MakeShape(shape.element_type(), {});
   }
   return shape;
 }
-bool HasFloat(const Shape &shape) {
+bool HasPlaceholder(const Shape &shape) {
   if (shape.IsTuple()) {
     for (const Shape &child : shape.tuple_shapes()) {
-      if (HasFloat(child))
+      if (HasPlaceholder(child))
         return true;
     }
     return false;
   }
   return shape.IsArray() &&
-         primitive_util::IsFloatingPointType(shape.element_type());
+         primitive_util::IsFloatingPointType(shape.element_type()) &&
+         ShapeUtil::ElementsIn(shape) != 1;
 }
 HloInstruction *Zero(HloComputation *computation, const Shape &shape) {
   if (shape.IsTuple()) {
@@ -95,13 +97,13 @@ public:
     if (!literal || !ShapeUtil::Compatible(shape_, literal->shape())) {
       return Future<>(absl::InvalidArgumentError("Virtual D2H shape mismatch"));
     }
-    if (!HasFloat(shape_))
+    if (!HasPlaceholder(shape_))
       return storage_->ToLiteral(literal);
     return CopyRawToHost(literal->untyped_data(), 0, literal->size_bytes());
   }
   Future<> LazyToLiteral(absl::AnyInvocable<Future<MutableLiteralBase *>() &&>
                              generator) override {
-    if (!HasFloat(shape_))
+    if (!HasPlaceholder(shape_))
       return storage_->LazyToLiteral(std::move(generator));
     auto [promise, future] = MakePromise();
     // Do not retain this buffer across asynchronous callbacks.
@@ -137,7 +139,7 @@ public:
       return Future<>(
           absl::InvalidArgumentError("Virtual D2H range is invalid"));
     }
-    if (!HasFloat(shape_))
+    if (!HasPlaceholder(shape_))
       return storage_->CopyRawToHost(destination, offset, size);
     auto [promise, future] = MakePromise();
     storage_->GetReadyFuture().OnReady([promise = std::move(promise),
@@ -434,8 +436,9 @@ PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args) {
   PJRT_ASSIGN_OR_RETURN(Shape shape, pjrt::BuildXlaShapeFromC(
                                          args->type, args->dims, args->num_dims,
                                          args->device_layout));
-  if (!HasFloat(shape)) {
-    // Control values live on the host, but retain the same Virtual HBM API.
+  if (!HasPlaceholder(shape)) {
+    // Integer, boolean and single-value float control state lives on the host.
+    // SGLang uses f32[1] for its distributed available-memory query.
     if (auto *error = pjrt::PJRT_Client_BufferFromHostBuffer(args))
       return error;
     args->buffer->buffer = std::make_unique<VirtualBuffer>(

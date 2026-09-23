@@ -72,6 +72,10 @@ guide to create the integration Python environment, or use your existing contain
 
 ## Targets and configuration
 
+For a distributable Python wheel, run `uv build --wheel`. This invokes the same
+Bazel plugin target and packages its output with the launcher. See
+[Python packaging](python-package.md) for installation and artifact overrides.
+
 | Target | Output or checks |
 | --- | --- |
 | `//:plugin` | `bazel-bin/pjrt_sim_plugin.so` |

@@ -99,6 +99,7 @@ def compose_final_bundles(modules, aliases=None, root="TLP", limit=1_000_000):
     allocations = {}
 
     def visit(name, prefix, stack):
+        label = name
         name = (aliases or {}).get(name, name)
         if name not in modules:
             raise ValueError(f"missing Final LLO callee: {name}")
@@ -128,6 +129,8 @@ def compose_final_bundles(modules, aliases=None, root="TLP", limit=1_000_000):
             item.update(
                 address=address,
                 module=name,
+                kernel=label,
+                callsite=prefix.rstrip("/"),
                 source_address=bundle["address"],
             )
             # Allocation names are local to each invocation. Cross-call operand
@@ -236,6 +239,91 @@ def _positive(value, name, allow_zero=False):
     return value
 
 
+def activity_timeline(program, events, hz, clock, finish, tail):
+    """Project the same cost-model events into compact, non-additive XProf tracks.
+
+    Kernels are compilation scopes. Unknown costs are markers, never invented
+    transfer or synchronization durations.
+    """
+    by_address = {b["address"]: b for b in program}
+    positions = {b["address"]: i for i, b in enumerate(program)}
+    result, previous = [], {}
+    run, last_position, last_callsite = 0, -1, None
+    unresolved = set()
+
+    def add(track, name, start, end, bundle=None, gap="", size=-1, merge=True):
+        bundle = bundle or {}
+        module = bundle.get("module", "")
+        callsite = bundle.get("callsite", "")
+        source = bundle.get("source_address", bundle.get("address", ""))
+        # Compare cycles before rounding: sub-nanosecond gaps must not merge.
+        key = (name, module, callsite, gap, run)
+        prior = previous.get(track)
+        if merge and prior and prior[0] == key and prior[1] == start:
+            item = prior[2]
+            item["end_ns"] = math.ceil(end / hz * 1e9)
+            item["last_address"] = source
+        else:
+            item = dict(
+                track=track, name=name,
+                start_ns=math.ceil(start / hz * 1e9),
+                end_ns=math.ceil(end / hz * 1e9),
+                module=module, callsite=callsite,
+                first_address=source, last_address=source,
+                cost_gap=gap, bytes=size,
+            )
+            result.append(item)
+        previous[track] = (key, end, item)
+
+    # Bundle events determine scope boundaries. DMA can outlive its launch scope.
+    for event in events:
+        bundle = by_address[event["address"]]
+        if event["kind"] == "dma":
+            add("DMA / " + event["resource"], "dma." + event["direction"],
+                event["start_cycle"], event["end_cycle"], bundle,
+                size=event["bytes"], merge=False)
+            continue
+        position = positions[event["address"]]
+        callsite = bundle.get("callsite", "")
+        if callsite != last_callsite or position <= last_position:
+            run += 1
+        last_callsite, last_position = callsite, position
+        start, end = event["start_cycle"], event["end_cycle"]
+        add("Kernels", bundle.get("kernel", bundle.get("module", "Final LLO")),
+            start, end, bundle)
+        gap = "; ".join(event["cost_gaps"])
+        ops = event["opcodes"]
+        if end > event["issue_end_cycle"]:
+            add("Wait", " | ".join(event["wait_ops"]) or "synchronization",
+                event["issue_end_cycle"], end, bundle, gap)
+        if event["delay_cycles"]:
+            add("Delay", "vdelay", start + event["issue_cycles"],
+                start + event["issue_cycles"] + event["delay_cycles"], bundle, gap)
+        for op in ops:
+            if op.startswith(("sbr", "sloop", "scall", "sret", "shalt")) or op in (
+                "loop", "branch", "call", "return"
+            ):
+                add("Control", op, start, start, bundle, gap)
+            if op.startswith(("send", "recv")):
+                add("Communication", op, start, start, bundle, gap)
+        for reason in event["cost_gaps"]:
+            key = (run, reason)
+            if key not in unresolved:
+                unresolved.add(key)
+                add("Unresolved", reason, start, start, bundle, reason)
+    retired = finish - tail
+    if retired > clock:
+        add("Completion", "Outstanding DMA", clock, retired)
+    if tail:
+        add("Completion", "Completion tail", retired, finish)
+    for item in result:
+        item["detail"] = (
+            f"module={item.pop('module')}; callsite={item.pop('callsite')}; "
+            f"bundles={item.pop('first_address')}..{item.pop('last_address')}"
+        )
+    return result
+
+
 def estimate_bundles(program, profile, scenario=None):
     """Estimate one execution scenario without mutating any input.
 
@@ -265,14 +353,20 @@ def estimate_bundles(program, profile, scenario=None):
     clock = stalls = extra = transferred = 0
     resources, flags, histogram, gaps, events = {}, {}, Counter(), [], []
     seen_gaps = set()
+    visit_gaps = []
 
     def gap(address, reason):
+        if reason not in visit_gaps:
+            visit_gaps.append(reason)
         key = (address, reason)
         if key not in seen_gaps:
             seen_gaps.add(key)
             gaps.append({"address": address, "reason": reason})
 
     for visit, address in enumerate(path):
+        visit_gaps = []
+        opcodes, wait_ops = set(), set()
+        delay_cycles = 0
         if "/" in address:
             gap(address.rsplit("/", 1)[0], "cross-call operand bindings are unresolved")
         start = clock
@@ -295,6 +389,7 @@ def estimate_bundles(program, profile, scenario=None):
                 elif not decision:
                     continue
             histogram[op] += 1
+            opcodes.add(op)
             known_special = op.startswith(
                 (
                     "sbr",
@@ -353,6 +448,7 @@ def estimate_bundles(program, profile, scenario=None):
                     )
                 else:
                     delay = _number(value.group(1))
+                    delay_cycles = delay if mode == "additional_cycles" else max(0, delay - issue)
                     bundle_extra = max(
                         bundle_extra,
                         delay if mode == "additional_cycles" else max(0, delay - issue),
@@ -390,12 +486,14 @@ def estimate_bundles(program, profile, scenario=None):
                         "kind": "dma",
                         "address": address,
                         "direction": direction,
+                        "resource": resource,
                         "bytes": size,
                         "start_cycle": begin,
                         "end_cycle": finish,
                     }
                 )
             elif op == "dma.done.wait":
+                wait_ops.add(op)
                 match = re.search(r"(\[#allocation\d+\]),\s*(\d+)", text)
                 pending = flags.get(match.group(1)) if match else None
                 if not pending or pending[0] != int(match.group(2)):
@@ -420,6 +518,7 @@ def estimate_bundles(program, profile, scenario=None):
             elif op.startswith(
                 ("vwait", "sfence", "cfence", "barrier", "send", "recv", "semaphore")
             ):
+                wait_ops.add(op)
                 ready = scenario.get("wait_until_cycles", {}).get(f"{visit}:{index}")
                 if ready is None:
                     gap(
@@ -443,6 +542,12 @@ def estimate_bundles(program, profile, scenario=None):
                 "visit": visit,
                 "start_cycle": start,
                 "end_cycle": clock,
+                "issue_end_cycle": start + issue + bundle_extra,
+                "issue_cycles": issue,
+                "delay_cycles": delay_cycles,
+                "opcodes": sorted(opcodes),
+                "wait_ops": sorted(wait_ops),
+                "cost_gaps": visit_gaps,
             }
         )
     # Outstanding DMA must retire, but do not add already-overlapped transfers again.
@@ -465,6 +570,7 @@ def estimate_bundles(program, profile, scenario=None):
         "instruction_counts": dict(sorted(histogram.items())),
         "gaps": gaps,
         "events": events,
+        "activity_timeline": activity_timeline(program, events, hz, clock, finish, tail),
         "assumptions": [
             "Profile supplies issue rate and instruction timing; dump addresses are not cycles.",
             "Scheduled bundles cover internal instruction dependencies; profile supplies completion tail.",

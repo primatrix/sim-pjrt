@@ -9,7 +9,11 @@ __pycache__/
 .bazelrc.local
 .env
 demo/
+/demo.py
 # Machine-specific editor database, dependency links, and clangd index.
 compile_commands.json
 external
 .cache/clangd/
+build/
+dist/
+*.egg-info/

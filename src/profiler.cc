@@ -93,6 +93,7 @@ std::string ProfileSession::Serialize() const {
   using Track = std::pair<int64_t, std::string>;
   std::map<Track, std::vector<std::pair<int64_t, int64_t>>> lanes;
   std::map<int64_t, int64_t> next_line;
+  std::map<int64_t, std::unique_ptr<tsl::profiler::XPlaneBuilder>> builders;
   for (const ProfileEvent* pointer : ordered) {
     const ProfileEvent& event = *pointer;
     const bool device = event.simulated;
@@ -114,7 +115,10 @@ std::string ProfileSession::Serialize() const {
               ? absl::StrCat("Host completion / device ", event.device_id)
               : "PJRT host API"));
     }
-    tsl::profiler::XPlaneBuilder builder(plane);
+    auto& cached_builder = builders[plane_id];
+    if (!cached_builder)
+      cached_builder = std::make_unique<tsl::profiler::XPlaneBuilder>(plane);
+    auto& builder = *cached_builder;
     const std::string track = !event.track.empty() ? event.track
                               : event.pending
                                   ? event.name
@@ -149,9 +153,11 @@ std::string ProfileSession::Serialize() const {
                        : !event.cost_gap.empty() ? "partial"
                        : event.track == "Launch" ? "structural"
                                                  : "estimated");
-      if (event.track == "Bundles")
-        out.AddStatValue(*builder.GetOrCreateStatMetadata("annotation_kind"),
-                         "executable_scope");
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("annotation_kind"),
+                       event.track == "Bundles" ? "executable_scope"
+                       : event.track == "Kernels" ? "compilation_scope"
+                       : event.track == "Unresolved" ? "unresolved_cost"
+                                                      : "activity");
     }
     out.AddStatValue(*builder.GetOrCreateStatMetadata("correlation_id"),
                      event.correlation_id);
@@ -282,7 +288,7 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
                                int64_t end, int64_t device,
                                const std::string& track,
                                const std::string& cost_gap,
-                               int64_t bytes) const {
+                               int64_t bytes, const std::string& detail) const {
   if (!session_) return;
   ProfileEvent event = event_;
   event.name = name;
@@ -290,6 +296,7 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
   event.end_ns = end;
   event.device_id = device;
   event.track = track;
+  if (!detail.empty()) event.detail = detail;
   event.cost_gap = cost_gap;
   event.bytes = bytes;
   event.simulated = true;

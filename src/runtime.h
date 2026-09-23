@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
+#include "src/bundle_timing.h"
 #include "src/profiler.h"
 #include "xla/future.h"
 
@@ -42,11 +43,11 @@ class SimRuntime {
   SimRuntime(const SimRuntime&) = delete;
   SimRuntime& operator=(const SimRuntime&) = delete;
 
-  std::vector<Completion> ExecuteTimed(int64_t duration_ns, bool partial,
-                                       const std::vector<int64_t>& devices,
-                                       const std::vector<Completion>& inputs,
-                                       const ProfileActivity& profile,
-                                       const std::string& name);
+  std::vector<Completion> ExecuteTimed(
+      int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
+      const std::vector<Completion>& inputs, const ProfileActivity& profile,
+      const std::string& name,
+      const std::vector<BundleActivity>& activities = {});
   Completion Transfer(int64_t source, int64_t destination, int64_t bytes,
                       const Completion& input, const ProfileActivity& profile);
 

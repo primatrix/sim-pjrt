@@ -1,10 +1,14 @@
 # Plugin guide
 
-The plugin has one performance path: original StableHLO → libtpu offline TPU
+The plugin has one performance path: original StableHLO → libtpu TPU
 compilation → Final LLO bundles → pure bundle timing → runtime completion.
 CPU lowering provides control values and placeholder outputs with Virtual HBM.
 HLO is only an internal representation for CPU output lowering; it is not a
 performance model. See [compilation architecture](compilation-architecture.md).
+
+This path supports runtime JIT during JAX/SGLang-Jax execution and explicit
+ahead-of-time compilation via `.lower(...).compile()`. Both use libtpu without
+requiring physical TPU hardware.
 
 ## Setup
 
@@ -27,7 +31,7 @@ fallback estimator. See [bundle timing](bundle-timing.md).
 ## Storage and execution
 
 All device buffers use Virtual HBM, without a size threshold or a materialized
-mode. Floating payloads use scalar placeholders. Integer and boolean control
+mode. Floating payloads use scalar placeholders. Integer, boolean and single-value float control
 values retain CPU shadow storage. D2H copies control values or fills floating
 placeholders in a host destination; it does not reconstruct real model data.
 Device pointers cannot be exported. See [compilation architecture](compilation-architecture.md).

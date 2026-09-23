@@ -130,7 +130,7 @@ class VirtualHbmTest(unittest.TestCase):
             jax.jit(lambda x: x * 3 + 1)(jnp.arange(7, dtype=jnp.int32)),
             np.arange(7) * 3 + 1,
         )
-        self.assertFalse(bool(jax.jit(lambda x: x > 0)(jnp.float32(1))))
+        self.assertTrue(bool(jax.jit(lambda x: x > 0)(jnp.float32(1))))
         self.assertEqual(int(jax.jit(jnp.argmax)(jnp.array([1.0, 3.0, 2.0]))), 0)
 
     def test_large_weight_with_explicit_output_sharding(self):

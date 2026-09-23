@@ -26,9 +26,10 @@ PYTHONPATH=python python3 python/bundle_timing.py \
 PYTHONPATH=python python3 tests/python/bundle_timing_test.py -v
 ```
 
-The fixture is the unedited final-bundle dump for `llo_demo_pallas_add`, produced
-by `examples/dump_libtpu.py` with libtpu 0.0.48, JAX 0.11.1 and a compile-only
-`v4:2x2x1` topology. The compiler's companion schedule analysis reports **34
+The fixture is a compiler-generated final-bundle dump of a Pallas vector-add
+kernel, captured with libtpu 0.0.48, JAX 0.11.1 and a compile-only `v4:2x2x1`
+topology. Source paths in diagnostic comments are normalized to
+`<fixture>/pallas_add.py`; bundle instructions are unchanged. The compiler's companion schedule analysis reports **34
 scheduled bundles**. There are two transfers, each with size 8 granules; the
 compiler comments independently give 4096 bytes for each array window.
 
@@ -41,8 +42,8 @@ zero extra completion tail. Under those assumptions the result is:
 - 152 modeled cycles / 152 ns. This is not a measured TPU latency.
 
 Without the explicit `assume_no_faults` scenario, the conditional bounds-check
-halts are reported as gaps. The dump's Python source line annotations refer to
-the source at dump time, not a promise that future edits preserve those lines.
+halts are reported as gaps. Source line annotations describe the original
+fixture capture, not a file distributed with this repository.
 
 ## Model
 
@@ -115,3 +116,13 @@ partial profiles time only the accounted work.
 
 The compiler’s `deduplication-map` associates call names with shared kernels.
 This mapping is metadata only; all timing instructions come from Final LLO.
+
+## XProf activities
+
+`activity_timeline` retains compact executable-relative nanosecond intervals even
+with `--summary`. It projects the existing estimate into compilation scopes,
+DMA resource tracks, modeled waits and delays,
+control-flow markers, unresolved-cost markers, and completion tails. Repeated
+calls retain their call-site identity and compiler names before deduplication.
+These overlapping views must not be summed as independent costs. Unknown
+communication, copy or synchronization latency is never synthesized for display.

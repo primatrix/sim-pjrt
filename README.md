@@ -2,9 +2,10 @@
 
 Explore how a TPU workload might run, using only a CPU.
 
-sim-pjrt compiles supported JAX and SGLang-Jax programs with libtpu's offline
-TPU compiler, estimates time from Final LLO bundles, and simulates
-outputs on CPU. TPU hardware is not required; **libtpu is required at runtime**.
+sim-pjrt compiles supported JAX and SGLang-Jax programs with libtpu, supports
+runtime JIT and ahead-of-time compilation, estimates time from Final LLO bundles,
+and simulates outputs on CPU. TPU hardware is not required;
+**libtpu is required at runtime**.
 
 ![sim-pjrt architecture](docs/images/architecture.svg)
 
@@ -13,7 +14,7 @@ and missing bundle artifacts are errors. There is no local HLO estimator or
 Plan/replay fallback. CPU lowering still uses HLO internally for output simulation.
 
 All device buffers use Virtual HBM, without a payload-size threshold. Floating
-payloads use scalar placeholders; integer and boolean control values retain CPU
+payloads use scalar placeholders; integer, boolean and single-value float control state retains CPU
 shadow storage. D2H allocates host output on demand and models transfer time.
 This does not validate numerical model accuracy or physical HBM behavior.
 Bundle timing is partial and uncalibrated; strict profiles reject unresolved
@@ -56,6 +57,44 @@ In an existing development container, run the same `bazel build //:plugin`
 command from the mounted repository. No wrapper scripts are required.
 
 ## Use
+
+### Python package launcher
+
+Build a Linux x86-64 wheel (requires uv and the native build prerequisites):
+
+```sh
+uv build --wheel
+uv pip install --python /path/to/venv/bin/python dist/sim_pjrt-0.1.0-py3-none-linux_x86_64.whl
+```
+
+The wheel includes the native plugin, timing tools and example configuration.
+Its dependencies install the tested JAX/jaxlib and libtpu versions. No Bazel or
+source checkout is needed to run an installed wheel. The package is not yet
+published to a package index; use the local wheel above.
+
+In that environment, run any Python workload with:
+
+```sh
+sim-pjrt run --topology v5e:2x2 --devices 1 --timing-profile example -- \
+  python your_script.py
+```
+
+`example` explicitly selects uncalibrated partial timing estimates. Pass a JSON
+file instead for your own profile. The launcher locates its plugin and libtpu,
+sets the backend environment before JAX starts, and uses its own Python environment.
+SGLang-Jax is installed separately in the same environment; there is no extra:
+
+```sh
+sim-pjrt run --topology v5e:2x2 --devices 4 --timing-profile example -- \
+  python -m sgl_jax.launch_server --model-path /path/to/model --tp-size 4 --load-format dummy
+```
+
+With uv, add the wheel to your workload project using `uv add /path/to/wheel.whl`,
+then use `uv run sim-pjrt run ...`. Install SGLang-Jax as a dependency of that
+project as well. See [Python packaging](docs/python-package.md) for configuration,
+build options and validation boundaries.
+
+### Manual environment
 
 In a Python environment with JAX/jaxlib 0.11.1:
 

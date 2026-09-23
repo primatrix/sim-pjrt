@@ -90,6 +90,7 @@ cc_library(
     srcs = ["src/runtime.cc"],
     hdrs = ["src/runtime.h"],
     deps = [
+        ":bundle_timing",
         "@com_google_protobuf//:protobuf",
         ":profiler",
         "@xla//xla:future",

@@ -12,7 +12,8 @@
 
 namespace xla::sim {
 // Virtual HBM has no payload-size threshold. Floating payloads use scalar
-// placeholders; integer and boolean control values have host shadow storage.
+// placeholders; integer, boolean and single-value float control state uses
+// host shadow storage.
 absl::Status VirtualizeModule(HloModule &module);
 absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>>
 CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,

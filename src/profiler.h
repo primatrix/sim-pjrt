@@ -79,7 +79,8 @@ class ProfileActivity {
   // Runtime reservations in epoch ns; Stop clips or discards future work.
   void Interval(const std::string& name, int64_t start, int64_t end,
                 int64_t device, const std::string& track,
-                const std::string& cost_gap = {}, int64_t bytes = -1) const;
+                const std::string& cost_gap = {}, int64_t bytes = -1,
+                const std::string& detail = {}) const;
   uint64_t correlation_id() const { return event_.correlation_id; }
 
  private:

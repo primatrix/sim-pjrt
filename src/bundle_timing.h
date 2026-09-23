@@ -2,16 +2,31 @@
 #define XLA_PJRT_SIM_BUNDLE_TIMING_H_
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 
 namespace xla::sim {
+// Offsets within one executable; overlapping tracks describe the same work.
+struct BundleActivity {
+  std::string name;
+  std::string track;
+  std::string detail;
+  std::string cost_gap;
+  int64_t start_ns = 0;
+  int64_t end_ns = 0;
+  int64_t bytes = -1;
+};
+
 struct BundleTiming {
   int64_t duration_ns = 0;
   int64_t bundles = 0;
   int64_t cost_gaps = 0;
+  // Shared immutable metadata avoids copying the timeline on every dispatch.
+  std::shared_ptr<const std::vector<BundleActivity>> activities =
+      std::make_shared<const std::vector<BundleActivity>>();
 };
 
 struct BundleCompilation {

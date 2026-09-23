@@ -1,12 +1,24 @@
 # Tests
 
-`bazel test //...` runs six native test targets and two pure Python targets.
+`bazel test //...` runs six native test targets and three pure Python targets.
 It covers CPU output substitution, Virtual HBM, bundle runtime readiness,
 profiling, API error ownership, compilation validation and bundle estimation.
 Real libtpu native compilation cases are optional in Bazel and run with an
 explicit library/profile environment; there is no fake local estimator.
 
 ## Integration
+
+The [installed Python package](../docs/python-package.md) also provides a direct
+launcher integration check. With the wheel and SGLang-Jax installed in the same
+environment, run:
+
+```sh
+SIM_HTTP_TP_SIZE=4 /path/to/venv/bin/python tests/python/serving_launcher_test.py
+```
+
+It starts a dummy-model HTTP server through `sim-pjrt run`, sends a token-ID
+request, checks bundle provenance, and tests SIGTERM shutdown. No tokenizer
+download is needed. Artifacts remain under `/tmp/sim-pjrt-http-*`.
 
 Use Python 3.12 with JAX/jaxlib 0.11.1, Flax 0.12.9, libtpu 0.0.48 and
 SGLang-Jax checkout `cd0b4bf6d92d8aac9ba74ca329cd8f059a3859e4`.

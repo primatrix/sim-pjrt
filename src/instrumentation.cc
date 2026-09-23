@@ -352,7 +352,7 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     const std::string name(args->executable->get()->name());
     std::vector<Completion> completed = runtime->ExecuteTimed(
         work.bundle_timing.duration_ns, work.bundle_timing.cost_gaps != 0,
-        devices, dependencies, profile.activity(), name);
+        devices, dependencies, profile.activity(), name, *work.bundle_timing.activities);
 
     for (size_t d = 0; d < args->num_devices; ++d) {
       execute_args.device_complete_events[d]->future =
