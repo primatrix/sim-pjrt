@@ -127,19 +127,17 @@ packages and repairs the wheel, then installs it in a clean virtual environment
 outside the checkout in the same container and runs the JAX simulation smoke
 tests.
 
-Pushes to `main` also run this workflow and save Bazel download and compiled-action
-caches after successful validation. Tags and manual runs restore matching caches;
-only runs on `main` update the shared cache. Keep `main` as the repository's default
-branch so tag builds can access its caches.
+Bazel uses all available CPU cores (`nproc`) with a 10,000 MB scheduling memory
+budget, not an OS memory cap. It stops after five hours to leave time for saving
+completed actions before the hosted job's six-hour limit. Failure/timeout saves
+progress; cancellation may not. Rerun a timed-out build to reuse its cache.
 
-The cache prefix tracks the manylinux platform/image, Bazel version/options,
-dependency manifests and upstream patches. Each commit gets an immutable snapshot,
-with a prefix fallback to earlier snapshots. Project source and release-script
-changes do not invalidate that prefix: Bazel checks individual action inputs and
-rebuilds only missing or changed actions. Cache eviction can still cause a cold
-build; this is not a permanent prebuilt SDK.
-The first hosted build still needs to establish that XLA fits the runner's
-resource and time limits.
+Each run attempt saves an immutable cache snapshot. The prefix covers the
+manylinux image, Bazel configuration, dependencies and patches; Bazel invalidates
+changed source actions individually. GitHub's cache scope applies: keep `main`
+as the default branch so branches/tags can reuse its snapshots. Eviction can
+still cause cold builds, which may require multiple attempts. Only successful
+builds produce release artifacts; hosted completion remains to be validated.
 
 Use **Run workflow** on a branch to validate the pipeline and download its wheel
 artifact without publishing. To release, update `pyproject.toml`'s version,
@@ -157,4 +155,3 @@ in `pyproject.toml` and are published as prereleases. Manual runs never publish.
 The release job alone receives `contents: write` permission. The host runner
 uses Ubuntu 24.04, while compilation, auditwheel repair and
 runtime checks all run inside the manylinux_2_34 container. macOS is not supported.
-The first hosted manylinux build has not yet been run.
