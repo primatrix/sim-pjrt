@@ -11,6 +11,60 @@
 namespace xla::sim {
 namespace {
 using tensorflow::profiler::XSpace;
+TEST(ProfilerTest, HostStagesShareActualThreadAndExecutionCorrelation) {
+  ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
+  {
+    ProfileCall parent("execute");
+    parent.activity().SetProgram(7, 8, 1);
+    ProfileCall child("prepare", {}, &parent.activity());
+    EXPECT_EQ(child.activity().correlation_id(), parent.activity().correlation_id());
+  }
+  StopProfile(session);
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session->Serialize()));
+  ASSERT_EQ(space.planes_size(), 1);
+  const auto& plane = space.planes(0);
+  EXPECT_EQ(plane.name(), "/host:CPU");
+  ASSERT_EQ(plane.lines_size(), 1);
+  const auto& line = plane.lines(0);
+  ASSERT_EQ(line.events_size(), 2);
+  EXPECT_LE(line.events(0).offset_ps(), line.events(1).offset_ps());
+  EXPECT_GE(line.events(0).offset_ps() + line.events(0).duration_ps(),
+            line.events(1).offset_ps() + line.events(1).duration_ps());
+  for (const auto& event : line.events()) {
+    bool found = false;
+    for (const auto& stat : event.stats()) {
+      if (plane.stat_metadata().at(stat.metadata_id()).name() == "program_id") {
+        EXPECT_EQ(stat.uint64_value(), 7);
+        found = true;
+      }
+    }
+    EXPECT_TRUE(found);
+  }
+}
+
+TEST(ProfilerTest, NativeDeviceIdsStayDistinctInStreamingViewer) {
+  ProfileSession session;
+  for (int device = 0; device < 8; ++device) {
+    ProfileEvent event;
+    event.name = "model";
+    event.track = "XLA Modules";
+    event.device_id = device;
+    event.simulated = true;
+    session.Begin(event);
+  }
+  session.Stop();
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session.Serialize()));
+  ASSERT_EQ(space.planes_size(), 8);
+  for (int i = 0; i < 8; ++i) {
+    EXPECT_EQ(space.planes(i).name(), "/device:TPU:" + std::to_string(i));
+    EXPECT_EQ(space.planes(i).id(), 2 + i);
+    // Streaming conversion clamps 1 + plane.id() > 500 to device 1.
+    EXPECT_LE(1 + space.planes(i).id(), 500);
+  }
+}
+
 TEST(ProfilerTest, AsyncLanesDoNotCrossAndHostLagIsNotDeviceWork) {
   ProfileSession session;
   const int64_t epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -31,7 +85,7 @@ TEST(ProfilerTest, AsyncLanesDoNotCrossAndHostLagIsNotDeviceWork) {
   add("second", 20, 40, "Runtime notification", false);
   add("first", 10, 30, "Runtime notification", false);
   add("third", 40, 50, "Runtime notification", false);
-  add("model", 10, 20, "Bundles", true);
+  add("model", 10, 20, "XLA Modules", true);
   add("other", 20, 30, "Other model resource", true);
   session.Stop();
   XSpace space;
@@ -40,7 +94,7 @@ TEST(ProfilerTest, AsyncLanesDoNotCrossAndHostLagIsNotDeviceWork) {
   int host_lanes = 0, device_lanes = 0;
   for (const auto& plane : space.planes()) {
     const bool device =
-        plane.name().find("Simulated TPU 0") != std::string::npos;
+        plane.name().find("/device:TPU:0") != std::string::npos;
     for (const auto& line : plane.lines()) {
       device ? ++device_lanes : ++host_lanes;
       int64_t end = -1;
@@ -109,9 +163,9 @@ TEST(ProfilerTest, StopClipsRuntimeReservationsAndOmitsFutureWork) {
                           std::chrono::system_clock::now().time_since_epoch())
                           .count();
   ProfileCall call("submit");
-  call.activity().Interval("started", now, now + 10000000000, 0, "Bundles");
+  call.activity().Interval("started", now, now + 10000000000, 0, "XLA Modules");
   call.activity().Interval("future", now + 10000000000, now + 20000000000, 0,
-                           "Bundles");
+                           "XLA Modules");
   StopProfile(session);
   XSpace space;
   ASSERT_TRUE(space.ParseFromString(session->Serialize()));
@@ -176,11 +230,12 @@ TEST(ProfilerTest, CapturesHostAndAsyncCompletionWithSharedCorrelation) {
   StopProfile(session);
   XSpace space;
   ASSERT_TRUE(space.ParseFromString(session->Serialize()));
-  ASSERT_EQ(space.planes_size(), 2);
+  ASSERT_EQ(space.planes_size(), 1);
+  ASSERT_EQ(space.planes(0).lines_size(), 2);
   EXPECT_EQ(space.planes(0).lines(0).events_size(), 1);
-  EXPECT_EQ(space.planes(1).lines(0).events_size(), 1);
-  auto correlation = [](const auto& plane) {
-    for (const auto& stat : plane.lines(0).events(0).stats()) {
+  EXPECT_EQ(space.planes(0).lines(1).events_size(), 1);
+  auto correlation = [](const auto& plane, int line) {
+    for (const auto& stat : plane.lines(line).events(0).stats()) {
       if (plane.stat_metadata().at(stat.metadata_id()).name() ==
           "correlation_id") {
         return stat.uint64_value();
@@ -188,8 +243,8 @@ TEST(ProfilerTest, CapturesHostAndAsyncCompletionWithSharedCorrelation) {
     }
     return uint64_t{0};
   };
-  EXPECT_NE(correlation(space.planes(0)), 0);
-  EXPECT_EQ(correlation(space.planes(0)), correlation(space.planes(1)));
+  EXPECT_NE(correlation(space.planes(0), 0), 0);
+  EXPECT_EQ(correlation(space.planes(0), 0), correlation(space.planes(0), 1));
 }
 
 TEST(ProfilerTest, StopClipsPendingEventsAndIgnoresLateCallbacks) {
@@ -207,11 +262,15 @@ TEST(ProfilerTest, StopClipsPendingEventsAndIgnoresLateCallbacks) {
   XSpace space;
   ASSERT_TRUE(space.ParseFromString(stopped));
   EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(space, after));
-  const auto& plane = space.planes(1);
+  const auto& plane = space.planes(0);
   bool incomplete = false;
-  for (const auto& stat : plane.lines(0).events(0).stats()) {
-    if (plane.stat_metadata().at(stat.metadata_id()).name() == "incomplete") {
-      incomplete = stat.int64_value();
+  for (const auto& line : plane.lines()) {
+    for (const auto& event : line.events()) {
+      if (plane.event_metadata().at(event.metadata_id()).name() != "ExecuteReady") continue;
+      for (const auto& stat : event.stats()) {
+        if (plane.stat_metadata().at(stat.metadata_id()).name() == "incomplete")
+          incomplete = stat.int64_value();
+      }
     }
   }
   EXPECT_TRUE(incomplete);

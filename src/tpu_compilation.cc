@@ -44,7 +44,7 @@ absl::StatusOr<const PJRT_Api*> Load(const char* path, const char* topology) {
   const char* previous = std::getenv("LIBTPU_INIT_ARGS");
   const std::string flags = absl::StrCat(
       previous ? previous : "", " --xla_jf_dump_to=", dump_dir,
-      " --xla_jf_dump_llo_text=true --xla_jf_dump_hlo_text=false",
+      " --xla_jf_dump_llo_text=true --xla_jf_dump_hlo_text=true",
       " --xla_jf_debug_level=2 --xla_jf_dump_use_subdirectories=false",
       " --xla_jf_dump_llo_pass_label_regex=^(final_bundles|deduplication-map)"
       "$");
@@ -186,7 +186,9 @@ absl::StatusOr<BundleCompilation> CompileTpuBundles(
       if ((name.size() >= 18 &&
            name.compare(name.size() - 18, 18, "-final_bundles.txt") == 0) ||
           (name.size() >= 22 &&
-           name.compare(name.size() - 22, 22, "-deduplication-map.txt") == 0))
+           name.compare(name.size() - 22, 22, "-deduplication-map.txt") == 0) ||
+          (name.size() >= 12 &&
+           name.compare(name.size() - 12, 12, "-TLP-hlo.txt") == 0))
         paths.insert(it->path().string());
     }
     if (error) return absl::UnavailableError(error.message());

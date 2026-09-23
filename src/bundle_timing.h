@@ -14,6 +14,9 @@ struct BundleActivity {
   std::string name;
   std::string track;
   std::string detail;
+  std::string hlo_text;
+  std::string tf_op;
+  std::string source;
   std::string cost_gap;
   int64_t start_ns = 0;
   int64_t end_ns = 0;
@@ -36,7 +39,7 @@ struct BundleCompilation {
 
 // Process-private libtpu dump directory, created before plugin initialization.
 const absl::StatusOr<std::string>& BundleDumpDirectory();
-// IO boundary around the pure Python model; no HLO is read or constructed.
+// Final LLO timing plus optional compiler debug labels for native XProf.
 absl::StatusOr<BundleCompilation> EstimateFinalBundles(
     const std::vector<std::string>& files);
 }  // namespace xla::sim

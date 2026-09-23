@@ -72,14 +72,15 @@ completion notifications can create visible gaps. The runtime does not rebuild
 internal collective contention or detailed physical HBM allocation.
 
 Native XProf records modeled device intervals separately from observed host
-submission-to-ready spans. A `Bundles` interval represents a whole program,
-not individual instruction execution. Additional tracks expose compiler scopes,
-modeled DMA/waits and unresolved-cost markers from the same
-estimate; their overlapping durations must not be summed. See [the plugin guide](plugin-guide.md)
+submission-to-ready spans. `XLA Modules` represents whole programs; `XLA Ops`
+contains compiler operation scopes, and `XLA TraceMe` contains runtime annotations.
+XProf derives framework and source lines from the compiler debug labels. Labels
+do not affect Final LLO timing; overlapping views must not be summed. See [the plugin guide](plugin-guide.md)
 for capture and inspection commands.
 
 `PJRT_SIM_TRACE` writes execution JSONL and per-program reports. Reports retain
 `bundle_stage`, `entry_file`, `final_bundle_files`, `deduplication_map_files`,
+`profile_metadata_files`,
 model parameters, gaps and `activity_timeline`. Runtime executables retain the
 total duration and shared immutable activity metadata for profiling.
 

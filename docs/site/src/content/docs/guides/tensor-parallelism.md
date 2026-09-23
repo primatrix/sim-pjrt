@@ -36,6 +36,6 @@ weight_rows.block_until_ready()
 
 ## 通信与计时
 
-整个程序的估时来自 Final LLO，不能再次简单除以 TP 数。显式 PJRT 设备 copy 单独计时，内部 collective 则需要 LLO 的 DMA、等待与跨设备依赖模型。当前没有完整的物理路由或网络争用模拟，不能把整段 `Bundles` 事件当作通信细节。
+整个程序的估时来自 Final LLO，不能再次简单除以 TP 数。显式 PJRT 设备 copy 单独计时，内部 collective 则需要 LLO 的 DMA、等待与跨设备依赖模型。当前没有完整的物理路由或网络争用模拟，不能把整段 `XLA Modules` 事件当作通信细节。
 
 目前仅支持单主机、单 replica 的 Virtual HBM 执行。完整 serving 用例与复现环境见[测试与验证](/development/testing/)。
