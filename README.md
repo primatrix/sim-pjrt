@@ -36,7 +36,8 @@ Requires Linux x86-64 and Bazel 8.7.0 (or Bazelisk). Bazel downloads the pinned 
 source, Python and C++ toolchains, and dependencies automatically. First builds
 need network access and native build prerequisites; `docker/Dockerfile` lists
 the Ubuntu packages. Building requires no TPU/GPU hardware or CUDA. Running the plugin requires a
-compatible `libtpu.so` (tested with 0.0.48).
+compatible `libtpu.so`. Package dependencies follow SGLang-Jax's TPU extra;
+see the [current baseline and validation status](docs/dependencies.md#python-runtime-baseline).
 
 The plugin is `bazel-bin/pjrt_sim_plugin.so`.
 ### Docker
