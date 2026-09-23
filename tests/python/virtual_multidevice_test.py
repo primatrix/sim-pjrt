@@ -4,7 +4,6 @@ import os
 import resource
 import unittest
 
-os.environ["PJRT_SIM_MAX_MATERIALIZED_BYTES"] = str(16 * 1024 * 1024)
 from runtime_profile import configure_runtime
 
 configure_runtime(launch_ns=100000000)
@@ -116,14 +115,13 @@ class VirtualMultiDeviceTest(unittest.TestCase):
         rows.delete()
         replicated.delete()
 
-    def test_threshold_is_per_shard_and_replication_can_cross_it(self):
-        # Each input shard fits in 16 MiB, but replication exceeds the limit.
+    def test_virtual_hbm_independent_of_shard_size(self):
         n = len(self.devices)
         vector = NamedSharding(self.mesh, P("tp"))
         size = n * 3 * 1024 * 1024
         value = jax.jit(lambda: jnp.ones((size,), jnp.float32), out_shardings=vector)()
         np.testing.assert_array_equal(
-            np.asarray(value.addressable_shards[0].data)[:4], 1
+            np.asarray(value.addressable_shards[0].data)[:4], 0
         )
         replicated = jax.jit(
             lambda x: x, in_shardings=vector, out_shardings=self.replicated

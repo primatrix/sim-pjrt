@@ -8,7 +8,7 @@ namespace xla::sim {
 // module has local shapes and explicit collectives; its SPMD metadata retains
 // the global input/output shardings. Prevent CPU compilation partitioning
 // twice.
-absl::Status PartitionForVirtualStorage(HloModule& module,
+absl::Status PartitionForVirtualHbm(HloModule& module,
                                         CompileOptions& options);
 }  // namespace xla::sim
 #endif  // XLA_PJRT_SIM_PARTITIONING_H_

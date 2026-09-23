@@ -34,7 +34,6 @@ npm run preview
 - 依赖版本：`package.json` 和 `package-lock.json`，使用 `npm ci` 复现。
 
 代码、命令和配置项保留原名。页面中的模拟器命令默认从仓库根目录运行。
-修改模拟器行为时，同步更新对应指南、配置与限制。原始英文 README 保留详细参考，
-`docs/iterations.md` 和 `docs/performance-plan.md` 保留开发证据与计划。
+修改模拟器行为时，同步更新对应指南、配置与限制。英文参考位于仓库根目录的 README 和 `docs/`；当前结构见 `docs/compilation-architecture.md`。
 
 产物在 `dist/`，依赖、构建输出和 `.astro/` 均不提交。当前仅配置本地使用。

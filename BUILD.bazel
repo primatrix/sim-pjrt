@@ -39,7 +39,7 @@ xla_cc_test(
     srcs = ["tests/cpp/instrumentation_test.cc", "src/instrumentation.cc", "src/instrumentation.h"],
     deps = [
         ":executable_work",
-        ":virtual_storage",
+        ":virtual_hbm",
         ":runtime",
         ":profiler",
         "@xla//xla/pjrt/c:pjrt_c_api_cpu_internal",
@@ -62,7 +62,7 @@ xla_cc_binary(
         "@tsl//tsl/profiler/protobuf:xplane_proto_cc",
         ":compilation",
         ":executable_work",
-        ":virtual_storage",
+        ":virtual_hbm",
         ":runtime",
         ":profiler",
         "@xla//xla/backends/profiler/plugin:profiler_error",
@@ -114,9 +114,9 @@ xla_cc_test(
 )
 
 cc_library(
-    name = "virtual_storage",
-    srcs = ["src/virtual_storage.cc"],
-    hdrs = ["src/virtual_storage.h"],
+    name = "virtual_hbm",
+    srcs = ["src/virtual_hbm.cc"],
+    hdrs = ["src/virtual_hbm.h"],
     deps = [
         ":hlo_utils",
         "@xla//xla:literal_util",
@@ -136,10 +136,10 @@ cc_library(
 )
 
 xla_cc_test(
-    name = "virtual_storage_test",
-    srcs = ["tests/cpp/virtual_storage_test.cc"],
+    name = "virtual_hbm_test",
+    srcs = ["tests/cpp/virtual_hbm_test.cc"],
     deps = [
-        ":virtual_storage",
+        ":virtual_hbm",
         "@xla//xla/hlo/parser:hlo_parser",
         "@xla//xla/hlo/ir:hlo",
         "@xla//xla/service:hlo_verifier",
@@ -218,7 +218,7 @@ cc_library(
         ":executable_work",
         ":output_simulation",
         ":partitioning",
-        ":virtual_storage",
+        ":virtual_hbm",
         "@xla//xla/hlo/builder:xla_computation",
         "@xla//xla/hlo/ir:hlo",
         "@xla//xla/pjrt:mlir_to_hlo",

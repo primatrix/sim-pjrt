@@ -9,7 +9,7 @@
 #include "src/output_simulation.h"
 #include "src/partitioning.h"
 #include "src/tpu_compilation.h"
-#include "src/virtual_storage.h"
+#include "src/virtual_hbm.h"
 #include "xla/hlo/builder/xla_computation.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/pjrt/mlir_to_hlo.h"
@@ -17,8 +17,8 @@
 namespace xla::sim {
 namespace {
 
-absl::StatusOr<std::unique_ptr<HloModule>> LowerToHlo(
-    const CompilationInput& input, CompileOptions& options) {
+absl::StatusOr<std::unique_ptr<HloModule>>
+LowerToHlo(const CompilationInput &input, CompileOptions &options) {
   XlaComputation computation;
   const auto format = input.format;
   if (format == "mlir") {
@@ -47,27 +47,26 @@ absl::StatusOr<std::unique_ptr<HloModule>> LowerToHlo(
   return module;
 }
 
-}  // namespace
+} // namespace
 
-absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput& input,
-                                               PjRtClient* output_client,
-                                               int64_t storage_limit,
+absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
+                                               PjRtClient *output_client,
                                                bool capture_snapshot) {
   // Output lowering and partitioning may change these options. Never modify
   // the original options needed by another compiler backend.
   CompileOptions options = input.options;
   // Direct callers may omit debug options; initialize defaults on the copy.
   options.executable_build_options.mutable_debug_options();
-  const auto& build = options.executable_build_options;
+  const auto &build = options.executable_build_options;
   if (build.num_replicas() * build.num_partitions() >
       output_client->addressable_device_count()) {
     return absl::InvalidArgumentError(
         "Executable needs more devices than PJRT_SIM_DEVICE_COUNT");
   }
   ABSL_ASSIGN_OR_RETURN(auto module, LowerToHlo(input, options));
-  const bool partitioned = storage_limit > 0 && build.num_partitions() > 1;
+  const bool partitioned = build.num_partitions() > 1;
   if (partitioned) {
-    ABSL_RETURN_IF_ERROR(PartitionForVirtualStorage(*module, options));
+    ABSL_RETURN_IF_ERROR(PartitionForVirtualHbm(*module, options));
   }
 
   CompiledProgram result;
@@ -76,23 +75,17 @@ absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput& input,
                                      std::getenv("PJRT_SIM_TPU_TOPOLOGY")));
   result.work.num_replicas = build.num_replicas();
   result.work.num_partitions = build.num_partitions();
-  if (capture_snapshot) result.program_json = std::move(timing.report_json);
+  if (capture_snapshot)
+    result.program_json = std::move(timing.report_json);
   result.work.bundle_timing = timing.timing;
 
   // Analysis and snapshots must observe the program before output substitution.
   ABSL_ASSIGN_OR_RETURN(result.work.substituted_ops,
                         SubstituteSimulationOutputs(*module));
-  if (storage_limit > 0) {
-    ABSL_ASSIGN_OR_RETURN(result.executable,
-                          CompileVirtual(output_client, std::move(module),
-                                         std::move(options), storage_limit));
-  } else {
-    ABSL_ASSIGN_OR_RETURN(
-        result.executable,
-        output_client->CompileAndLoad(XlaComputation(module->ToProto()),
-                                      std::move(options)));
-  }
+  ABSL_ASSIGN_OR_RETURN(
+      result.executable,
+      CompileVirtual(output_client, std::move(module), std::move(options)));
   return result;
 }
 
-}  // namespace xla::sim
+} // namespace xla::sim

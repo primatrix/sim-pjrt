@@ -93,13 +93,6 @@ absl::StatusOr<RuntimeConfig> RuntimeConfig::FromEnvironment() {
           old,
           " was removed; use the runtime object in PJRT_SIM_BUNDLE_PROFILE"));
   }
-  if (const char* value = std::getenv("PJRT_SIM_MAX_MATERIALIZED_BYTES")) {
-    if (!absl::SimpleAtoi(value, &config.max_materialized_bytes) ||
-        (config.max_materialized_bytes != 0 &&
-         config.max_materialized_bytes < 16))
-      return absl::InvalidArgumentError(
-          "PJRT_SIM_MAX_MATERIALIZED_BYTES must be 0 or at least 16");
-  }
   return config;
 }
 

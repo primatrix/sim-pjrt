@@ -29,10 +29,9 @@ struct CompiledProgram {
 
 // Compile original input with libtpu and estimate expanded bundle timing.
 // Independently compile virtual simulated outputs on the CPU backend.
-absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput& input,
-                                               PjRtClient* output_client,
-                                               int64_t storage_limit,
+absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
+                                               PjRtClient *output_client,
                                                bool capture_snapshot);
 
-}  // namespace xla::sim
-#endif  // XLA_PJRT_SIM_COMPILATION_H_
+} // namespace xla::sim
+#endif // XLA_PJRT_SIM_COMPILATION_H_
