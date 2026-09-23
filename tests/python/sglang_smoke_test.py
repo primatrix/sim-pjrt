@@ -63,7 +63,7 @@ def check_trace(paths, tp_size, overlap):
     )
 
 
-def check_profile(directory, tp_size, overlap):
+def check_profile(directory, tp_size, overlap, paths=None):
     from collections import defaultdict
     from profile_report import load_trace, simulator_events
 
@@ -105,6 +105,7 @@ def check_profile(directory, tp_size, overlap):
             lanes[event["pid"], event["tid"]].append(event)
         assert event["name"] != "Host source releasable"
     assert lanes, "No simulator timeline lanes found"
+    assert not any(int(e.get("args", {}).get("dropped_events", 0)) for e in trace["traceEvents"]), "Simulator profile dropped events"
     for lane in lanes.values():
         end = float("-inf")
         for event in sorted(lane, key=lambda e: e["ts"]):
@@ -126,9 +127,20 @@ def check_profile(directory, tp_size, overlap):
     assert all(int(e["args"]["sim_program_id"]) > 0 for e in model_scopes)
     assert {int(e["args"]["device"]) for e in model_scopes} == set(range(tp_size))
     assert all(e["args"]["clock_alignment"] == "runtime_realtime" for e in simulated)
+    scope_by_execution = {
+        (e["args"]["correlation_id"], int(e["args"]["device"])): e for e in scopes
+    }
+    internal = [e for e in simulated if e["args"].get("annotation_kind") in {
+        "compilation_scope", "unresolved_cost"
+    }]
+    assert any(e["args"]["annotation_kind"] == "compilation_scope" for e in internal)
+    for event in internal:
+        scope = scope_by_execution[event["args"]["correlation_id"], int(event["args"]["device"])]
+        assert event["ts"] >= scope["ts"] - 1e-3
+        assert event["ts"] + event.get("dur", 0) <= scope["ts"] + scope["dur"] + 1e-3
     durations = {
         r["program_id"]: r["bundle_duration_ns"] / 1000
-        for path in trace_files(Path(os.environ["PJRT_SIM_TRACE"]))
+        for path in (paths if paths is not None else trace_files(Path(os.environ["PJRT_SIM_TRACE"])))
         for r in map(json.loads, path.read_text().splitlines())
     }
     ready = {
@@ -308,7 +320,8 @@ def main():
                 engine.shutdown()
         check_trace(trace_files(prefix) - previous_traces, args.tp_size, args.overlap)
         if args.profile_dir:
-            check_profile(args.profile_dir, args.tp_size, args.overlap)
+            check_profile(args.profile_dir, args.tp_size, args.overlap,
+                          trace_files(prefix) - previous_traces)
         print(
             json.dumps(
                 {

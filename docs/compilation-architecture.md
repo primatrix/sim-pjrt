@@ -4,9 +4,16 @@
 
 ## TPU compilation and timing
 
-The original StableHLO and compile options go to libtpu's offline TPU compiler.
-The selected topology supplies the device generation, coordinates and core IDs.
-No physical TPU is required.
+Compilation can happen on demand during JAX/SGLang-Jax execution (JIT), or
+explicitly ahead of execution with JAX's `.lower(...).compile()` API (AOT).
+Both use the same compilation path below.
+
+The original StableHLO and compile options go to libtpu through the
+topology-based `PJRT_Compile` API. The selected topology supplies the device
+generation, coordinates and core IDs; no physical TPU is required. "Offline"
+in this compiler context means compilation without a physical TPU, not that
+compilation must happen before the application starts. Serving workloads can
+compile new programs while running.
 
 Each compilation collects `*-final_bundles.txt` and the compiler's
 `deduplication-map` into a manifest in `/tmp/pjrt-sim-bundles-*`. Starting at TLP,
@@ -39,9 +46,9 @@ All public device buffers use Virtual HBM. There is no size threshold or switch
 to a fully materialized device mode. Logical shapes, dtypes, device placement,
 byte counts and readiness are preserved independently of CPU backing.
 
-Floating payloads use scalar placeholders regardless of their logical size.
-Integer and boolean values retain CPU shadow storage so token IDs, indices,
-loop counters and scheduling can run. This host state still consumes memory;
+Floating tensors use scalar placeholders. Integer, boolean and single-value
+floating controls retain CPU shadow storage so token IDs, indices, loop counters
+and distributed available-memory queries can run. This host state still consumes memory;
 Virtual HBM does not promise a constant-memory interpreter for arbitrary
 integer programs.
 
@@ -66,12 +73,15 @@ internal collective contention or detailed physical HBM allocation.
 
 Native XProf records modeled device intervals separately from observed host
 submission-to-ready spans. A `Bundles` interval represents a whole program,
-not individual instruction execution. See [the plugin guide](plugin-guide.md)
+not individual instruction execution. Additional tracks expose compiler scopes,
+modeled DMA/waits and unresolved-cost markers from the same
+estimate; their overlapping durations must not be summed. See [the plugin guide](plugin-guide.md)
 for capture and inspection commands.
 
 `PJRT_SIM_TRACE` writes execution JSONL and per-program reports. Reports retain
 `bundle_stage`, `entry_file`, `final_bundle_files`, `deduplication_map_files`,
-model parameters and gaps. Runtime executables keep only scalar timing metadata.
+model parameters, gaps and `activity_timeline`. Runtime executables retain the
+total duration and shared immutable activity metadata for profiling.
 
 ## Implementation map
 

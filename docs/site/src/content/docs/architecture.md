@@ -7,11 +7,15 @@ title: 架构与执行流程
 项目只保留一条计时路径：
 
 ```text
-StableHLO → libtpu 离线编译 → Final LLO bundles → 估时 → 模拟设备完成
+StableHLO → libtpu TPU 编译 → Final LLO bundles → 估时 → 模拟设备完成
          → CPU 输出编译 / Virtual HBM → 占位输出与控制值
 ```
 
 原始程序直接交给 libtpu，CPU 输出替换不会影响 TPU 编译输入。设备型号、坐标和 core 索引来自指定的 TPU 拓扑。没有 libtpu 或 bundle 产物时直接报错。
+
+编译既可以在 JAX/SGLang-Jax 运行时按需触发（JIT），也可以通过 `.lower(...).compile()` 在执行前显式完成（AOT），两者使用同一条编译路径。
+
+底层调用基于 topology 的 `PJRT_Compile` 接口，无需真实 TPU。这里的“离线编译”指编译器不需要连接真实 TPU，并不限制编译发生的时机；服务运行期间也可以编译新程序。
 
 CPU 输出编译内部仍使用 HLO 表示、SPMD 分区和存储改写；它不参与性能估算。程序计时只使用 Final LLO bundles。
 

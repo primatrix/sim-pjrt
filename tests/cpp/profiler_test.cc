@@ -57,6 +57,52 @@ TEST(ProfilerTest, AsyncLanesDoNotCrossAndHostLagIsNotDeviceWork) {
   EXPECT_EQ(device_lanes, 2);
 }
 
+TEST(ProfilerTest, ActivityDetailAndCorrelationSurviveExport) {
+  ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
+  const int64_t now = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          std::chrono::system_clock::now().time_since_epoch())
+                          .count();
+  ProfileCall call("submit", "model");
+  call.activity().SetProgram(42, 1, 1);
+  call.activity().Interval("dma.hbm_to_vmem", now - 1000, now - 500, 0,
+                           "DMA / hbm", "partial bundle cost coverage", 4096,
+                           "module=fusion.1; callsite=0:0x2");
+  StopProfile(session);
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session->Serialize()));
+  int transfers = 0;
+  for (const auto& plane : space.planes()) {
+    for (const auto& line : plane.lines()) {
+      for (const auto& event : line.events()) {
+        if (plane.event_metadata().at(event.metadata_id()).name() !=
+            "dma.hbm_to_vmem")
+          continue;
+        ++transfers;
+        EXPECT_EQ(line.name(), "DMA / hbm");
+        EXPECT_EQ(event.duration_ps(), 500000);
+        bool detail = false, program = false, correlation = false,
+             bytes = false;
+        for (const auto& stat : event.stats()) {
+          const auto& name =
+              plane.stat_metadata().at(stat.metadata_id()).name();
+          if (name == "detail")
+            detail =
+                (stat.has_ref_value()
+                     ? plane.stat_metadata().at(stat.ref_value()).name()
+                     : stat.str_value()) == "module=fusion.1; callsite=0:0x2";
+          if (name == "program_id") program = stat.uint64_value() == 42;
+          if (name == "correlation_id")
+            correlation =
+                stat.uint64_value() == call.activity().correlation_id();
+          if (name == "bytes") bytes = stat.int64_value() == 4096;
+        }
+        EXPECT_TRUE(detail && program && correlation && bytes);
+      }
+    }
+  }
+  EXPECT_EQ(transfers, 1);
+}
+
 TEST(ProfilerTest, StopClipsRuntimeReservationsAndOmitsFutureWork) {
   ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
   const int64_t now = std::chrono::duration_cast<std::chrono::nanoseconds>(

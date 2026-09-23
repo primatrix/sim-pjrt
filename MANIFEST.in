@@ -1,0 +1,8 @@
+include .bazelrc .bazelversion BUILD.bazel MODULE.bazel MODULE.bazel.lock
+recursive-include src *.cc *.h
+recursive-include configs *.json BUILD.bazel
+recursive-include third_party *
+recursive-include python *.py BUILD.bazel
+graft tests
+global-exclude __pycache__ *.py[cod]
+include LICENSE

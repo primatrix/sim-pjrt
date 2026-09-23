@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sim-pjrt"
+version = "0.1.0"
+description = "Run JAX workloads with a simulated TPU PJRT backend on CPU"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = ["jax==0.11.1", "jaxlib==0.11.1", "libtpu==0.0.48"]
+
+[project.scripts]
+sim-pjrt = "sim_pjrt.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+packages = ["sim_pjrt"]
+py-modules = ["bundle_timing", "profile_report"]

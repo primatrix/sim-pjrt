@@ -34,6 +34,68 @@ class BundleTimingTest(unittest.TestCase):
         self.assertEqual(modules, before)
         self.assertEqual({b["module"] for b in result}, {"kernel"})
 
+    def test_activity_scopes_preserve_aliases_and_repeated_calls(self):
+        program = compose_final_bundles(
+            {
+                "TLP": parse_bundles(
+                    "0 : { inlined_call /* %fusion.1 = fusion(%x) */ }\n"
+                    "1 : { inlined_call /* %copy.2 = copy(%y) */ }"
+                ),
+                "shared": parse_bundles("0 : { vmov 1, 2 }\n1 : { vmov 3, 4 }"),
+            },
+            {"fusion.1": "shared", "copy.2": "shared"},
+        )
+        report = estimate_bundles(program, PROFILE)
+        scopes = [e for e in report["activity_timeline"] if e["track"] == "Kernels"]
+        self.assertEqual([e["name"] for e in scopes], ["fusion.1", "copy.2"])
+        self.assertEqual([(e["start_ns"], e["end_ns"]) for e in scopes], [(0, 2), (2, 4)])
+        self.assertTrue(all("module=shared" in e["detail"] for e in scopes))
+        self.assertNotEqual(scopes[0]["detail"], scopes[1]["detail"])
+        # Replaying the same call site must create another scope, not merge it.
+        repeated = estimate_bundles(
+            program, PROFILE,
+            {"path": [{"repeat": 2, "body": [b["address"] for b in program[:2]]}]},
+        )
+        scopes = [e for e in repeated["activity_timeline"] if e["track"] == "Kernels"]
+        self.assertEqual(len(scopes), 2)
+
+    def test_no_operation_track(self):
+        report = estimate_bundles(parse_bundles(
+            "0 : { vadd 1, 2 }\n1 : { vmul 1, 2 }\n2 : { vmov 1, 2 }"
+        ), PROFILE)
+        self.assertEqual({e["track"] for e in report["activity_timeline"]}, {"Kernels"})
+        self.assertEqual(report["modeled_cycles"], 3)
+
+    def test_activity_dma_wait_and_tail_share_the_model_clock(self):
+        program = parse_bundles(
+            "0 : { dma.hbm_to_vmem %src, 1, %dst, [#allocation1] }\n"
+            "1 : { dma.hbm_to_vmem %src, 1, %dst, [#allocation2] }\n"
+            "2 : { dma.done.wait [#allocation2], 1 }"
+        )
+        report = estimate_bundles(program, dict(
+            PROFILE, dma_granule_bytes=8, completion_tail_cycles=2,
+            dma={"hbm_to_vmem": {"bytes_per_second": 1e9, "resource": "hbm"}},
+        ))
+        timeline = report["activity_timeline"]
+        dma = [e for e in timeline if e["track"] == "DMA / hbm"]
+        self.assertEqual([(e["start_ns"], e["end_ns"]) for e in dma], [(0, 8), (8, 16)])
+        self.assertEqual([e["bytes"] for e in dma], [8, 8])
+        wait = next(e for e in timeline if e["track"] == "Wait")
+        self.assertEqual((wait["start_ns"], wait["end_ns"]), (3, 16))
+        tail = next(e for e in timeline if e["track"] == "Completion")
+        self.assertEqual((tail["start_ns"], tail["end_ns"]), (16, 18))
+        self.assertEqual(report["modeled_cycles"], 18)
+        self.assertTrue(all(0 <= e["start_ns"] <= e["end_ns"] <= 18 for e in timeline))
+
+    def test_unresolved_cost_is_a_marker_not_invented_latency(self):
+        report = estimate_bundles(parse_bundles("0 : { vwait.ge [sflag:$52], $8 }"), PROFILE)
+        timeline = report["activity_timeline"]
+        self.assertFalse(any(e["track"] == "Wait" for e in timeline))
+        unknown = next(e for e in timeline if e["track"] == "Unresolved")
+        self.assertEqual(unknown["start_ns"], unknown["end_ns"])
+        self.assertTrue(unknown["cost_gap"])
+        self.assertEqual(report["modeled_cycles"], 1)
+
     def test_final_control_markers_and_deduplication(self):
         kernel = parse_bundles(
             "0 LB: > { sbr.rel target = $region1 }\n1 : > { vadd 1, 2 }\n2 LE: { }"

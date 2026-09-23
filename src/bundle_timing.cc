@@ -10,6 +10,7 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -110,6 +111,47 @@ absl::StatusOr<BundleCompilation> EstimateFinalBundles(
   result.timing.duration_ns = static_cast<int64_t>(std::ceil(duration * 1e9));
   result.timing.bundles = static_cast<int64_t>(bundles->second.number_value());
   result.timing.cost_gaps = gaps->second.list_value().values_size();
+  const auto timeline = fields.find("activity_timeline");
+  if (timeline == fields.end() || !timeline->second.has_list_value())
+    return absl::DataLossError("Missing Final LLO activity timeline");
+  std::vector<BundleActivity> activities;
+  activities.reserve(timeline->second.list_value().values_size());
+  for (const auto& value : timeline->second.list_value().values()) {
+    if (!value.has_struct_value())
+      return absl::DataLossError("Invalid Final LLO activity");
+    const auto& activity = value.struct_value().fields();
+    BundleActivity event;
+    for (auto [key, target] : {std::pair{"name", &event.name},
+                               {"track", &event.track},
+                               {"detail", &event.detail},
+                               {"cost_gap", &event.cost_gap}}) {
+      const auto field = activity.find(key);
+      if (field == activity.end() || !field->second.has_string_value())
+        return absl::DataLossError("Invalid Final LLO activity label");
+      *target = field->second.string_value();
+    }
+    for (auto [key, target] : {std::pair{"start_ns", &event.start_ns},
+                               {"end_ns", &event.end_ns},
+                               {"bytes", &event.bytes}}) {
+      const auto field = activity.find(key);
+      if (field == activity.end() || !field->second.has_number_value())
+        return absl::DataLossError("Invalid Final LLO activity offset/size");
+      const double number = field->second.number_value();
+      if (!std::isfinite(number) || std::floor(number) != number ||
+          number < (target == &event.bytes ? -1 : 0) || number > 1e18)
+        return absl::DataLossError("Invalid Final LLO activity offset/size");
+      *target = static_cast<int64_t>(number);
+    }
+    if (event.name.empty() || event.track.empty() ||
+        event.start_ns > event.end_ns ||
+        event.end_ns > result.timing.duration_ns)
+      return absl::DataLossError(
+          "Final LLO activity outside executable interval");
+    activities.push_back(std::move(event));
+  }
+  result.timing.activities =
+      std::make_shared<const std::vector<BundleActivity>>(
+          std::move(activities));
   const auto settings = fields.find("profile");
   bool allow_partial = false;
   if (settings != fields.end() && settings->second.has_struct_value()) {

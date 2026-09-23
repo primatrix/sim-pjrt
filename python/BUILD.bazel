@@ -2,7 +2,7 @@ load("@rules_python//python:py_library.bzl", "py_library")
 
 py_library(
     name = "analysis_tools",
-    srcs = glob(["*.py"]),
+    srcs = glob(["*.py", "sim_pjrt/*.py"]),
     imports = ["."],
     data = ["//configs:defaults"],
     visibility = ["//visibility:public"],

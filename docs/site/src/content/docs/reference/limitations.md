@@ -9,7 +9,7 @@ description: 执行流程、数值结果、存储和性能模型的边界。
 
 - 单主机；CPU 输出执行要求单 replica。
 - 所有设备 buffer 使用 Virtual HBM，没有按大小选择真实设备存储的阈值。
-- 浮点 payload 使用占位表示；整数和布尔控制值仍有 CPU shadow storage。
+- 浮点 payload 使用占位表示；整数、布尔和单元素浮点控制值仍有 CPU shadow storage。
 - D2H 返回控制值或浮点占位数据；不会恢复原始权重或计算结果。
 - 原始设备指针、远程 buffer copy、buffer bitcast、动态 shape、HLO tuple 参数和嵌套 tuple 输出不受支持。
 - 未识别的 custom call 和不受支持的外部副作用会报错。
@@ -33,4 +33,4 @@ description: 执行流程、数值结果、存储和性能模型的边界。
 
 测试 harness 包含 dummy Llama 和 Qwen3 MoE，可覆盖 prefill、decode、overlap、缓存复用、flush 和 XProf。dummy 权重与占位浮点输出不验证文本生成质量，也不代表真实 MoE 专家选择、负载均衡或生产吞吐。
 
-复现步骤见[测试与验证](/development/testing/)。Virtual HBM 去阈值改动尚未重新验证，不能直接沿用旧版本的通过记录。
+复现步骤见[测试与验证](/development/testing/)。Virtual HBM 去阈值版本已用小型 Llama TP4 overlap 流程验证；Qwen3 MoE 和完整回归套件尚未重新运行，不能直接沿用旧版本的通过记录。

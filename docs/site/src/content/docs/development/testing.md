@@ -35,4 +35,4 @@ SIM_PYTHON=.venv/bin/python SIM_MODEL=qwen3_moe SIM_TP_SIZES=4 \
 
 模型尺寸和专家配置以输出的 `model_config.json` 为准。使用 dummy 权重验证的是请求调度、编译和执行流程，不是生成质量。
 
-本次 Virtual HBM 去阈值改动未运行构建或测试；上述命令是复现入口，不能视为当前工作区的通过记录。
+Virtual HBM 去阈值版本已构建，并完成小型 Llama TP4 overlap 的 11 个请求和内部活动 XProf 验证；Qwen3 MoE 和完整回归套件尚未重新运行。
