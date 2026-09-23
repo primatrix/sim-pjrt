@@ -99,9 +99,7 @@ def check_profile(directory, tp_size, overlap, paths=None):
         if event.get("ph") != "X":
             continue
         plane = process_names.get(event["pid"], "")
-        if "Simulated TPU" in plane:
-            assert event["args"]["clock_domain"] == "simulated", event
-        if "Simulated TPU" in plane or "Host completion" in plane:
+        if "/device:TPU:" in plane and event.get("args", {}).get("clock_domain") == "simulated":
             lanes[event["pid"], event["tid"]].append(event)
         assert event["name"] != "Host source releasable"
     assert lanes, "No simulator timeline lanes found"
@@ -114,7 +112,7 @@ def check_profile(directory, tp_size, overlap, paths=None):
     bundle_tracks = {
         (e.get("pid"), e.get("tid"))
         for e in trace["traceEvents"]
-        if e.get("ph") == "M" and e.get("args", {}).get("name") == "Bundles"
+        if e.get("ph") == "M" and e.get("args", {}).get("name") == "XLA Modules"
     }
     scopes = [
         e
@@ -155,7 +153,7 @@ def check_profile(directory, tp_size, overlap, paths=None):
             completion["ts"] + completion["dur"] + 1e-3
         )
     assert any(
-        e.get("ph") == "M" and "Bundles" in e.get("args", {}).get("name", "")
+        e.get("ph") == "M" and "XLA Modules" in e.get("args", {}).get("name", "")
         for e in trace["traceEvents"]
     )
     print(

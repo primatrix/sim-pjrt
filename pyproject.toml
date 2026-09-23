@@ -18,4 +18,4 @@ sim-pjrt = "sim_pjrt.cli:main"
 [tool.setuptools]
 package-dir = {"" = "python"}
 packages = ["sim_pjrt"]
-py-modules = ["bundle_timing", "profile_report"]
+py-modules = ["bundle_timing", "profile_report", "profile_metadata"]

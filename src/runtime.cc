@@ -178,8 +178,8 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
   std::vector<Completion> result;
   for (int64_t device : devices) {
     profile.Interval("device launch", Epoch(release),
-                     Epoch(release + config_.launch_ns), device, "Launch");
-    profile.Interval(name, Epoch(start), Epoch(end), device, "Bundles",
+                     Epoch(release + config_.launch_ns), device, "XLA TraceMe");
+    profile.Interval(name, Epoch(start), Epoch(end), device, "XLA Modules",
                      partial ? "partial bundle cost coverage" : "");
     if (profile) {
       for (const auto& activity : activities) {
@@ -188,7 +188,8 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
                                     : partial ? "partial bundle cost coverage" : "";
         profile.Interval(activity.name, Epoch(start + activity.start_ns),
                          Epoch(start + activity.end_ns), device, activity.track,
-                         gap, activity.bytes, activity.detail);
+                         gap, activity.bytes, activity.detail,
+                         activity.hlo_text, activity.tf_op, activity.source);
       }
     }
     Completion completion = CompleteAt(end);
@@ -221,7 +222,7 @@ Completion SimRuntime::Transfer(int64_t source, int64_t destination,
   profile.Interval(source < 0        ? "H2D"
                    : destination < 0 ? "D2H"
                                      : "Device copy",
-                   Epoch(start), Epoch(start + duration), device, "DMA", {},
+                   Epoch(start), Epoch(start + duration), device, "XLA TraceMe", {},
                    bytes);
   Completion completion = CompleteAt(start + duration);
   completion.future = JoinFutures({input.future, completion.future});

@@ -111,10 +111,17 @@ void ProfileBuffer(const ProfileActivity& activity, PJRT_Buffer* buffer,
 
 PJRT_Error* FromHost(PJRT_Client_BufferFromHostBuffer_Args* args) {
   ProfileCall profile("PJRT H2D submit");
-  PJRT_Error* error = VirtualFromHost(args);
+  PJRT_Error* error;
+  {
+    ProfileCall stage("PJRT H2D buffer preparation", {}, &profile.activity());
+    error = VirtualFromHost(args);
+  }
   if (!error) {
     Track(args->buffer);
-    TransferBuffer(args->buffer, -1, {}, profile.activity());
+    {
+      ProfileCall stage("PJRT H2D enqueue", {}, &profile.activity());
+      TransferBuffer(args->buffer, -1, {}, profile.activity());
+    }
     ProfileBuffer(profile.activity(), args->buffer, "H2D submit-to-ready");
     if (profile.activity())
       profile.activity().SetLinks({}, std::to_string(Track(args->buffer)));
@@ -208,8 +215,10 @@ PJRT_Error* ToHost(PJRT_Buffer_ToHostBuffer_Args* args) {
   if (!error && args->dst && args->event) {
     const int64_t device = args->src->buffer->device()->id();
     const auto runtime = Runtime(args->src->client);
+    ProfileCall enqueue("PJRT D2H enqueue", {}, &profile.activity());
     Completion copy = runtime->Transfer(
         device, -1, args->dst_size, Producer(args->src), profile.activity());
+    enqueue.activity().Finish();
     args->event->future = JoinFutures({copy.future, args->event->future});
     profile.activity().Ready(args->event->future, "D2H submit-to-ready",
                              args->src->buffer->device()->id(),
@@ -251,6 +260,16 @@ PJRT_Error* ExternalReference(
   PJRT_RETURN_IF_ERROR(CheckMaterialized(args->buffer->buffer.get()));
   PJRT_RETURN_IF_ERROR(BufferReady(args->buffer).Await());
   return pjrt::PJRT_Buffer_IncreaseExternalReferenceCount(args);
+}
+
+PJRT_Error* AwaitEvent(PJRT_Event_Await_Args* args) {
+  ProfileCall profile("PJRT_Event_Await");
+  PJRT_Error* error = pjrt::PJRT_Event_Await(args);
+  if (error) {
+    profile.activity().Finish(
+        pjrt::PjrtErrorToStatus(error, pjrt::cpu_plugin::GetCpuPjrtApi()));
+  }
+  return error;
 }
 
 PJRT_Error* ReadyEvent(PJRT_Buffer_ReadyEvent_Args* args) {
@@ -302,7 +321,8 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
       "PJRT_LoadedExecutable_Execute_Args",
       PJRT_LoadedExecutable_Execute_Args_STRUCT_SIZE, args->struct_size));
-  ProfileCall profile("PJRT Execute submit", args->executable->get()->name());
+  ProfileCall profile("PJRT_LoadedExecutable_Execute",
+                      args->executable->get()->name());
   ExecutableWork work;
   {
     std::lock_guard<std::mutex> lock(State().mutex);
@@ -311,6 +331,9 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
   if (work.num_replicas != 1)
     return pjrt::StatusToPjRtError(absl::UnimplementedError(
         "Online timing currently requires one replica with SPMD partitions"));
+  profile.activity().SetProgram(work.program_id, args->num_devices,
+                               work.num_replicas);
+  ProfileCall prepare("PJRT execute prepare", {}, &profile.activity());
   std::vector<Completion> dependencies;
   for (size_t d = 0; d < args->num_devices; ++d)
     for (size_t a = 0; a < args->num_args; ++a)
@@ -338,7 +361,16 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     owned_events.resize(args->num_devices, nullptr);
     execute_args.device_complete_events = owned_events.data();
   }
-  PJRT_Error* error = pjrt::PJRT_LoadedExecutable_Execute(&execute_args);
+  prepare.activity().Finish();
+  PJRT_Error* error;
+  {
+    ProfileCall dispatch("PJRT simulator output dispatch", {}, &profile.activity());
+    error = pjrt::PJRT_LoadedExecutable_Execute(&execute_args);
+    if (error) {
+      dispatch.activity().Finish(
+          pjrt::PjrtErrorToStatus(error, pjrt::cpu_plugin::GetCpuPjrtApi()));
+    }
+  }
   if (!error) {
     std::vector<int64_t> devices;
     const auto addressable = args->executable->get()->addressable_devices();
@@ -350,9 +382,12 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     profile.activity().SetProgram(work.program_id, args->num_devices,
                                   work.num_replicas);
     const std::string name(args->executable->get()->name());
+    ProfileCall enqueue("PJRT execution enqueue", {}, &profile.activity());
     std::vector<Completion> completed = runtime->ExecuteTimed(
         work.bundle_timing.duration_ns, work.bundle_timing.cost_gaps != 0,
         devices, dependencies, profile.activity(), name, *work.bundle_timing.activities);
+    enqueue.activity().Finish();
+    ProfileCall outputs("PJRT output association", {}, &profile.activity());
 
     for (size_t d = 0; d < args->num_devices; ++d) {
       execute_args.device_complete_events[d]->future =
@@ -473,6 +508,7 @@ void AddInstrumentation(PJRT_Api& api) {
   api.PJRT_Buffer_CopyRawToHost = RawToHost;
   api.PJRT_Buffer_IncreaseExternalReferenceCount = ExternalReference;
   api.PJRT_Buffer_ReadyEvent = ReadyEvent;
+  api.PJRT_Event_Await = AwaitEvent;
   api.PJRT_Buffer_Destroy = DestroyBuffer;
   api.PJRT_Device_MemoryStats = MemoryStats;
   api.PJRT_LoadedExecutable_Execute = Execute;

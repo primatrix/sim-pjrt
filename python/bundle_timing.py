@@ -93,7 +93,7 @@ def parse_bundles(text):
     return tuple(result)
 
 
-def compose_final_bundles(modules, aliases=None, root="TLP", limit=1_000_000):
+def compose_final_bundles(modules, aliases=None, root="TLP", limit=None):
     """Expand reachable calls per invocation; never sum independent dump files."""
     result = []
     allocations = {}
@@ -147,7 +147,7 @@ def compose_final_bundles(modules, aliases=None, root="TLP", limit=1_000_000):
                     r"#allocation\d+", allocation, instruction["text"]
                 )
             result.append(item)
-            if len(result) > limit:
+            if limit is not None and len(result) > limit:
                 raise ValueError("Final LLO call expansion exceeds limit")
 
     visit(root, "", ())
@@ -177,8 +177,12 @@ def parse_deduplication_map(text):
 def load_final_manifest(path):
     files = json.loads(path.read_text())["files"]
     modules, sources, aliases, mapping_files = {}, {}, {}, []
+    metadata_files = []
     for filename in files:
         file = Path(filename)
+        if file.name.endswith("-TLP-hlo.txt"):
+            metadata_files.append(str(file.resolve()))
+            continue
         if file.name.endswith("-deduplication-map.txt"):
             mapping_files.append(str(file.resolve()))
             aliases.update(parse_deduplication_map(file.read_text()))
@@ -198,6 +202,7 @@ def load_final_manifest(path):
         "entry_file": sources["TLP"],
         "final_bundle_files": list(sources.values()),
         "deduplication_map_files": mapping_files,
+        "profile_metadata_files": metadata_files,
     }
 
 
@@ -242,14 +247,14 @@ def _positive(value, name, allow_zero=False):
 def activity_timeline(program, events, hz, clock, finish, tail):
     """Project the same cost-model events into compact, non-additive XProf tracks.
 
-    Kernels are compilation scopes. Unknown costs are markers, never invented
-    transfer or synchronization durations.
+    Kernels are compilation scopes; waits and control time stay in their scope.
+    Unknown costs annotate scopes rather than creating per-instruction markers.
     """
     by_address = {b["address"]: b for b in program}
     positions = {b["address"]: i for i, b in enumerate(program)}
     result, previous = [], {}
     run, last_position, last_callsite = 0, -1, None
-    unresolved = set()
+    communication = set()
 
     def add(track, name, start, end, bundle=None, gap="", size=-1, merge=True):
         bundle = bundle or {}
@@ -274,14 +279,12 @@ def activity_timeline(program, events, hz, clock, finish, tail):
             )
             result.append(item)
         previous[track] = (key, end, item)
+        return item
 
-    # Bundle events determine scope boundaries. DMA can outlive its launch scope.
+    # DMA remains in the cost report, but is not a separate internal XProf track.
     for event in events:
         bundle = by_address[event["address"]]
         if event["kind"] == "dma":
-            add("DMA / " + event["resource"], "dma." + event["direction"],
-                event["start_cycle"], event["end_cycle"], bundle,
-                size=event["bytes"], merge=False)
             continue
         position = positions[event["address"]]
         callsite = bundle.get("callsite", "")
@@ -289,33 +292,26 @@ def activity_timeline(program, events, hz, clock, finish, tail):
             run += 1
         last_callsite, last_position = callsite, position
         start, end = event["start_cycle"], event["end_cycle"]
-        add("Kernels", bundle.get("kernel", bundle.get("module", "Final LLO")),
-            start, end, bundle)
-        gap = "; ".join(event["cost_gaps"])
-        ops = event["opcodes"]
-        if end > event["issue_end_cycle"]:
-            add("Wait", " | ".join(event["wait_ops"]) or "synchronization",
-                event["issue_end_cycle"], end, bundle, gap)
-        if event["delay_cycles"]:
-            add("Delay", "vdelay", start + event["issue_cycles"],
-                start + event["issue_cycles"] + event["delay_cycles"], bundle, gap)
-        for op in ops:
-            if op.startswith(("sbr", "sloop", "scall", "sret", "shalt")) or op in (
-                "loop", "branch", "call", "return"
-            ):
-                add("Control", op, start, start, bundle, gap)
-            if op.startswith(("send", "recv")):
-                add("Communication", op, start, start, bundle, gap)
-        for reason in event["cost_gaps"]:
-            key = (run, reason)
-            if key not in unresolved:
-                unresolved.add(key)
-                add("Unresolved", reason, start, start, bundle, reason)
+        scope = add(
+            "XLA TraceMe" if bundle.get("module") in {"TLP", "<late-initialization>", "<late-finalization>"} else "XLA Ops",
+            bundle.get("kernel", bundle.get("module", "Final LLO")),
+            start, end, bundle,
+        )
+        # Waiting and control issue time remain inside the kernel interval.
+        # Keep uncertainty visible without emitting a marker per instruction.
+        if event["cost_gaps"]:
+            scope["cost_gap"] = "partial bundle cost coverage"
+        for op in event["opcodes"]:
+            key = (run, op)
+            if op.startswith(("send", "recv")) and key not in communication:
+                communication.add(key)
+                add("XLA TraceMe", op, start, start, bundle,
+                    "; ".join(event["cost_gaps"]))
     retired = finish - tail
     if retired > clock:
-        add("Completion", "Outstanding DMA", clock, retired)
+        add("XLA TraceMe", "Outstanding DMA", clock, retired)
     if tail:
-        add("Completion", "Completion tail", retired, finish)
+        add("XLA TraceMe", "Completion tail", retired, finish)
     for item in result:
         item["detail"] = (
             f"module={item.pop('module')}; callsite={item.pop('callsite')}; "
@@ -339,7 +335,10 @@ def estimate_bundles(program, profile, scenario=None):
         profile.get("completion_tail_cycles", 0), "completion_tail_cycles", True
     )
     by_address = {b["address"]: b for b in program}
-    path = expand_path(scenario.get("path", [b["address"] for b in program]))
+    # Compiler output is already finite; only user-specified loop expansion
+    # needs the scenario size guard. Large models can exceed a million bundles.
+    path = (expand_path(scenario["path"]) if "path" in scenario
+            else tuple(by_address))
     if not path or any(a not in by_address for a in path):
         raise ValueError("path must contain existing bundle addresses")
     inactive = set(scenario.get("inactive", []))
@@ -602,6 +601,10 @@ def main():
         json.loads(args.profile.read_text()),
         json.loads(args.scenario.read_text()) if args.scenario else None,
     )
+    from profile_metadata import annotate_timeline, hlo_profile_metadata
+
+    for filename in provenance.get("profile_metadata_files", []):
+        annotate_timeline(result["activity_timeline"], hlo_profile_metadata(Path(filename).read_text()))
     result["analysis_source"] = "libtpu_bundles"
     result.update(provenance)
     if args.summary:
