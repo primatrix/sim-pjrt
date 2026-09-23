@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import unittest
 
+from llo_scalar import resolve_scalar_operands
+
 from bundle_timing import (
     compose_final_bundles,
     estimate_bundles,
@@ -18,6 +20,135 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "bundles"
 
 
 class BundleTimingTest(unittest.TestCase):
+    def test_dma_transactions_round_bytes_not_completion_credits(self):
+        profile = dict(PROFILE, dma_granule_bytes=32, dma_transaction_bytes=512,
+                       dma={'hbm_to_vmem': {'bytes_per_second': 1e9, 'latency_cycles': 7}})
+        for units, payload, bus in ((1, 32, 512), (16, 512, 512), (17, 544, 1024)):
+            with self.subTest(units=units):
+                program = parse_bundles(f'''
+0: {{ %dma = dma.hbm_to_vmem %hbm, {units}, %vmem, [#allocation0] }}
+1: {{ %done = dma.done.wait [#allocation0], {units} }}
+''')
+                result = estimate_bundles(program, profile)
+                self.assertEqual(result['dma_bytes'], payload)
+                self.assertEqual(result['dma_bus_bytes'], bus)
+                self.assertEqual(result['modeled_cycles'], bus + 7)
+                self.assertFalse(any('completion credits' in g['reason'] for g in result['gaps']))
+        with self.assertRaises(ValueError):
+            estimate_bundles(program, dict(profile, dma_transaction_bytes=0.5))
+
+    def test_scalar_loop_repeats_dma_and_consumes_credits(self):
+        program = parse_bundles('''
+0: { %s_seed = smov 0 }
+1 LB: { %s_i = sphi %s_seed, %s_next ;; %s_size = sadd.u32 %s_i, 1 } /* Start region 7 */
+2: { %dma = dma.hbm_to_vmem %hbm, %s_size, %vmem, [#allocation0] }
+3: { %done = dma.done.wait [#allocation0], %s_size }
+4: { %s_neg = ssub.u32 0, %s_size ;; %s_next = sadd.u32 %s_i, 1 }
+5: { %credit = vsyncadd [#allocation0], %s_neg ;; %p_more = scmp.lt.u32.totalorder %s_next, 3 }
+6: { %jump = sbr.rel (%p_more) target = $region7 }
+7: { vadd 1, 2 }
+''')
+        resolved = resolve_scalar_operands(program)
+        self.assertEqual(len(resolved), 20)
+        self.assertEqual(len({b['address'] for b in resolved}), 20)
+        result = estimate_bundles(resolved, dict(PROFILE, dma_granule_bytes=32,
+            dma={'hbm_to_vmem': {'bytes_per_second': 1e9, 'latency_cycles': 0}}))
+        self.assertEqual(result['scheduled_bundle_count'], 8)
+        self.assertEqual(result['modeled_bundle_visits'], 20)
+        self.assertEqual(result['dma_bytes'], 192)
+        self.assertEqual({g['reason'] for g in result['gaps']},
+                         {'branch delay slots are not reconstructed from Final LLO'})
+        composed = compose_final_bundles({
+            'TLP': parse_bundles('0: { inlined_call /* kernel */ }'),
+            'kernel': resolved})
+        timeline = estimate_bundles(composed, PROFILE)['activity_timeline']
+        self.assertEqual(len([e for e in timeline if e['track'] == 'XLA Ops']), 1)
+        limited = resolve_scalar_operands(program, max_visits=10)
+        self.assertEqual(len(limited), 8)
+        self.assertIn('limit', limited[0]['scalar_path_gap'])
+
+    def test_scalar_branch_skips_unexecuted_dma(self):
+        program = parse_bundles('''
+0: { %p0 = scmp.eq.u32.totalorder 1, 1 }
+1: { %jump = sbr.rel (%p0) target = $region3 }
+2: { %dma = dma.hbm_to_vmem %hbm, 100, %vmem, [#allocation0] }
+3 PF: { vadd 1, 2 } /* Start/End empty region 3 */
+''')
+        resolved = resolve_scalar_operands(program)
+        self.assertEqual([b['source_address'] for b in resolved], ['0:0x0', '0:0x1', '0:0x3'])
+        self.assertEqual(estimate_bundles(resolved, PROFILE)['dma_bytes'], 0)
+
+    def test_scalar_dma_operands_and_flag_offsets(self):
+        source = parse_bundles('''
+0: { %s0 = smov 8 ;; %s1 = smov [#allocation7] }
+1: { %s2 = smul.u32 %s0, 4 ;; %s3 = scalar_lea.sflag %s1, 1 }
+2: { %dma = dma.hbm_to_vmem %hbm, %s2, %vmem, %s3 }
+3: { %done = dma.done.wait %s3, 32 }
+''')
+        before = copy.deepcopy(source)
+        resolved = resolve_scalar_operands(source)
+        result = estimate_bundles(resolved, dict(PROFILE, dma_granule_bytes=32,
+            dma={'hbm_to_vmem': {'bytes_per_second': 1e9, 'latency_cycles': 0}}))
+        self.assertEqual(result['dma_bytes'], 1024)
+        self.assertEqual(result['modeled_cycles'], 1026)
+        self.assertNotIn('DMA wait has unknown or partial completion credits',
+                         [g['reason'] for g in result['gaps']])
+        self.assertEqual(source, before)
+
+    def test_scalar_values_do_not_cross_unknown_control_flow(self):
+        resolved = resolve_scalar_operands(parse_bundles('''
+0: { %s0 = smov 32 }
+1: { %jump = sbr.rel (%p0) target = $region99 }
+2: { %dma = dma.hbm_to_vmem %hbm, %s0, %vmem, [#allocation0] }
+3: { %s0 = smov 64 }
+4: { %dma2 = dma.hbm_to_vmem %hbm, %s0, %vmem, [#allocation0] }
+'''))
+        self.assertIn('%s0,', resolved[2]['instructions'][0]['text'])
+        self.assertIn('%s0,', resolved[4]['instructions'][0]['text'])
+
+    def test_scalar_select_and_u32_wrap(self):
+        resolved = resolve_scalar_operands(parse_bundles('''
+0: { %s0 = sadd.u32 4294967295, 5 }
+1: { %p0 = scmp.eq.u32.totalorder %s0, 4 }
+2: { %s1 = scalar_select %p0, %s0, 8 }
+3: { %dma = dma.hbm_to_vmem %hbm, %s1, %vmem, [#allocation0] }
+'''))
+        self.assertIn(', 4,', resolved[3]['instructions'][0]['text'])
+
+    def test_scalar_spills_preserve_loop_control_values(self):
+        resolved = resolve_scalar_operands(parse_bundles('''
+0: { %s0 = smov 32 }
+1: { %store = sst [smem:[#allocation7_spill]] %s0 }
+2: { %s1 = sld [smem:[#allocation7_spill]] }
+3: { %dma = dma.hbm_to_vmem %hbm, %s1, %vmem, [#allocation0] }
+4: { %unknown = sst [smem:%s_pointer] %s0 }
+5: { %s2 = sld [smem:[#allocation7_spill]] }
+6: { %dma2 = dma.hbm_to_vmem %hbm, %s2, %vmem, [#allocation1] }
+'''))
+        self.assertIn(', 32,', resolved[3]['instructions'][0]['text'])
+        self.assertIn('%s2,', resolved[6]['instructions'][0]['text'])
+
+    def test_scalar_coissue_unknown_writes_and_predicates(self):
+        resolved = resolve_scalar_operands(parse_bundles('''
+0: { %s0 = smov 8 }
+1: { %s0 = smov 16 ;; %s1 = smul.u32 %s0, 4 }
+2: { %s2 = smov 4294967295 ;; %s3 = sld %unknown }
+3: { %p0 = scmp.lt.s32.totalorder %s2, 0 }
+4: { %s4 = smov (%p0, %s0), 64 }
+5: { %dma = dma.hbm_to_vmem %hbm, %s1, %vmem, [#allocation0] }
+6: { %dma2 = dma.hbm_to_vmem (!%p0), %hbm, %s4, %vmem, [#allocation1] }
+7: { %s1 = smov (%p_unknown), 100 }
+8: { %s1 = sld %unknown }
+9: { %dma3 = dma.hbm_to_vmem %hbm, %s1, %vmem, [#allocation2] }
+'''))
+        self.assertIn(', 32,', resolved[5]['instructions'][0]['text'])
+        self.assertIn(', 64,', resolved[6]['instructions'][0]['text'])
+        self.assertFalse(resolved[6]['instructions'][0]['resolved_predicate'])
+        self.assertIn('%s1,', resolved[9]['instructions'][0]['text'])
+        result = estimate_bundles(resolved, dict(PROFILE, dma_granule_bytes=32,
+            dma={'hbm_to_vmem': {'bytes_per_second': 1e9, 'latency_cycles': 0}}))
+        self.assertEqual(result['dma_bytes'], 1024)
+
     def test_final_calls_expand_per_invocation(self):
         modules = {
             "TLP": parse_bundles(

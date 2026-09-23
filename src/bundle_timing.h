@@ -21,12 +21,16 @@ struct BundleActivity {
   int64_t start_ns = 0;
   int64_t end_ns = 0;
   int64_t bytes = -1;
+  int64_t sparse_core = -1;
 };
 
 struct BundleTiming {
   int64_t duration_ns = 0;
   int64_t bundles = 0;
   int64_t cost_gaps = 0;
+  // Boolean scalar input indices, with little-endian bitmask case selection.
+  std::vector<int64_t> branch_parameters;
+  std::vector<std::shared_ptr<const BundleTiming>> branch_cases;
   // Shared immutable metadata avoids copying the timeline on every dispatch.
   std::shared_ptr<const std::vector<BundleActivity>> activities =
       std::make_shared<const std::vector<BundleActivity>>();
@@ -39,7 +43,7 @@ struct BundleCompilation {
 
 // Process-private libtpu dump directory, created before plugin initialization.
 const absl::StatusOr<std::string>& BundleDumpDirectory();
-// Final LLO timing plus optional compiler debug labels for native XProf.
+// Final LLO timing with optional SparseCore calibration and compiler labels.
 absl::StatusOr<BundleCompilation> EstimateFinalBundles(
     const std::vector<std::string>& files);
 }  // namespace xla::sim

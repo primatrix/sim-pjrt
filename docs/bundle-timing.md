@@ -45,7 +45,24 @@ Without the explicit `assume_no_faults` scenario, the conditional bounds-check
 halts are reported as gaps. Source line annotations describe the original
 fixture capture, not a file distributed with this repository.
 
+## TPU7x profile
+
+Use `--timing-profile configs/tpu7x.json`: 2.2 GHz, 3.70 TB/s HBM bandwidth,
+32 bytes per LLO DMA unit, and a **512-byte transaction rounding assumption**.
+`dma_bytes` is payload; `dma_bus_bytes` is rounded traffic. Rounding assumes an
+aligned contiguous transfer; address/stride behavior remains unverified.
+Startup latency is charged once per DMA; synchronization credits use LLO units.
+
+DMA startup latencies are approximate, not independently calibrated.
+Bundle issue and runtime parameters remain uncalibrated.
+
 ## Model
+
+Scalar-known branches and loops resolve before call expansion, using region
+labels, loop-header phi nodes, arithmetic and spill/reload values. Static bundle
+counts and executed visits are reported separately. Unknown paths or the
+100,000-visit module limit fall back to a partial linear scan. Branch delay slots
+and cross-call scalar bindings remain gaps; explicit scenarios override resolution.
 
 The parser accepts multiline `final_bundles` and `assembly-pre-overlay` syntax,
 hex/decimal addresses, multiple instruction slots, empty bundles and multiline
@@ -76,15 +93,15 @@ and does not charge the inlined-call placeholder as an issued bundle. The report
 records `bundle_stage=final_bundles`, `entry_file` and `final_bundle_files`.
 Missing callees, recursion and unsupported co-issued calls fail explicitly.
 Allocation identifiers are isolated per invocation; unresolved cross-call operand
-bindings remain timing gaps, as do dynamic control flow and synchronization.
+bindings remain timing gaps, as do unresolved control flow and synchronization.
 
 ## Execution scenarios
 
-Control flow is supplied as an executed path, not guessed from static addresses.
+An explicit scenario overrides automatic scalar path resolution.
 For loops and branches, `path` is an ordered address list and can contain nested
 `{"repeat": N, "body": [...]}` blocks. Zero repetitions are allowed. Expansion
 is bounded to one million visits. A path is user-supplied evidence/assumption;
-the estimator does not prove it is feasible or execute scalar predicate code.
+the estimator does not prove a user-supplied path is feasible.
 
 Optional scenario inputs:
 
@@ -98,8 +115,9 @@ Optional scenario inputs:
   keyed by instruction visit. These can come from a separate communication model.
 
 Indices are zero-based and refer to the expanded path and parsed slot list.
-Every referenced path address and inactive visit is checked. Without a path,
-the report describes a linear scan; encountered branches make it partial.
+Every referenced path address and inactive visit is checked. Without an explicit
+scenario, the CLI resolves scalar-known paths per module and falls back to a
+partial linear scan where it cannot resolve them.
 
 `status=modeled` means the supplied scenario and timing assumptions cover the
 recognized operations. It does **not** mean hardware-calibrated or cycle-accurate.
@@ -108,7 +126,7 @@ With any semantic gap, `status=partial` and `estimated_seconds=null`;
 as a bound or a complete execution time. Reports include the profile, scenario,
 per-bundle/per-DMA timeline, instruction counts and explicit gaps.
 
-Current missing pieces include automatic scalar control-flow interpretation,
+Current missing pieces include complete scalar ISA and branch-delay semantics,
 ISA-validated latency tables, general DMA/collective semaphore protocols,
 branch/loop scenarios derived from model inputs, and cross-call operand bindings.
 Until these are addressed, strict profiles reject affected programs; explicitly
@@ -120,9 +138,30 @@ This mapping is metadata only; all timing instructions come from Final LLO.
 ## XProf activities
 
 `activity_timeline` retains compact executable-relative nanosecond intervals even
-with `--summary`. It projects the existing estimate into compilation scopes,
-DMA resource tracks, modeled waits and delays,
-control-flow markers, unresolved-cost markers, and completion tails. Repeated
+with `--summary`. It projects the estimate into native XLA Modules/Ops/TraceMe views. Internal
+DMA, wait and control costs remain in the report rather than separate tracks;
+unresolved costs annotate scopes. Optional SparseCore calibrated intervals use
+the same executable-relative time base. Repeated
 calls retain their call-site identity and compiler names before deduplication.
 These overlapping views must not be summed as independent costs. Unknown
 communication, copy or synchronization latency is never synthesized for display.
+
+## SparseCore
+
+SparseCore dump paths are retained for inspection. Optional `sparsecore.operation_timings` supplies hardware-specific
+operation durations, keyed by compiler shape, layout, collective groups and core IDs.
+`calibrate_operations` aggregates matching **Sparse Core Ops** samples; Module spans
+may include input waits and must not be used as operation durations.
+
+Compiler operand links anchor input readiness and consumer waits to Final LLO
+scopes. Independent work overlaps; each SparseCore serializes its operations.
+Up to four replicated boolean inputs can select entry-branch timing cases at runtime.
+Missing calibration, ambiguous dependencies and unsupported control flow remain gaps.
+HLO supplies metadata and dependencies, never TensorCore costs.
+
+Native SparseCore planes expose Modules, Ops and Offload Type. Module spans cover
+operation service time only. This is `calibrated_partial`, not SCS/TEC instruction
+simulation: startup, internal DMA/synchronization and cross-device contention are
+not independently modeled. Without calibration the work is explicitly unmodeled.
+`modeled_seconds` and `activity_timeline` include added dependency waits;
+`tensorcore_base_modeled_seconds` and per-bundle events retain the TensorCore estimate.

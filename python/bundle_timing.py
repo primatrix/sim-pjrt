@@ -13,17 +13,20 @@ import math
 from pathlib import Path
 import re
 
+from llo_scalar import resolve_scalar_operands
+
 _HEADER = re.compile(
     r"^\s*(?:(\d+):)?(0x[\da-fA-F]+|\d+)\s*(?:LH|LB|LE|PB|PF|CT)?\s*:\s*[><=]*\s*\{",
     re.M,
 )
 _COMMENT = re.compile(r"/\*.*?\*/", re.S)
+_SYNC_FLAG = r"(\[#allocation\d+(?:\s*\+\s*\$0x[\da-fA-F]+)?\])"
 
 # These scheduled operations incur their bundle issue cost. Latency between
 # dependent instructions is assumed to be represented by the compiler schedule.
 _SCHEDULED = set(
     """sadd ssub smul sand sor sxor snot smov simm sld sst scmp seq
-slt sge sle sgt sne sshll sshrl sshra scalar_lea scalar_select scalar_parameter_address
+slt sge sle sgt sne sshll sshrl sshra sphi scalar_lea scalar_select scalar_parameter_address
 int_to_ptr ptr_to_int reloc set compiler-scheduling-barrier inlined_call_operand
 vadd vsub vmul vdiv vmax vmin vand vor vxor vnot vmov vld vst vstv vsel vcmp veq
 vlt vge vle vgt vne vlaneseq vshll vshrl vshra vsetiar vsettm vtrace vrng
@@ -37,6 +40,12 @@ def parse_bundles(text):
     Accept multiline final_bundles and single-line assembly-pre-overlay. Reject
     malformed/truncated records and duplicate addresses instead of dropping work.
     """
+    # Region-entry annotations identify branch targets, including empty regions.
+    regions = {}
+    raw_headers = list(_HEADER.finditer(text))
+    for n, header in enumerate(raw_headers):
+        segment = text[header.end():raw_headers[n + 1].start() if n + 1 < len(raw_headers) else len(text)]
+        regions[n] = re.findall(r'Start(?:/End empty)? region (\d+)\b', segment)
     # Call targets are diagnostic annotations, but are needed before stripping.
     text = re.sub(
         r"(inlined_call\b[^;{}]*?)/\*\s*(.*?)\s*\*/",
@@ -47,6 +56,8 @@ def parse_bundles(text):
     if "/*" in text or "*/" in text:
         raise ValueError("unterminated or unmatched diagnostic comment")
     headers = list(_HEADER.finditer(text))
+    if len(raw_headers) != len(headers):
+        raise ValueError("ambiguous bundle headers in diagnostic comments")
     candidates = re.findall(
         r"^\s*(?:(?:\d+):)?(?:0x[\da-fA-F]+|\d+)\s*[^\n{]*:\s*[^\n{]*\{", text, re.M
     )
@@ -89,7 +100,12 @@ def parse_bundles(text):
                 instruction["callee"] = raw.split("__callee__", 1)[1].strip()
                 instruction["text"] = raw.split("__callee__", 1)[0].strip()
             instructions.append(instruction)
-        result.append({"address": address, "instructions": instructions})
+        bundle = {"address": address, "instructions": instructions}
+        if re.search(r'\b(?:LH|LB)\b', match[0]):
+            bundle['loop_header'] = True
+        if regions.get(i):
+            bundle['regions'] = regions[i]
+        result.append(bundle)
     return tuple(result)
 
 
@@ -131,7 +147,7 @@ def compose_final_bundles(modules, aliases=None, root="TLP", limit=None):
                 module=name,
                 kernel=label,
                 callsite=prefix.rstrip("/"),
-                source_address=bundle["address"],
+                source_address=bundle.get("source_address", bundle["address"]),
             )
             # Allocation names are local to each invocation. Cross-call operand
             # binding is unresolved, so do not infer false DMA dependencies.
@@ -174,12 +190,15 @@ def parse_deduplication_map(text):
     return aliases
 
 
-def load_final_manifest(path):
+def load_final_manifest(path, resolve_scalars=True):
     files = json.loads(path.read_text())["files"]
     modules, sources, aliases, mapping_files = {}, {}, {}, []
-    metadata_files = []
+    metadata_files, sparsecore_files = [], []
     for filename in files:
         file = Path(filename)
+        if re.fullmatch(r".+_\d+_bundles\.txt", file.name):
+            sparsecore_files.append(str(file.resolve()))
+            continue
         if file.name.endswith("-TLP-hlo.txt"):
             metadata_files.append(str(file.resolve()))
             continue
@@ -193,7 +212,8 @@ def load_final_manifest(path):
         name = match[1]
         if name in modules:
             raise ValueError(f"ambiguous Final LLO module: {name}")
-        modules[name] = parse_bundles(file.read_text())
+        parsed = parse_bundles(file.read_text())
+        modules[name] = resolve_scalar_operands(parsed) if resolve_scalars else parsed
         sources[name] = str(file.resolve())
     if len(mapping_files) != 1:
         raise ValueError("expected one libtpu deduplication map per compile")
@@ -203,6 +223,7 @@ def load_final_manifest(path):
         "final_bundle_files": list(sources.values()),
         "deduplication_map_files": mapping_files,
         "profile_metadata_files": metadata_files,
+        "sparsecore_bundle_files": sparsecore_files,
     }
 
 
@@ -330,6 +351,9 @@ def estimate_bundles(program, profile, scenario=None):
     """
     scenario = scenario or {}
     hz = _positive(profile["frequency_hz"], "frequency_hz")
+    transaction = _positive(profile.get("dma_transaction_bytes", 1), "dma_transaction_bytes")
+    if not float(transaction).is_integer():
+        raise ValueError("dma_transaction_bytes must be an integer")
     issue = _positive(profile.get("bundle_issue_cycles", 1), "bundle_issue_cycles")
     tail = _positive(
         profile.get("completion_tail_cycles", 0), "completion_tail_cycles", True
@@ -349,7 +373,7 @@ def estimate_bundles(program, profile, scenario=None):
     }
     if inactive - valid:
         raise ValueError("inactive refers to nonexistent instruction visits")
-    clock = stalls = extra = transferred = 0
+    clock = stalls = extra = transferred = bus_transferred = 0
     resources, flags, histogram, gaps, events = {}, {}, Counter(), [], []
     seen_gaps = set()
     visit_gaps = []
@@ -371,6 +395,8 @@ def estimate_bundles(program, profile, scenario=None):
         start = clock
         end = start + issue
         bundle_extra = 0
+        if by_address[address].get('scalar_path_gap'):
+            gap(address, by_address[address]['scalar_path_gap'])
         for index, instruction in enumerate(by_address[address]["instructions"]):
             if f"{visit}:{index}" in inactive:
                 continue
@@ -380,7 +406,8 @@ def estimate_bundles(program, profile, scenario=None):
             if predicated and not (
                 op.startswith("shalt") and scenario.get("assume_no_faults")
             ):
-                decision = scenario.get("predicates", {}).get(f"{visit}:{index}")
+                decision = scenario.get("predicates", {}).get(
+                    f"{visit}:{index}", instruction.get("resolved_predicate"))
                 if decision is None:
                     gap(address, "predicate outcome not supplied")
                 elif not isinstance(decision, bool):
@@ -430,8 +457,10 @@ def estimate_bundles(program, profile, scenario=None):
                 "call",
                 "return",
             ):
-                if "path" not in scenario:
+                if "path" not in scenario and not by_address[address].get('scalar_path_resolved'):
                     gap(address, "control flow requires an explicit executed path")
+                elif "path" not in scenario:
+                    gap(address, "branch delay slots are not reconstructed from Final LLO")
             if op.startswith("shalt") and not scenario.get("assume_no_faults"):
                 gap(
                     address,
@@ -455,7 +484,7 @@ def estimate_bundles(program, profile, scenario=None):
             if op.startswith("dma.") and op != "dma.done.wait":
                 direction = op.removeprefix("dma.")
                 # final_bundles carries granules and destination sync flag inline.
-                match = re.search(r",\s*(\d+)\s*,.*?(\[#allocation\d+\])", text)
+                match = re.search(r",\s*(\d+)\s*,.*?" + _SYNC_FLAG, text)
                 config = profile.get("dma", {}).get(direction)
                 if not match or not config:
                     gap(
@@ -471,7 +500,10 @@ def estimate_bundles(program, profile, scenario=None):
                 latency = _positive(
                     config.get("latency_cycles", 0), "DMA latency", True
                 )
-                duration = latency + math.ceil(size * hz / bandwidth)
+                bus_size = math.ceil(size / transaction) * transaction
+                if transaction > 1:
+                    gap(address, "DMA transaction rounding assumes aligned contiguous transfer; address/stride unverified")
+                duration = latency + math.ceil(bus_size * hz / bandwidth)
                 resource = config.get("resource", direction)
                 begin = max(start, resources.get(resource, 0))
                 finish = begin + duration
@@ -480,6 +512,7 @@ def estimate_bundles(program, profile, scenario=None):
                 previous = flags.get(flag, (0, 0))
                 flags[flag] = (previous[0] + units, max(previous[1], finish))
                 transferred += size
+                bus_transferred += bus_size
                 events.append(
                     {
                         "kind": "dma",
@@ -487,20 +520,21 @@ def estimate_bundles(program, profile, scenario=None):
                         "direction": direction,
                         "resource": resource,
                         "bytes": size,
+                        "bus_bytes": bus_size,
                         "start_cycle": begin,
                         "end_cycle": finish,
                     }
                 )
             elif op == "dma.done.wait":
                 wait_ops.add(op)
-                match = re.search(r"(\[#allocation\d+\]),\s*(\d+)", text)
+                match = re.search(_SYNC_FLAG + r",\s*(\d+)", text)
                 pending = flags.get(match.group(1)) if match else None
                 if not pending or pending[0] != int(match.group(2)):
                     gap(address, "DMA wait has unknown or partial completion credits")
                 else:
                     end = max(end, pending[1])
             elif op.startswith("vsyncadd"):
-                match = re.search(r"(\[#allocation\d+\]),\s*(-?\d+)", text)
+                match = re.search(_SYNC_FLAG + r",\s*(-?\d+)", text)
                 if not match:
                     gap(
                         address,
@@ -555,9 +589,11 @@ def estimate_bundles(program, profile, scenario=None):
         "profile": deepcopy(profile),
         "scenario": deepcopy(scenario),
         "status": "partial" if gaps else "modeled",
-        "scheduled_bundle_count": len(program),
+        "scheduled_bundle_count": sum(b.get('static_bundle_count', 1) for b in program),
         "modeled_bundle_visits": len(path),
-        "path_source": "explicit" if "path" in scenario else "linear_scan",
+        "path_source": ("explicit" if "path" in scenario else
+                        "scalar_resolved_with_partial_fallback" if any(b.get('scalar_path_resolved') for b in program)
+                        else "linear_scan"),
         "issue_cycles": len(path) * issue,
         "wait_stall_cycles": stalls,
         "extra_instruction_cycles": extra,
@@ -566,6 +602,7 @@ def estimate_bundles(program, profile, scenario=None):
         "modeled_seconds": finish / hz,
         "estimated_seconds": None if gaps else finish / hz,
         "dma_bytes": transferred,
+        "dma_bus_bytes": bus_transferred,
         "instruction_counts": dict(sorted(histogram.items())),
         "gaps": gaps,
         "events": events,
@@ -591,9 +628,12 @@ def main():
     )
     args = parser.parse_args()
     if args.dump.suffix == ".json":
-        program, provenance = load_final_manifest(args.dump)
+        program, provenance = load_final_manifest(args.dump, resolve_scalars=not args.scenario)
     else:
-        program, provenance = parse_bundles(args.dump.read_text()), {
+        program = parse_bundles(args.dump.read_text())
+        if not args.scenario:
+            program = resolve_scalar_operands(program)
+        provenance = {
             "entry_file": str(args.dump.resolve())
         }
     result = estimate_bundles(
@@ -603,8 +643,21 @@ def main():
     )
     from profile_metadata import annotate_timeline, hlo_profile_metadata
 
+    from sparsecore import align_offloads, branch_variants, dependency_metadata, mark_unmodeled, offload_inventory
+
+    sparsecore_calls, sparsecore_nodes, debug_metadata = [], {}, {}
     for filename in provenance.get("profile_metadata_files", []):
-        annotate_timeline(result["activity_timeline"], hlo_profile_metadata(Path(filename).read_text()))
+        text = Path(filename).read_text()
+        labels = hlo_profile_metadata(text)
+        debug_metadata.update(labels)
+        annotate_timeline(result["activity_timeline"], labels)
+        sparsecore_nodes.update(dependency_metadata(text))
+        sparsecore_calls.extend(offload_inventory(text))
+    mark_unmodeled(result, sparsecore_calls, provenance.get("sparsecore_bundle_files", []))
+    calibration = result["profile"].get("sparsecore", {}).get("operation_timings", {})
+    if sparsecore_calls and calibration:
+        branch_variants(result, sparsecore_calls, sparsecore_nodes, debug_metadata, calibration)
+        align_offloads(result, sparsecore_calls, sparsecore_nodes, debug_metadata, calibration)
     result["analysis_source"] = "libtpu_bundles"
     result.update(provenance)
     if args.summary:

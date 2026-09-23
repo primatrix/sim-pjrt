@@ -26,7 +26,7 @@ ProfileSession::ProfileSession(size_t max_events)
 size_t ProfileSession::Begin(ProfileEvent event, size_t parent) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (stopped_) return kDropped;
-  if (events_.size() == max_events_) {
+  if (events_.size() + deferred_.size() >= max_events_) {
     ++dropped_events_;
     return kDropped;
   }
@@ -38,6 +38,24 @@ size_t ProfileSession::Begin(ProfileEvent event, size_t parent) {
   if (!event.start_ns) event.start_ns = Now();
   events_.push_back(std::move(event));
   return events_.size() - 1;
+}
+
+void ProfileSession::DeferActivities(
+    ProfileEvent event, size_t parent,
+    std::shared_ptr<const std::vector<BundleActivity>> activities) {
+  if (!activities || activities->empty()) return;
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (stopped_) return;
+  if (events_.size() + deferred_.size() >= max_events_) {
+    ++dropped_events_;
+    return;
+  }
+  if (parent < events_.size()) {
+    event.program_id = events_[parent].program_id;
+    event.num_devices = events_[parent].num_devices;
+    event.num_replicas = events_[parent].num_replicas;
+  }
+  deferred_.push_back({std::move(event), std::move(activities)});
 }
 
 void ProfileSession::Finish(size_t index, const absl::Status& status) {
@@ -80,11 +98,56 @@ void ProfileSession::SetLinks(size_t index, std::string inputs,
 
 std::string ProfileSession::Serialize() const {
   std::lock_guard<std::mutex> lock(mutex_);
+  // Expand immutable executable metadata only during collection, never while
+  // holding the runtime scheduler lock or submitting an execution.
+  std::vector<ProfileEvent> expanded;
+  uint64_t dropped = dropped_events_;
+  auto append = [&](ProfileEvent event) {
+    if (events_.size() + expanded.size() >= max_events_) {
+      ++dropped;
+      return;
+    }
+    if (stopped_ns_ && (!event.end_ns || event.end_ns > stopped_ns_)) {
+      event.end_ns = std::max(stopped_ns_, event.start_ns);
+      event.incomplete = true;
+    }
+    expanded.push_back(std::move(event));
+  };
+  for (const auto& batch : deferred_) {
+    for (const auto& activity : *batch.activities) {
+      ProfileEvent event = batch.event;
+      event.name = activity.name;
+      event.track = activity.track;
+      event.start_ns += activity.start_ns;
+      event.end_ns = batch.event.start_ns + activity.end_ns;
+      if (!activity.detail.empty()) event.detail = activity.detail;
+      event.hlo_text = activity.hlo_text;
+      event.tf_op = activity.tf_op;
+      event.source = activity.source;
+      event.sparse_core = activity.sparse_core;
+      event.bytes = activity.bytes;
+      if (!activity.cost_gap.empty()) event.cost_gap = activity.cost_gap;
+      append(event);
+      if (activity.track == "Sparse Core Ops") {
+        event.name = batch.event.name;
+        event.track = "Sparse Core Modules";
+        event.bytes = -1;
+        event.hlo_text.clear();
+        event.tf_op.clear();
+        event.source.clear();
+        append(std::move(event));
+      }
+    }
+  }
   tensorflow::profiler::XSpace space;
   // Serialize chronologically. Async intervals need independent lanes: XPlane
   // lines represent stacks, so crossing intervals must never share a line.
   std::vector<const ProfileEvent*> ordered;
   for (const auto& event : events_) {
+    if (!stopped_ns_ || event.start_ns <= stopped_ns_)
+      ordered.push_back(&event);
+  }
+  for (const auto& event : expanded) {
     if (!stopped_ns_ || event.start_ns <= stopped_ns_)
       ordered.push_back(&event);
   }
@@ -97,12 +160,21 @@ std::string ProfileSession::Serialize() const {
   std::map<Track, std::vector<std::pair<int64_t, int64_t>>> lanes;
   std::map<int64_t, int64_t> next_line;
   std::map<int64_t, std::unique_ptr<tsl::profiler::XPlaneBuilder>> builders;
+  std::map<std::pair<int64_t, int64_t>, int64_t> sparse_planes;
+  int64_t next_plane = 2;
+  for (const auto* event : ordered) {
+    if (event->simulated) next_plane = std::max(next_plane, 3 + event->device_id);
+    if (event->simulated && event->sparse_core >= 0)
+      sparse_planes[{event->device_id, event->sparse_core}] = 0;
+  }
+  for (auto& [key, id] : sparse_planes) id = next_plane++;
   for (const ProfileEvent* pointer : ordered) {
     const ProfileEvent& event = *pointer;
     const bool device = event.simulated;
     const bool asynchronous = event.pending || !event.track.empty();
     // Native Trace Viewer reserves device IDs 1..500. CUSTOM IDs cannot be reused.
-    const int64_t plane_id = device ? 2 + event.device_id : 0;
+    const int64_t plane_id = !device ? 0 : event.sparse_core < 0
+        ? 2 + event.device_id : sparse_planes.at({event.device_id, event.sparse_core});
     tensorflow::profiler::XPlane* plane = nullptr;
     for (auto& candidate : *space.mutable_planes()) {
       if (candidate.id() == plane_id) plane = &candidate;
@@ -112,6 +184,8 @@ std::string ProfileSession::Serialize() const {
       plane->set_id(plane_id);
       plane->set_name(device ? absl::StrCat("/device:TPU:", event.device_id)
                             : "/host:CPU");
+      if (device && event.sparse_core >= 0)
+        plane->set_name(absl::StrCat(plane->name(), " SparseCore ", event.sparse_core));
     }
     auto& cached_builder = builders[plane_id];
     if (!cached_builder)
@@ -135,6 +209,9 @@ std::string ProfileSession::Serialize() const {
         if (track == "XLA Modules") id = 2;
         if (track == "XLA Ops") id = 3;
         if (track == "XLA TraceMe") id = 7;
+        if (track == "Sparse Core Modules") id = 66;
+        if (track == "Sparse Core Ops") id = 67;
+        if (track == "SparseCore Offload Type") id = 145;
       }
       available.push_back({id, 0});
     }
@@ -156,9 +233,9 @@ std::string ProfileSession::Serialize() const {
       out.AddStatValue(*builder.GetOrCreateStatMetadata("tf_op"), event.tf_op);
     if (!event.source.empty())
       out.AddStatValue(*builder.GetOrCreateStatMetadata("source"), event.source);
-    if (device && track == "XLA Modules")
+    if (device && (track == "XLA Modules" || track == "Sparse Core Modules"))
       out.AddStatValue(*builder.GetOrCreateStatMetadata("hlo_module"), event.name);
-    if (device && track == "XLA Ops")
+    if (device && (track == "XLA Ops" || track == "Sparse Core Ops"))
       out.AddStatValue(*builder.GetOrCreateStatMetadata("hlo_op"), event.name);
     out.SetTimestampNs(event.start_ns);
     out.SetDurationNs(std::max<int64_t>(0, event.end_ns - event.start_ns));
@@ -169,6 +246,8 @@ std::string ProfileSession::Serialize() const {
                        "runtime_realtime");
       out.AddStatValue(*builder.GetOrCreateStatMetadata("device"),
                        event.device_id);
+      if (event.sparse_core >= 0)
+        out.AddStatValue(*builder.GetOrCreateStatMetadata("sparse_core"), event.sparse_core);
       if (!event.cost_gap.empty())
         out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_gap"),
                          event.cost_gap);
@@ -206,9 +285,9 @@ std::string ProfileSession::Serialize() const {
                        event.buffer_id);
     if (event.bytes >= 0)
       out.AddStatValue(*builder.GetOrCreateStatMetadata("bytes"), event.bytes);
-    if (dropped_events_)
+    if (dropped)
       out.AddStatValue(*builder.GetOrCreateStatMetadata("dropped_events"),
-                       dropped_events_);
+                       dropped);
     if (!event.detail.empty())
       out.AddStatValue(*builder.GetOrCreateStatMetadata("detail"),
                        event.detail);
@@ -224,11 +303,11 @@ std::string ProfileSession::Serialize() const {
   for (auto& plane : *space.mutable_planes()) {
     tsl::profiler::XPlaneBuilder builder(&plane);
     builder.AddStatValue(*builder.GetOrCreateStatMetadata("dropped_events"),
-                         dropped_events_);
+                         dropped);
   }
-  if (dropped_events_)
+  if (dropped)
     space.add_warnings(
-        absl::StrCat("PJRT simulator dropped ", dropped_events_, " events"));
+        absl::StrCat("PJRT simulator dropped ", dropped, " events"));
   return space.SerializeAsString();
 }
 
@@ -311,6 +390,19 @@ void ProfileActivity::Ready(const Future<>& future, const char* name,
   });
 }
 
+void ProfileActivity::Activities(
+    const std::string& name, int64_t start, int64_t device, bool partial,
+    std::shared_ptr<const std::vector<BundleActivity>> activities) const {
+  if (!session_) return;
+  ProfileEvent event = event_;
+  event.name = name;
+  event.start_ns = start;
+  event.device_id = device;
+  event.simulated = true;
+  if (partial) event.cost_gap = "partial bundle cost coverage";
+  session_->DeferActivities(std::move(event), index_, std::move(activities));
+}
+
 void ProfileActivity::Interval(const std::string& name, int64_t start,
                                int64_t end, int64_t device,
                                const std::string& track,
@@ -318,7 +410,7 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
                                int64_t bytes, const std::string& detail,
                                const std::string& hlo_text,
                                const std::string& tf_op,
-                               const std::string& source) const {
+                               const std::string& source, int64_t sparse_core) const {
   if (!session_) return;
   ProfileEvent event = event_;
   event.name = name;
@@ -330,6 +422,7 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
   event.hlo_text = hlo_text;
   event.tf_op = tf_op;
   event.source = source;
+  event.sparse_core = sparse_core;
   event.cost_gap = cost_gap;
   event.bytes = bytes;
   event.simulated = true;

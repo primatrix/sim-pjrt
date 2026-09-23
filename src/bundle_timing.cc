@@ -22,6 +22,65 @@
 extern char** environ;
 
 namespace xla::sim {
+namespace {
+absl::StatusOr<std::shared_ptr<const std::vector<BundleActivity>>> ReadActivities(
+    const google::protobuf::Value& timeline, int64_t duration_ns) {
+  if (!timeline.has_list_value())
+    return absl::DataLossError("Missing Final LLO activity timeline");
+  std::vector<BundleActivity> activities;
+  activities.reserve(timeline.list_value().values_size());
+  for (const auto& value : timeline.list_value().values()) {
+    if (!value.has_struct_value())
+      return absl::DataLossError("Invalid Final LLO activity");
+    const auto& activity = value.struct_value().fields();
+    BundleActivity event;
+    for (auto [key, target] : {std::pair{"name", &event.name},
+                               {"track", &event.track},
+                               {"detail", &event.detail},
+                               {"cost_gap", &event.cost_gap}}) {
+      const auto field = activity.find(key);
+      if (field == activity.end() || !field->second.has_string_value())
+        return absl::DataLossError("Invalid Final LLO activity label");
+      *target = field->second.string_value();
+    }
+    for (auto [key, target] : {std::pair{"hlo_text", &event.hlo_text},
+                               {"tf_op", &event.tf_op},
+                               {"source", &event.source}}) {
+      const auto field = activity.find(key);
+      if (field != activity.end() && field->second.has_string_value())
+        *target = field->second.string_value();
+    }
+    for (auto [key, target] : {std::pair{"start_ns", &event.start_ns},
+                               {"end_ns", &event.end_ns},
+                               {"bytes", &event.bytes}}) {
+      const auto field = activity.find(key);
+      if (field == activity.end() || !field->second.has_number_value())
+        return absl::DataLossError("Invalid Final LLO activity offset/size");
+      const double number = field->second.number_value();
+      if (!std::isfinite(number) || std::floor(number) != number ||
+          number < (target == &event.bytes ? -1 : 0) || number > 1e18)
+        return absl::DataLossError("Invalid Final LLO activity offset/size");
+      *target = static_cast<int64_t>(number);
+    }
+    const auto core = activity.find("sparse_core");
+    if (core != activity.end()) {
+      const double value = core->second.number_value();
+      if (!core->second.has_number_value() || !std::isfinite(value) ||
+          std::floor(value) != value || value < 0 || value > 15)
+        return absl::DataLossError("Invalid SparseCore ID");
+      event.sparse_core = static_cast<int64_t>(value);
+    }
+    if (event.name.empty() || event.track.empty() ||
+        event.start_ns > event.end_ns ||
+        event.end_ns > duration_ns)
+      return absl::DataLossError(
+          "Final LLO activity outside executable interval");
+    activities.push_back(std::move(event));
+  }
+  return std::make_shared<const std::vector<BundleActivity>>(std::move(activities));
+}
+}  // namespace
+
 const absl::StatusOr<std::string>& BundleDumpDirectory() {
   static const auto directory = []() -> absl::StatusOr<std::string> {
     char path[] = "/tmp/pjrt-sim-bundles-XXXXXX";
@@ -112,53 +171,54 @@ absl::StatusOr<BundleCompilation> EstimateFinalBundles(
   result.timing.bundles = static_cast<int64_t>(bundles->second.number_value());
   result.timing.cost_gaps = gaps->second.list_value().values_size();
   const auto timeline = fields.find("activity_timeline");
-  if (timeline == fields.end() || !timeline->second.has_list_value())
+  if (timeline == fields.end())
     return absl::DataLossError("Missing Final LLO activity timeline");
-  std::vector<BundleActivity> activities;
-  activities.reserve(timeline->second.list_value().values_size());
-  for (const auto& value : timeline->second.list_value().values()) {
-    if (!value.has_struct_value())
-      return absl::DataLossError("Invalid Final LLO activity");
-    const auto& activity = value.struct_value().fields();
-    BundleActivity event;
-    for (auto [key, target] : {std::pair{"name", &event.name},
-                               {"track", &event.track},
-                               {"detail", &event.detail},
-                               {"cost_gap", &event.cost_gap}}) {
-      const auto field = activity.find(key);
-      if (field == activity.end() || !field->second.has_string_value())
-        return absl::DataLossError("Invalid Final LLO activity label");
-      *target = field->second.string_value();
+  ABSL_ASSIGN_OR_RETURN(result.timing.activities,
+                        ReadActivities(timeline->second, result.timing.duration_ns));
+  const auto parameters = fields.find("branch_parameters");
+  const auto cases = fields.find("branch_cases");
+  if (parameters != fields.end() || cases != fields.end()) {
+    if (parameters == fields.end() || cases == fields.end() ||
+        !parameters->second.has_list_value() || !cases->second.has_list_value())
+      return absl::DataLossError("Incomplete branch timing cases");
+    for (const auto& value : parameters->second.list_value().values()) {
+      const double index = value.number_value();
+      if (!value.has_number_value() || !std::isfinite(index) || index < 0 ||
+          index > 1000000 || std::floor(index) != index ||
+          (!result.timing.branch_parameters.empty() &&
+           index <= result.timing.branch_parameters.back()))
+        return absl::DataLossError("Invalid branch parameter index");
+      result.timing.branch_parameters.push_back(static_cast<int64_t>(index));
     }
-    for (auto [key, target] : {std::pair{"hlo_text", &event.hlo_text},
-                               {"tf_op", &event.tf_op},
-                               {"source", &event.source}}) {
-      const auto field = activity.find(key);
-      if (field != activity.end() && field->second.has_string_value())
-        *target = field->second.string_value();
+    const size_t count = result.timing.branch_parameters.size();
+    if (count == 0 || count > 4 ||
+        cases->second.list_value().values_size() != (1 << count))
+      return absl::DataLossError("Invalid branch timing case count");
+    for (const auto& value : cases->second.list_value().values()) {
+      if (!value.has_struct_value())
+        return absl::DataLossError("Invalid branch timing case");
+      const auto& c = value.struct_value().fields();
+      auto variant = std::make_shared<BundleTiming>();
+      variant->bundles = result.timing.bundles;
+      for (auto [key, target] : {std::pair{"duration_ns", &variant->duration_ns},
+                                 {"cost_gaps", &variant->cost_gaps}}) {
+        const auto field = c.find(key);
+        if (field == c.end() || !field->second.has_number_value())
+          return absl::DataLossError("Missing branch timing value");
+        const double number = field->second.number_value();
+        if (!std::isfinite(number) || number < 0 || number > 1e18 ||
+            std::floor(number) != number)
+          return absl::DataLossError("Invalid branch timing value");
+        *target = static_cast<int64_t>(number);
+      }
+      const auto events = c.find("activity_timeline");
+      if (events == c.end())
+        return absl::DataLossError("Missing branch timing activities");
+      ABSL_ASSIGN_OR_RETURN(variant->activities,
+                            ReadActivities(events->second, variant->duration_ns));
+      result.timing.branch_cases.push_back(std::move(variant));
     }
-    for (auto [key, target] : {std::pair{"start_ns", &event.start_ns},
-                               {"end_ns", &event.end_ns},
-                               {"bytes", &event.bytes}}) {
-      const auto field = activity.find(key);
-      if (field == activity.end() || !field->second.has_number_value())
-        return absl::DataLossError("Invalid Final LLO activity offset/size");
-      const double number = field->second.number_value();
-      if (!std::isfinite(number) || std::floor(number) != number ||
-          number < (target == &event.bytes ? -1 : 0) || number > 1e18)
-        return absl::DataLossError("Invalid Final LLO activity offset/size");
-      *target = static_cast<int64_t>(number);
-    }
-    if (event.name.empty() || event.track.empty() ||
-        event.start_ns > event.end_ns ||
-        event.end_ns > result.timing.duration_ns)
-      return absl::DataLossError(
-          "Final LLO activity outside executable interval");
-    activities.push_back(std::move(event));
   }
-  result.timing.activities =
-      std::make_shared<const std::vector<BundleActivity>>(
-          std::move(activities));
   const auto settings = fields.find("profile");
   bool allow_partial = false;
   if (settings != fields.end() && settings->second.has_struct_value()) {

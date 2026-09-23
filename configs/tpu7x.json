@@ -1,0 +1,29 @@
+{
+  "description": "TPU7x approximate DMA profile: 2.2 GHz, theoretical HBM bandwidth 3.70 TB/s, and per-direction latency inferred from a 1 MiB effective-bandwidth measurement. The residual is applied per DMA as an approximation, not an independently measured fixed latency. Bundle issue and runtime parameters remain uncalibrated.",
+  "allow_partial": true,
+  "frequency_hz": 2200000000.0,
+  "bundle_issue_cycles": 1,
+  "completion_tail_cycles": 0,
+  "dma_granule_bytes": 32,
+  "dma_transaction_bytes": 512,
+  "dma": {
+    "hbm_to_vmem": {
+      "bytes_per_second": 3700000000000,
+      "latency_cycles": 60.275418,
+      "resource": "hbm"
+    },
+    "vmem_to_hbm": {
+      "bytes_per_second": 3700000000000,
+      "latency_cycles": 74.984644,
+      "resource": "hbm"
+    }
+  },
+  "runtime": {
+    "launch_ns": 1000,
+    "transfer_ns": 2000,
+    "link_ns": 1000,
+    "host_bytes_per_second": 32000000000.0,
+    "link_bytes_per_second": 100000000000.0,
+    "communication_scale": 1
+  }
+}
