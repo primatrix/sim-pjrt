@@ -75,7 +75,8 @@ Native XProf records modeled device intervals separately from observed host
 submission-to-ready spans. `XLA Modules` represents whole programs; `XLA Ops`
 contains compiler operation scopes, and `XLA TraceMe` contains runtime annotations.
 XProf derives framework and source lines from the compiler debug labels. Labels
-do not affect Final LLO timing; overlapping views must not be summed. See [the plugin guide](plugin-guide.md)
+do not affect Final LLO timing; optional SparseCore calibration uses compiler
+operand links to place measured operations and consumer waits; overlapping views must not be summed. See [the plugin guide](plugin-guide.md)
 for capture and inspection commands.
 
 `PJRT_SIM_TRACE` writes execution JSONL and per-program reports. Reports retain

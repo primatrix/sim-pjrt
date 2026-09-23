@@ -29,4 +29,11 @@ py_test(
     deps = ["//python:analysis_tools"],
 )
 
-test_suite(name = "python_tests", tests = [":profile_metadata_test", ":profile_report_test", ":bundle_timing_test", ":launcher_test"])
+py_test(
+    name = "sparsecore_test",
+    size = "small",
+    srcs = ["sparsecore_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+test_suite(name = "python_tests", tests = [":sparsecore_test", ":profile_metadata_test", ":profile_report_test", ":bundle_timing_test", ":launcher_test"])

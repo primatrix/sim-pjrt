@@ -12,6 +12,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/status_macros.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "xla/pjrt/c/pjrt_c_api.h"
 #include "xla/pjrt/c/pjrt_c_api_status_utils.h"
@@ -44,6 +45,7 @@ absl::StatusOr<const PJRT_Api*> Load(const char* path, const char* topology) {
   const char* previous = std::getenv("LIBTPU_INIT_ARGS");
   const std::string flags = absl::StrCat(
       previous ? previous : "", " --xla_jf_dump_to=", dump_dir,
+      " --xla_sc_dump_bundles_to=", dump_dir,
       " --xla_jf_dump_llo_text=true --xla_jf_dump_hlo_text=true",
       " --xla_jf_debug_level=2 --xla_jf_dump_use_subdirectories=false",
       " --xla_jf_dump_llo_pass_label_regex=^(final_bundles|deduplication-map)"
@@ -183,12 +185,11 @@ absl::StatusOr<BundleCompilation> CompileTpuBundles(
     std::filesystem::directory_iterator it(dump_dir, error), end;
     for (; !error && it != end; it.increment(error)) {
       const std::string name = it->path().filename().string();
-      if ((name.size() >= 18 &&
-           name.compare(name.size() - 18, 18, "-final_bundles.txt") == 0) ||
-          (name.size() >= 22 &&
-           name.compare(name.size() - 22, 22, "-deduplication-map.txt") == 0) ||
-          (name.size() >= 12 &&
-           name.compare(name.size() - 12, 12, "-TLP-hlo.txt") == 0))
+      if (name.find("schedule-analysis") == std::string::npos &&
+          (absl::EndsWith(name, "-final_bundles.txt") ||
+           absl::EndsWith(name, "-deduplication-map.txt") ||
+           absl::EndsWith(name, "-TLP-hlo.txt") ||
+           absl::EndsWith(name, "_bundles.txt")))
         paths.insert(it->path().string());
     }
     if (error) return absl::UnavailableError(error.message());

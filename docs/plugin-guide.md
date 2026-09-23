@@ -58,8 +58,9 @@ interval does not imply a long TPU transfer. CPU scheduling can delay notificati
 
 `PJRT_SIM_TRACE=/path/execution` writes JSONL execution metadata and per-program
 bundle reports. Reports retain the Final LLO source file list and optional TLP
-HLO debug-label file paths. HLO annotations are only for profiling; timing uses
-Final LLO bundles. For a host-observation summary:
+HLO debug-label file paths. TensorCore timing uses Final LLO bundles. HLO supplies debug labels and
+SparseCore dependency links; optional SparseCore operation timing uses explicitly
+provided hardware calibration. For a host-observation summary:
 
 ```sh
 python python/profile_report.py PATH --output profile-summary.json

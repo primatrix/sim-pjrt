@@ -157,7 +157,7 @@ int64_t SimRuntime::Reserve(int64_t start, int64_t duration,
 std::vector<Completion> SimRuntime::ExecuteTimed(
     int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
     const std::vector<Completion>& inputs, const ProfileActivity& profile,
-    const std::string& name, const std::vector<BundleActivity>& activities) {
+    const std::string& name, std::shared_ptr<const std::vector<BundleActivity>> activities) {
   std::lock_guard<std::mutex> lock(mutex_);
   int64_t release = Now();
   std::vector<Future<>> predecessors;
@@ -181,17 +181,7 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
                      Epoch(release + config_.launch_ns), device, "XLA TraceMe");
     profile.Interval(name, Epoch(start), Epoch(end), device, "XLA Modules",
                      partial ? "partial bundle cost coverage" : "");
-    if (profile) {
-      for (const auto& activity : activities) {
-        const std::string gap = !activity.cost_gap.empty()
-                                    ? activity.cost_gap
-                                    : partial ? "partial bundle cost coverage" : "";
-        profile.Interval(activity.name, Epoch(start + activity.start_ns),
-                         Epoch(start + activity.end_ns), device, activity.track,
-                         gap, activity.bytes, activity.detail,
-                         activity.hlo_text, activity.tf_op, activity.source);
-      }
-    }
+    profile.Activities(name, Epoch(start), device, partial, activities);
     Completion completion = CompleteAt(end);
     auto waits = predecessors;
     waits.push_back(completion.future);

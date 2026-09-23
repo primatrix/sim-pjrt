@@ -334,6 +334,33 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
   profile.activity().SetProgram(work.program_id, args->num_devices,
                                work.num_replicas);
   ProfileCall prepare("PJRT execute prepare", {}, &profile.activity());
+  if (!work.bundle_timing.branch_parameters.empty()) {
+    size_t selected_case = 0;
+    for (size_t d = 0; d < args->num_devices; ++d) {
+      size_t mask = 0;
+      for (size_t bit = 0; bit < work.bundle_timing.branch_parameters.size(); ++bit) {
+        const int64_t index = work.bundle_timing.branch_parameters[bit];
+        if (index >= args->num_args)
+          return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
+              "Branch predicate argument is missing"));
+        auto* buffer = args->argument_lists[d][index]->buffer.get();
+        const auto& shape = buffer->on_device_shape();
+        if (shape.element_type() != PRED || shape.dimensions_size() != 0)
+          return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
+              "Branch timing requires a scalar boolean input"));
+        // Boolean control storage retains real values. This reads CPU backing,
+        // not the simulated device-ready future or floating Virtual HBM.
+        PJRT_ASSIGN_OR_RETURN(auto literal, buffer->ToLiteralSync());
+        if (literal->GetFirstElement<bool>()) mask |= size_t{1} << bit;
+      }
+      if (d && mask != selected_case)
+        return pjrt::StatusToPjRtError(absl::UnimplementedError(
+            "Branch timing currently requires replicated predicates"));
+      selected_case = mask;
+    }
+    BundleTiming selected = *work.bundle_timing.branch_cases.at(selected_case);
+    work.bundle_timing = std::move(selected);
+  }
   std::vector<Completion> dependencies;
   for (size_t d = 0; d < args->num_devices; ++d)
     for (size_t a = 0; a < args->num_args; ++a)
@@ -385,7 +412,7 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     ProfileCall enqueue("PJRT execution enqueue", {}, &profile.activity());
     std::vector<Completion> completed = runtime->ExecuteTimed(
         work.bundle_timing.duration_ns, work.bundle_timing.cost_gaps != 0,
-        devices, dependencies, profile.activity(), name, *work.bundle_timing.activities);
+        devices, dependencies, profile.activity(), name, work.bundle_timing.activities);
     enqueue.activity().Finish();
     ProfileCall outputs("PJRT output association", {}, &profile.activity());
 

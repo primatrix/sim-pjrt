@@ -1,4 +1,4 @@
-"""Compiler labels for XProf; these annotations never participate in timing."""
+"""Compiler labels for XProf and operation descriptions for calibration matching."""
 
 import json
 import re
