@@ -1,10 +1,12 @@
 #include "src/virtual_storage.h"
 
+#include <cstring>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status_macros.h"
 #include "absl/strings/str_cat.h"
+#include "src/hlo_utils.h"
 #include "xla/hlo/builder/xla_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/layout_util.h"
@@ -67,8 +69,8 @@ HloInstruction* Zero(HloComputation* computation, const Shape& shape) {
 }
 absl::Status NoData() {
   return absl::FailedPreconditionError(
-      "Virtual simulator tensor has no materialized data; host reads and "
-      "pointer export are unavailable");
+      "Virtual simulator tensor has no materialized data; pointer export is "
+      "unavailable; use D2H for simulated data");
 }
 
 class VirtualBuffer final : public PjRtBuffer {
@@ -99,15 +101,56 @@ class VirtualBuffer final : public PjRtBuffer {
   ReleaseDeviceMemoryOwnership(bool) override {
     return NoData();
   }
-  Future<> ToLiteral(MutableLiteralBase*) override {
-    return Future<>(NoData());
+  Future<> ToLiteral(MutableLiteralBase* literal) override {
+    if (!literal || !ShapeUtil::Compatible(shape_, literal->shape())) {
+      return Future<>(absl::InvalidArgumentError("Virtual D2H shape mismatch"));
+    }
+    return CopyRawToHost(literal->untyped_data(), 0, literal->size_bytes());
   }
   Future<> LazyToLiteral(
-      absl::AnyInvocable<Future<MutableLiteralBase*>() &&>) override {
-    return Future<>(NoData());
+      absl::AnyInvocable<Future<MutableLiteralBase*>() &&> generator) override {
+    auto [promise, future] = MakePromise();
+    // Do not retain this buffer across asynchronous callbacks.
+    auto ready = storage_->GetReadyFuture();
+    Shape shape = shape_;
+    std::move(generator)().OnReady(
+        [promise = std::move(promise), ready,
+         shape](absl::StatusOr<MutableLiteralBase*> result) mutable {
+          if (!result.ok()) {
+            promise.Set(result.status());
+            return;
+          }
+          auto* literal = *result;
+          if (!literal || !ShapeUtil::Compatible(shape, literal->shape())) {
+            promise.Set(
+                absl::InvalidArgumentError("Virtual D2H shape mismatch"));
+            return;
+          }
+          ready.OnReady([promise = std::move(promise),
+                         literal](absl::Status status) mutable {
+            if (status.ok() && literal->size_bytes())
+              std::memset(literal->untyped_data(), 0, literal->size_bytes());
+            promise.Set(status);
+          });
+        });
+    return future;
   }
-  Future<> CopyRawToHost(void*, int64_t, int64_t) override {
-    return Future<>(NoData());
+  Future<> CopyRawToHost(void* destination, int64_t offset,
+                         int64_t size) override {
+    const int64_t bytes = ShapeUtil::ByteSizeOfElements(shape_);
+    if (offset < 0 || size < 0 || offset > bytes || size > bytes - offset ||
+        (size && !destination)) {
+      return Future<>(
+          absl::InvalidArgumentError("Virtual D2H range is invalid"));
+    }
+    auto [promise, future] = MakePromise();
+    storage_->GetReadyFuture().OnReady([promise = std::move(promise),
+                                        destination,
+                                        size](absl::Status status) mutable {
+      if (status.ok() && size) std::memset(destination, 0, size);
+      promise.Set(status);
+    });
+    return future;
   }
   void CopyToRemoteDevice(Future<std::string>,
                           RemoteSendCallback on_done) override {
@@ -272,9 +315,9 @@ absl::Status VirtualizeModule(HloModule& module, int64_t limit) {
   if (limit < 16)
     return absl::InvalidArgumentError(
         "Virtual storage limit must be at least 16 bytes");
-  // Validate before any mutation. Conservatively forbid every float-to-control
-  // boundary, including small intermediates and reducer computations, because
-  // those values may originate from an approximated tensor in another call.
+  // Small arrays retain CPU storage, including logits used by the sampler.
+  // Validate shape limits before mutation; operations consuming scalar-backed
+  // large arrays are checked below when their signatures change.
   for (HloComputation* computation : module.computations()) {
     for (HloInstruction* instruction : computation->instructions()) {
       ABSL_RETURN_IF_ERROR(ShapeUtil::ForEachSubshapeWithStatus(
@@ -290,24 +333,6 @@ absl::Status VirtualizeModule(HloModule& module, int64_t limit) {
             }
             return absl::OkStatus();
           }));
-      switch (instruction->opcode()) {
-        case HloOpcode::kParameter:
-        case HloOpcode::kTuple:
-        case HloOpcode::kGetTupleElement:
-        case HloOpcode::kCall:
-        case HloOpcode::kWhile:
-        case HloOpcode::kConditional:
-          break;
-        default:
-          for (const HloInstruction* operand : instruction->operands()) {
-            if (HasFloat(operand->shape()) && !AllFloat(instruction->shape())) {
-              return absl::UnimplementedError(
-                  absl::StrCat("Virtual storage cannot derive integer/control "
-                               "data from floating data: ",
-                               instruction->name()));
-            }
-          }
-      }
     }
   }
   // Mutate shapes first, then replace nonstructural operations whose signatures
@@ -332,9 +357,10 @@ absl::Status VirtualizeModule(HloModule& module, int64_t limit) {
         case HloOpcode::kConditional:
           break;
         default:
-          if (!AllFloat(instruction->shape()) || instruction->HasSideEffect()) {
+          if (!AllFloat(instruction->shape()) ||
+              (instruction->HasSideEffect() && !IsShardingAnnotation(*instruction))) {
             return absl::UnimplementedError(absl::StrCat(
-                "Unsupported virtual operation: ", instruction->name()));
+                "Unsupported virtual operation: ", instruction->ToString()));
           }
           replace.push_back(instruction);
       }
@@ -385,6 +411,7 @@ absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>> CompileVirtual(
     }
   }
   std::shared_ptr<HloModule> logical = module->Clone();
+  logical->set_name(module->name());
   if (options.argument_layouts) {
     if (options.argument_layouts->size() !=
         logical->entry_computation()->num_parameters()) {

@@ -9,12 +9,13 @@
 #include <vector>
 
 #include "absl/log/log.h"
-#include "xla/pjrt/c/pjrt_c_api_cpu_internal.h"
-#include "xla/pjrt/c/pjrt_c_api_status_utils.h"
-#include "xla/pjrt/c/pjrt_c_api_wrapper_impl.h"
 #include "src/profiler.h"
 #include "src/virtual_storage.h"
 #include "tsl/platform/env.h"
+#include "xla/pjrt/c/pjrt_c_api_cpu_internal.h"
+#include "xla/pjrt/c/pjrt_c_api_helpers.h"
+#include "xla/pjrt/c/pjrt_c_api_status_utils.h"
+#include "xla/pjrt/c/pjrt_c_api_wrapper_impl.h"
 
 namespace xla::sim {
 namespace {
@@ -87,8 +88,6 @@ void TransferBuffer(PJRT_Buffer* buffer, int64_t source,
       runtime->Transfer(source, device, size.ok() ? *size : 0, input, profile);
   // Store the modeled future; callers join CPU readiness only when data is
   // observed. Functional execution can run ahead without changing the model.
-  runtime->WithCpu(completion, buffer->buffer->GetReadyFuture(), profile,
-                   device);
   SetProducer(buffer, std::move(completion));
 }
 
@@ -119,10 +118,6 @@ PJRT_Error* FromHost(PJRT_Client_BufferFromHostBuffer_Args* args) {
     ProfileBuffer(profile.activity(), args->buffer, "H2D submit-to-ready");
     if (profile.activity())
       profile.activity().SetLinks({}, std::to_string(Track(args->buffer)));
-    if (args->done_with_host_buffer) {
-      profile.activity().Ready(args->done_with_host_buffer->future,
-                               "Host source releasable");
-    }
   }
   if (error)
     profile.activity().Finish(
@@ -207,7 +202,6 @@ PJRT_Error* DestroyClient(PJRT_Client_Destroy_Args* args) {
 }
 
 PJRT_Error* ToHost(PJRT_Buffer_ToHostBuffer_Args* args) {
-  PJRT_RETURN_IF_ERROR(CheckMaterialized(args->src->buffer.get()));
   ProfileCall profile(args->dst ? "PJRT D2H submit" : "PJRT D2H size query");
   ProfileBuffer(profile.activity(), args->src);
   PJRT_Error* error = pjrt::PJRT_Buffer_ToHostBuffer(args);
@@ -216,8 +210,7 @@ PJRT_Error* ToHost(PJRT_Buffer_ToHostBuffer_Args* args) {
     const auto runtime = Runtime(args->src->client);
     Completion copy = runtime->Transfer(
         device, -1, args->dst_size, Producer(args->src), profile.activity());
-    args->event->future =
-        runtime->WithCpu(copy, args->event->future, profile.activity(), device);
+    args->event->future = JoinFutures({copy.future, args->event->future});
     profile.activity().Ready(args->event->future, "D2H submit-to-ready",
                              args->src->buffer->device()->id(),
                              Track(args->src), args->dst_size);
@@ -238,8 +231,7 @@ PJRT_Error* RawToHost(PJRT_Buffer_CopyRawToHost_Args* args) {
     Completion copy =
         runtime->Transfer(device, -1, args->transfer_size,
                           Producer(args->buffer), profile.activity());
-    args->event->future =
-        runtime->WithCpu(copy, args->event->future, profile.activity(), device);
+    args->event->future = JoinFutures({copy.future, args->event->future});
     profile.activity().SetBuffer(Track(args->buffer), args->transfer_size,
                                  args->buffer->buffer->device()->id());
     profile.activity().Ready(args->event->future, "Raw D2H submit-to-ready",
@@ -256,70 +248,18 @@ PJRT_Error* ExternalReference(
     PJRT_Buffer_IncreaseExternalReferenceCount_Args* args) {
   // CPU-backed buffers can be read through an external reference. Such access
   // is not a TPU D2H transfer and must be named separately in the profile.
-  ProfileCall profile("PJRT buffer external reference");
-  ProfileBuffer(profile.activity(), args->buffer);
   PJRT_RETURN_IF_ERROR(CheckMaterialized(args->buffer->buffer.get()));
   PJRT_RETURN_IF_ERROR(BufferReady(args->buffer).Await());
   return pjrt::PJRT_Buffer_IncreaseExternalReferenceCount(args);
 }
 
 PJRT_Error* ReadyEvent(PJRT_Buffer_ReadyEvent_Args* args) {
-  ProfileCall profile("PJRT buffer ready event");
-  ProfileBuffer(profile.activity(), args->buffer);
   PJRT_Error* error = pjrt::PJRT_Buffer_ReadyEvent(args);
   if (!error) args->event->future = BufferReady(args->buffer);
-  if (!error)
-    profile.activity().Ready(args->event->future, "Buffer readiness observed",
-                             args->buffer->buffer->device()->id(),
-                             Track(args->buffer));
-  if (error)
-    profile.activity().Finish(
-        pjrt::PjrtErrorToStatus(error, pjrt::cpu_plugin::GetCpuPjrtApi()));
-  return error;
-}
-
-PJRT_Error* Await(PJRT_Event_Await_Args* args) {
-  ProfileCall profile("PJRT Event await");
-  PJRT_Error* error = pjrt::PJRT_Event_Await(args);
-  if (error)
-    profile.activity().Finish(
-        pjrt::PjrtErrorToStatus(error, pjrt::cpu_plugin::GetCpuPjrtApi()));
-  return error;
-}
-
-PJRT_Error* OnReady(PJRT_Event_OnReady_Args* args) {
-  ProfileCall profile("PJRT Event callback registration");
-  if (!profile.activity()) return pjrt::PJRT_Event_OnReady(args);
-  struct Callback {
-    ProfileActivity activity;
-    PJRT_Event_OnReadyCallback callback;
-    void* user_arg;
-  };
-  auto* context =
-      new Callback{profile.activity(), args->callback, args->user_arg};
-  PJRT_Event_OnReady_Args wrapped = *args;
-  wrapped.user_arg = context;
-  wrapped.callback = [](PJRT_Error* error, void* user_arg) {
-    std::unique_ptr<Callback> context(static_cast<Callback*>(user_arg));
-    ProfileActivity callback = context->activity.Child("PJRT Event callback");
-    // The user's callback owns the error and may destroy it.
-    absl::Status status =
-        pjrt::PjrtErrorToStatus(error, pjrt::cpu_plugin::GetCpuPjrtApi());
-    context->callback(error, context->user_arg);
-    callback.Finish(status);
-  };
-  PJRT_Error* error = pjrt::PJRT_Event_OnReady(&wrapped);
-  if (error) {
-    delete context;
-    profile.activity().Finish(
-        pjrt::PjrtErrorToStatus(error, pjrt::cpu_plugin::GetCpuPjrtApi()));
-  }
   return error;
 }
 
 PJRT_Error* DestroyBuffer(PJRT_Buffer_Destroy_Args* args) {
-  ProfileCall profile("PJRT buffer destroy");
-  if (args->buffer) ProfileBuffer(profile.activity(), args->buffer);
   {
     std::lock_guard<std::mutex> lock(State().mutex);
     State().buffers.erase(args->buffer);
@@ -409,13 +349,15 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     const auto runtime = Runtime(args->executable->client);
     profile.activity().SetProgram(work.program_id, args->num_devices,
                                   work.num_replicas);
-    std::vector<Completion> completed =
-        runtime->Execute(*work.plan, devices, dependencies, profile.activity(),
-                         std::string(args->executable->get()->name()));
+    const std::string name(args->executable->get()->name());
+    std::vector<Completion> completed = runtime->ExecuteTimed(
+        work.bundle_timing.duration_ns, work.bundle_timing.cost_gaps != 0,
+        devices, dependencies, profile.activity(), name);
+
     for (size_t d = 0; d < args->num_devices; ++d) {
-      execute_args.device_complete_events[d]->future = runtime->WithCpu(
-          completed[d], execute_args.device_complete_events[d]->future,
-          profile.activity(), devices[d]);
+      execute_args.device_complete_events[d]->future =
+          JoinFutures({completed[d].future,
+                       execute_args.device_complete_events[d]->future});
       for (size_t output = 0; output < types.front().size(); ++output)
         SetProducer(args->output_lists[d][output], completed[d]);
     }
@@ -453,26 +395,23 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
   }
   if (it != State().work.end() && State().trace.is_open()) {
     const ExecutableWork& work = it->second;
-    State().trace
-        << std::setprecision(17) << "{\"sequence\":" << State().sequence++
-        << ",\"name\":"
-        << std::quoted(std::string(args->executable->get()->name()))
-        << ",\"num_devices\":" << args->num_devices
-        << ",\"num_replicas\":" << work.num_replicas
-        << ",\"num_partitions\":" << work.num_partitions
-        << ",\"program_id\":" << work.program_id
-        << ",\"correlation_id\":" << profile.activity().correlation_id()
-        << ",\"work_scope\":"
-        << std::quoted(work.partitioned ? "per_partition" : "pre_partition")
-        << ",\"dot_flops\":" << work.estimate.dot_flops
-        << ",\"logical_bytes\":" << work.estimate.logical_bytes
-        << ",\"substituted_ops\":" << work.estimate.substituted_ops
-        << ",\"unmodeled_ops\":" << work.estimate.unmodeled_ops
-        << ",\"plan_cost_gaps\":" << work.plan->cost_gaps
-        << ",\"kernel_cost_scope\":\"per_device\""
-        << ",\"kernel_flops\":" << work.plan->kernel_flops
-        << ",\"kernel_transcendentals\":" << work.plan->kernel_transcendentals
-        << ",\"kernel_bytes_accessed\":" << work.plan->kernel_bytes << "}\n";
+    State().trace << std::setprecision(17)
+                  << "{\"sequence\":" << State().sequence++ << ",\"name\":"
+                  << std::quoted(std::string(args->executable->get()->name()))
+                  << ",\"num_devices\":" << args->num_devices
+                  << ",\"num_replicas\":" << work.num_replicas
+                  << ",\"num_partitions\":" << work.num_partitions
+                  << ",\"analysis_source\":" << std::quoted("libtpu_bundles")
+                  << ",\"program_id\":" << work.program_id
+                  << ",\"correlation_id\":"
+                  << profile.activity().correlation_id()
+                  << ",\"work_scope\":" << std::quoted("per_partition")
+                  << ",\"substituted_ops\":" << work.substituted_ops;
+    State().trace << ",\"bundle_duration_ns\":"
+                  << work.bundle_timing.duration_ns
+                  << ",\"bundle_count\":" << work.bundle_timing.bundles
+                  << ",\"bundle_cost_gaps\":" << work.bundle_timing.cost_gaps;
+    State().trace << "}\n";
     State().trace.flush();
     if (!State().trace) LOG(ERROR) << "Failed to write PJRT_SIM_TRACE";
   }
@@ -519,6 +458,15 @@ void RegisterRuntime(PJRT_Client* client, RuntimeConfig config) {
 }
 
 void AddInstrumentation(PJRT_Api& api) {
+  // Even small CPU-backed control values are simulated device memory. Force
+  // frameworks through D2H so host reads receive transfer timing and events.
+  api.PJRT_Buffer_IsOnCpu = [](PJRT_Buffer_IsOnCpu_Args* args) -> PJRT_Error* {
+    PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+        "PJRT_Buffer_IsOnCpu_Args", PJRT_Buffer_IsOnCpu_Args_STRUCT_SIZE,
+        args->struct_size));
+    args->is_on_cpu = false;
+    return nullptr;
+  };
   api.PJRT_Client_Destroy = DestroyClient;
   api.PJRT_Client_BufferFromHostBuffer = FromHost;
   api.PJRT_Buffer_CopyToMemory = Copy;
@@ -530,8 +478,6 @@ void AddInstrumentation(PJRT_Api& api) {
   api.PJRT_Buffer_CopyRawToHost = RawToHost;
   api.PJRT_Buffer_IncreaseExternalReferenceCount = ExternalReference;
   api.PJRT_Buffer_ReadyEvent = ReadyEvent;
-  api.PJRT_Event_Await = Await;
-  api.PJRT_Event_OnReady = OnReady;
   api.PJRT_Buffer_Destroy = DestroyBuffer;
   api.PJRT_Device_MemoryStats = MemoryStats;
   api.PJRT_LoadedExecutable_Execute = Execute;

@@ -36,12 +36,7 @@ struct ProfileEvent {
   bool incomplete = false;
   std::string error;
   std::string track;
-  std::string framework_op;
   std::string cost_gap;
-  double flops = 0;
-  double logical_bytes = 0;
-  double transcendentals = 0;
-  std::string cost_source;
   bool simulated = false;
 };
 
@@ -78,17 +73,13 @@ class ProfileActivity {
   void SetBuffer(uint64_t id, int64_t bytes, int64_t device) const;
   void SetLinks(std::string inputs, std::string outputs) const;
   void SetProgram(uint64_t id, int64_t devices, int64_t replicas) const;
-  ProfileActivity Child(const char* name) const;
   void Ready(const Future<>& future, const char* name, int64_t device = -1,
              uint64_t buffer_id = 0, int64_t bytes = -1) const;
   explicit operator bool() const { return session_ != nullptr; }
   // Runtime reservations in epoch ns; Stop clips or discards future work.
   void Interval(const std::string& name, int64_t start, int64_t end,
                 int64_t device, const std::string& track,
-                const std::string& framework_op = {},
-                const std::string& cost_gap = {}, double bytes = 0,
-                double flops = 0, double transcendentals = 0,
-                const std::string& cost_source = {}) const;
+                const std::string& cost_gap = {}, int64_t bytes = -1) const;
   uint64_t correlation_id() const { return event_.correlation_id; }
 
  private:

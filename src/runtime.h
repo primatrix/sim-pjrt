@@ -12,26 +12,22 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
-#include "xla/future.h"
-#include "src/execution_plan.h"
 #include "src/profiler.h"
+#include "xla/future.h"
 
 namespace xla::sim {
 
 struct RuntimeConfig {
-  // Opt-in per-array host storage limit; zero preserves CPU storage.
-  int64_t max_materialized_bytes = 0;
-  // Hypothetical per-chiplet rates, not calibrated TPU measurements.
-  double flops_per_second = 1.1535e15;
-  double transcendentals_per_second = 1e12;
-  double hbm_bytes_per_second = 3.69e12;
+  // Device storage is virtual by default; keep only small CPU/control backing.
+  // Zero explicitly selects the legacy fully materialized CPU mode.
+  int64_t max_materialized_bytes = 16 * 1024 * 1024;
   double host_bytes_per_second = 32e9;
   double link_bytes_per_second = 100e9;
   int64_t launch_ns = 1000;
   int64_t transfer_ns = 2000;
   int64_t link_ns = 1000;
-  double compute_scale = 1;
   double communication_scale = 1;
+  static absl::StatusOr<RuntimeConfig> FromProfile(absl::string_view json);
   static absl::StatusOr<RuntimeConfig> FromEnvironment();
 };
 
@@ -52,15 +48,13 @@ class SimRuntime {
   SimRuntime(const SimRuntime&) = delete;
   SimRuntime& operator=(const SimRuntime&) = delete;
 
-  std::vector<Completion> Execute(const ExecutionPlan& plan,
-                                  const std::vector<int64_t>& devices,
-                                  const std::vector<Completion>& inputs,
-                                  const ProfileActivity& profile,
-                                  const std::string& name);
+  std::vector<Completion> ExecuteTimed(int64_t duration_ns, bool partial,
+                                       const std::vector<int64_t>& devices,
+                                       const std::vector<Completion>& inputs,
+                                       const ProfileActivity& profile,
+                                       const std::string& name);
   Completion Transfer(int64_t source, int64_t destination, int64_t bytes,
                       const Completion& input, const ProfileActivity& profile);
-  Future<> WithCpu(const Completion& completion, Future<> cpu,
-                   const ProfileActivity& profile, int64_t device) const;
 
  private:
   struct Timer {

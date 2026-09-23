@@ -11,51 +11,50 @@
 namespace xla::sim {
 namespace {
 using tensorflow::profiler::XSpace;
-TEST(ProfilerTest, DeclaredKernelCostsAreSeparateFromDotFlops) {
-  ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
-  const int64_t now = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                          std::chrono::system_clock::now().time_since_epoch())
-                          .count();
-  ProfileCall call("submit");
-  call.activity().Interval("attention", now, now, 0, "HLO", {}, {}, 160, 800,
-                           40, "pallas_cost_estimate");
-  StopProfile(session);
+TEST(ProfilerTest, AsyncLanesDoNotCrossAndHostLagIsNotDeviceWork) {
+  ProfileSession session;
+  const int64_t epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+  auto add = [&](const char* name, int64_t start, int64_t end,
+                 const char* track, bool simulated) {
+    ProfileEvent event;
+    event.name = name;
+    event.start_ns = epoch + start;
+    event.end_ns = epoch + end;
+    event.device_id = 0;
+    event.track = track;
+    event.simulated = simulated;
+    session.Begin(event);
+  };
+  // Deliberately insert out of chronological order, with crossing intervals.
+  add("second", 20, 40, "Runtime notification", false);
+  add("first", 10, 30, "Runtime notification", false);
+  add("third", 40, 50, "Runtime notification", false);
+  add("model", 10, 20, "Bundles", true);
+  add("other", 20, 30, "Other model resource", true);
+  session.Stop();
   XSpace space;
-  ASSERT_TRUE(space.ParseFromString(session->Serialize()));
-  int kernels = 0;
+  ASSERT_TRUE(space.ParseFromString(session.Serialize()));
+  ASSERT_EQ(space.planes_size(), 2);
+  int host_lanes = 0, device_lanes = 0;
   for (const auto& plane : space.planes()) {
+    const bool device =
+        plane.name().find("Simulated TPU 0") != std::string::npos;
     for (const auto& line : plane.lines()) {
+      device ? ++device_lanes : ++host_lanes;
+      int64_t end = -1;
       for (const auto& event : line.events()) {
-        if (plane.event_metadata().at(event.metadata_id()).name() !=
-            "attention")
-          continue;
-        ++kernels;
-        int checked = 0;
-        for (const auto& stat : event.stats()) {
-          const auto& name =
-              plane.stat_metadata().at(stat.metadata_id()).name();
-          if (name == "kernel_flops") {
-            EXPECT_EQ(stat.double_value(), 800);
-            ++checked;
-          }
-          if (name == "dot_flops") {
-            EXPECT_EQ(stat.double_value(), 0);
-            ++checked;
-          }
-          if (name == "transcendentals") {
-            EXPECT_EQ(stat.double_value(), 40);
-            ++checked;
-          }
-          if (name == "cost_source") {
-            EXPECT_EQ(stat.str_value(), "pallas_cost_estimate");
-            ++checked;
-          }
-        }
-        EXPECT_EQ(checked, 4);
+        EXPECT_GE(event.offset_ps(), end);
+        end = event.offset_ps() + event.duration_ps();
+        const auto& name =
+            plane.event_metadata().at(event.metadata_id()).name();
+        if (device) EXPECT_TRUE(name == "model" || name == "other");
       }
     }
   }
-  EXPECT_EQ(kernels, 1);
+  EXPECT_EQ(host_lanes, 2);
+  EXPECT_EQ(device_lanes, 2);
 }
 
 TEST(ProfilerTest, StopClipsRuntimeReservationsAndOmitsFutureWork) {
@@ -64,9 +63,9 @@ TEST(ProfilerTest, StopClipsRuntimeReservationsAndOmitsFutureWork) {
                           std::chrono::system_clock::now().time_since_epoch())
                           .count();
   ProfileCall call("submit");
-  call.activity().Interval("started", now, now + 10000000000, 0, "HLO");
+  call.activity().Interval("started", now, now + 10000000000, 0, "Bundles");
   call.activity().Interval("future", now + 10000000000, now + 20000000000, 0,
-                           "HLO");
+                           "Bundles");
   StopProfile(session);
   XSpace space;
   ASSERT_TRUE(space.ParseFromString(session->Serialize()));

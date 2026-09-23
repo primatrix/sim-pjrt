@@ -7,8 +7,9 @@ import unittest
 # Set before the backend initializes; these deliberately slow deadlines make
 # bypasses observable without relying on microsecond host timing.
 os.environ["PJRT_SIM_DEVICE_COUNT"] = "2"
-os.environ["PJRT_SIM_LAUNCH_NS"] = "100000000"
-os.environ["PJRT_SIM_TRANSFER_NS"] = "100000000"
+from runtime_profile import configure_runtime
+
+configure_runtime(launch_ns=100000000, transfer_ns=100000000)
 os.environ.pop("PJRT_SIM_PROFILE_PYTHON", None)
 os.environ.pop("PJRT_SIM_PROFILE_HELPER", None)
 
@@ -17,6 +18,13 @@ import numpy as np
 
 
 class OnlineRuntimeTest(unittest.TestCase):
+    def test_ready_control_buffer_still_requires_d2h(self):
+        x = jax.device_put(np.arange(8, dtype=np.int32))
+        x.block_until_ready()
+        start = time.monotonic()
+        np.testing.assert_array_equal(np.asarray(x), np.arange(8))
+        self.assertGreaterEqual(time.monotonic() - start, 0.09)
+
     def test_device_put_and_copy_wait_for_modeled_transfer(self):
         start = time.monotonic()
         x = jax.device_put(np.arange(16, dtype=np.int32), jax.devices()[0])

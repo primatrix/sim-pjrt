@@ -61,7 +61,7 @@ TEST(VirtualStorageTest, ShrinksSmallOutputWithLargeInput) {
       module->entry_computation()->root_instruction()->shape().dimensions(0),
       4);
 }
-TEST(VirtualStorageTest, RejectsControlDerivedThroughSmallFloats) {
+TEST(VirtualStorageTest, AllowsControlFromSmallSimulatedFloats) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
     HloModule control
     ENTRY main {
@@ -70,8 +70,8 @@ TEST(VirtualStorageTest, RejectsControlDerivedThroughSmallFloats) {
       ROOT index = s32[1] convert(first)
     }
   )"));
-  EXPECT_EQ(VirtualizeModule(*module, 1024).code(),
-            absl::StatusCode::kUnimplemented);
+  ASSERT_OK(VirtualizeModule(*module, 1024));
+  ASSERT_OK(HloVerifier(false, false).Run(module.get()).status());
 }
 TEST(VirtualStorageTest, RejectsLargeIntegerAllocation) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
