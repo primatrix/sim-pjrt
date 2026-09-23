@@ -89,7 +89,10 @@ std::string ProfileSession::Serialize() const {
       ordered.push_back(&event);
   }
   std::stable_sort(ordered.begin(), ordered.end(),
-                   [](auto a, auto b) { return a->start_ns < b->start_ns; });
+                   [](auto a, auto b) {
+                     if (a->start_ns != b->start_ns) return a->start_ns < b->start_ns;
+                     return a->end_ns > b->end_ns;
+                   });
   using Track = std::pair<int64_t, std::string>;
   std::map<Track, std::vector<std::pair<int64_t, int64_t>>> lanes;
   std::map<int64_t, int64_t> next_line;
@@ -98,9 +101,8 @@ std::string ProfileSession::Serialize() const {
     const ProfileEvent& event = *pointer;
     const bool device = event.simulated;
     const bool asynchronous = event.pending || !event.track.empty();
-    const int64_t plane_id = device         ? 1000 + event.device_id
-                             : asynchronous ? 100 + event.device_id + 1
-                                            : 0;
+    // Native Trace Viewer reserves device IDs 1..500. CUSTOM IDs cannot be reused.
+    const int64_t plane_id = device ? 2 + event.device_id : 0;
     tensorflow::profiler::XPlane* plane = nullptr;
     for (auto& candidate : *space.mutable_planes()) {
       if (candidate.id() == plane_id) plane = &candidate;
@@ -108,34 +110,56 @@ std::string ProfileSession::Serialize() const {
     if (!plane) {
       plane = space.add_planes();
       plane->set_id(plane_id);
-      plane->set_name(absl::StrCat(
-          "/device:CUSTOM:", plane_id, " ",
-          device ? absl::StrCat("Simulated TPU ", event.device_id)
-          : asynchronous
-              ? absl::StrCat("Host completion / device ", event.device_id)
-              : "PJRT host API"));
+      plane->set_name(device ? absl::StrCat("/device:TPU:", event.device_id)
+                            : "/host:CPU");
     }
     auto& cached_builder = builders[plane_id];
     if (!cached_builder)
       cached_builder = std::make_unique<tsl::profiler::XPlaneBuilder>(plane);
     auto& builder = *cached_builder;
-    const std::string track = !event.track.empty() ? event.track
-                              : event.pending
-                                  ? event.name
-                                  : absl::StrCat("thread ", event.thread_id);
+    const std::string track = device ? event.track
+        : asynchronous ? absl::StrCat("PJRT completion / device ", event.device_id,
+                                      " / ", event.track.empty() ? event.name : event.track)
+                       : absl::StrCat("thread ", event.thread_id);
     auto& available = lanes[{plane_id, track}];
     size_t lane = 0;
     if (asynchronous) {
       while (lane < available.size() && available[lane].second > event.start_ns)
         ++lane;
     }
-    if (lane == available.size())
-      available.push_back({next_line[plane_id]++, 0});
+    if (lane == available.size()) {
+      // Match TPU's native line IDs. Extra overlapping lanes use a separate range.
+      int64_t id = next_line[plane_id]++ + (device ? 100 : (int64_t{1} << 31));
+      if (!device && !asynchronous) id = event.thread_id;
+      if (device && lane == 0) {
+        if (track == "XLA Modules") id = 2;
+        if (track == "XLA Ops") id = 3;
+        if (track == "XLA TraceMe") id = 7;
+      }
+      available.push_back({id, 0});
+    }
     available[lane].second = event.end_ns;
     auto line = builder.GetOrCreateLine(available[lane].first);
     line.SetTimestampNs(start_ns_);
-    line.SetName(lane ? absl::StrCat(track, " [", lane + 1, "]") : track);
-    auto out = line.AddEvent(*builder.GetOrCreateEventMetadata(event.name));
+    if (!device && !asynchronous) {
+      if (!event.thread_name.empty()) line.SetName(event.thread_name);
+    } else {
+      line.SetName(lane ? absl::StrCat(track, " [", lane + 1, "]") : track);
+    }
+    auto* metadata = builder.GetOrCreateEventMetadata(
+        device ? absl::StrCat(event.program_id, ":", track, ":", event.name)
+               : event.name);
+    metadata->set_name(event.hlo_text.empty() ? event.name : event.hlo_text);
+    metadata->set_display_name(event.name);
+    auto out = line.AddEvent(*metadata);
+    if (!event.tf_op.empty())
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("tf_op"), event.tf_op);
+    if (!event.source.empty())
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("source"), event.source);
+    if (device && track == "XLA Modules")
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("hlo_module"), event.name);
+    if (device && track == "XLA Ops")
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("hlo_op"), event.name);
     out.SetTimestampNs(event.start_ns);
     out.SetDurationNs(std::max<int64_t>(0, event.end_ns - event.start_ns));
     out.AddStatValue(*builder.GetOrCreateStatMetadata("clock_domain"),
@@ -154,8 +178,8 @@ std::string ProfileSession::Serialize() const {
                        : event.track == "Launch" ? "structural"
                                                  : "estimated");
       out.AddStatValue(*builder.GetOrCreateStatMetadata("annotation_kind"),
-                       event.track == "Bundles" ? "executable_scope"
-                       : event.track == "Kernels" ? "compilation_scope"
+                       event.track == "XLA Modules" ? "executable_scope"
+                       : event.track == "XLA Ops" ? "compilation_scope"
                        : event.track == "Unresolved" ? "unresolved_cost"
                                                       : "activity");
     }
@@ -227,17 +251,20 @@ void StopProfile(const std::shared_ptr<ProfileSession>& session) {
   }
 }
 
-ProfileCall::ProfileCall(const char* name, absl::string_view detail) {
-  activity_.session_ = std::atomic_load(&active_session);
+ProfileCall::ProfileCall(const char* name, absl::string_view detail,
+                         const ProfileActivity* parent) {
+  activity_.session_ = parent ? parent->session_ : std::atomic_load(&active_session);
   if (!activity_.session_) return;
   ProfileEvent& event = activity_.event_;
   event.name = name;
   event.detail = std::string(detail);
   event.start_ns = Now();
   event.thread_id = tsl::Env::Default()->GetCurrentThreadId();
-  event.correlation_id =
-      next_correlation.fetch_add(1, std::memory_order_relaxed);
-  activity_.index_ = activity_.session_->Begin(event);
+  tsl::Env::Default()->GetCurrentThreadName(&event.thread_name);
+  event.correlation_id = parent ? parent->correlation_id()
+      : next_correlation.fetch_add(1, std::memory_order_relaxed);
+  activity_.index_ = activity_.session_->Begin(
+      event, parent ? parent->index_ : kDropped);
 }
 
 void ProfileActivity::Finish(const absl::Status& status) const {
@@ -288,7 +315,10 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
                                int64_t end, int64_t device,
                                const std::string& track,
                                const std::string& cost_gap,
-                               int64_t bytes, const std::string& detail) const {
+                               int64_t bytes, const std::string& detail,
+                               const std::string& hlo_text,
+                               const std::string& tf_op,
+                               const std::string& source) const {
   if (!session_) return;
   ProfileEvent event = event_;
   event.name = name;
@@ -297,6 +327,9 @@ void ProfileActivity::Interval(const std::string& name, int64_t start,
   event.device_id = device;
   event.track = track;
   if (!detail.empty()) event.detail = detail;
+  event.hlo_text = hlo_text;
+  event.tf_op = tf_op;
+  event.source = source;
   event.cost_gap = cost_gap;
   event.bytes = bytes;
   event.simulated = true;

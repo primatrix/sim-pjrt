@@ -33,6 +33,35 @@ def capture(output):
         x.delete()
         y.delete()
     trace = load_trace(output)
+    process_names = {e["pid"]: e["args"]["name"] for e in trace["traceEvents"]
+                     if e.get("name") == "process_name"}
+    expected = {"XLA Modules", "XLA Ops", "XLA TraceMe",
+                "Framework Name Scope", "Framework Ops", "Source code"}
+    for device in devices:
+        pid = next(pid for pid, name in process_names.items()
+                   if name == f"/device:TPU:{device.id}")
+        tracks = {e["args"]["name"] for e in trace["traceEvents"]
+                  if e.get("name") == "thread_name" and e["pid"] == pid}
+        assert expected <= tracks, (device.id, tracks)
+        assert not {"Bundles", "Kernels", "Communication", "Completion", "DMA", "Launch"} & tracks
+    # The browser's streaming converter has a bounded device-ID namespace.
+    # Checking only trace_viewer misses its out-of-range ID clamp.
+    import json
+    from xprof.convert.raw_to_tool_data import xspace_to_tool_data
+
+    pb = next(output.rglob("*.xplane.pb"))
+    raw, _ = xspace_to_tool_data([str(pb)], "trace_viewer@", {"use_saved_result": False})
+    streamed = json.loads(raw)["traceEvents"]
+    device_pids = {e["pid"] for e in streamed if e.get("name") == "process_name"
+                   and "/device:TPU:" in e["args"]["name"]}
+    assert len(device_pids) == len(devices), device_pids
+    for pid in device_pids:
+        modules = sorted((e for e in streamed if e.get("ph") == "X"
+                          and e["pid"] == pid and e.get("tid") == 2),
+                         key=lambda e: e["ts"])
+        assert modules
+        for a, b in zip(modules, modules[1:]):
+            assert a["ts"] + a["dur"] <= b["ts"] + 1e-3, (a, b)
     events = simulator_events(trace)
     for name in (
         "PJRT H2D submit",
@@ -44,12 +73,32 @@ def capture(output):
     h2d = next(e for e in events if e["name"] == "PJRT H2D submit")
     assert int(h2d["args"]["bytes"]) == 256, h2d
     assert int(h2d["args"]["buffer_id"]) > 0, h2d
+    parents = {e["args"]["correlation_id"]: e for e in events
+               if e["name"] == "PJRT_LoadedExecutable_Execute"}
+    phases = {"PJRT execute prepare", "PJRT simulator output dispatch",
+              "PJRT execution enqueue", "PJRT output association"}
+    for correlation, parent in parents.items():
+        children = [e for e in events if e["args"].get("correlation_id") == correlation
+                    and e["name"] in phases]
+        assert {e["name"] for e in children} == phases
+        for child in children:
+            assert (child["pid"], child["tid"]) == (parent["pid"], parent["tid"])
+            assert child["ts"] >= parent["ts"] - 1e-3
+            assert child["ts"] + child["dur"] <= parent["ts"] + parent["dur"] + 1e-3
+    # PJRT submission must nest in the existing JAX caller's real thread.
+    callers = [e for e in trace["traceEvents"] if e.get("name") == "PjRtCApiLoadedExecutable::Execute"]
+    assert callers
+    for parent in parents.values():
+        assert any(c["pid"] == parent["pid"] and c["tid"] == parent["tid"]
+                   and c["ts"] <= parent["ts"] + 1e-3
+                   and c["ts"] + c["dur"] >= parent["ts"] + parent["dur"] - 1e-3
+                   for c in callers), parent
     pending = [e for e in events if e["name"] == "Execute submit-to-ready"]
     assert {int(e["args"]["device_id"]) for e in pending} == {d.id for d in devices}
     submissions = {
         e["args"]["correlation_id"]
         for e in events
-        if e["name"] == "PJRT Execute submit"
+        if e["name"] == "PJRT_LoadedExecutable_Execute"
     }
     assert all(e["args"]["correlation_id"] in submissions for e in pending)
     assert all(int(e["args"]["incomplete"]) == 0 for e in pending)
@@ -66,7 +115,7 @@ def capture(output):
     steps = [
         e
         for e in events
-        if e["name"] == "PJRT Execute submit"
+        if e["name"] == "PJRT_LoadedExecutable_Execute"
         and e["args"].get("detail") == "jit__lambda"
     ]
     assert len(steps) == 8, steps
