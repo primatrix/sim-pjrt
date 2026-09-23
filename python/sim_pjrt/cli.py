@@ -1,4 +1,4 @@
-"""Configure a simulated TPU backend before executing a workload."""
+"""Run TPU workloads or collect their JIT compilation artifacts on CPU."""
 
 import argparse
 import importlib.util
@@ -32,23 +32,25 @@ def environment(args, inherited=None):
     if not libtpu:
         raise ValueError("Install libtpu in this Python environment or pass --libtpu")
     libtpu = existing_file(libtpu, "libtpu library")
-    topology = args.topology or env.get("PJRT_SIM_TPU_TOPOLOGY")
-    if not topology:
-        raise ValueError("Specify --topology (for example v5e:2x2)")
-    devices = args.devices if args.devices is not None else env.get("PJRT_SIM_DEVICE_COUNT", "1")
+    topology = args.topology or env.get("PJRT_SIM_TPU_TOPOLOGY", "tpu7x:2x2x1")
+    devices = args.devices if args.devices is not None else env.get("PJRT_SIM_DEVICE_COUNT", "8")
     try:
         devices = int(devices)
     except ValueError:
         raise ValueError("Device count must be a positive integer") from None
     if devices < 1:
         raise ValueError("Device count must be a positive integer")
-    timing = args.timing_profile or env.get("PJRT_SIM_BUNDLE_PROFILE")
-    if not timing:
-        raise ValueError("Specify --timing-profile PATH or --timing-profile example "
-                         "(uncalibrated partial estimates)")
-    if timing == "example":
-        timing = package / "configs/bundle_timing_example.json"
-    timing = existing_file(timing, "Timing profile")
+    if args.action == "compile":
+        env["PJRT_SIM_DUMP_DIR"] = str(Path(args.output).expanduser().resolve())
+        env.pop("PJRT_SIM_BUNDLE_PROFILE", None)
+    else:
+        env.pop("PJRT_SIM_DUMP_DIR", None)
+        timing = args.timing_profile or env.get("PJRT_SIM_BUNDLE_PROFILE")
+        if not timing:
+            raise ValueError("Specify --timing-profile PATH (or use sim-pjrt compile to export without timing)")
+        if timing == "example":
+            timing = package / "configs/bundle_timing_example.json"
+        env["PJRT_SIM_BUNDLE_PROFILE"] = existing_file(timing, "Timing profile")
     env.update(
         JAX_PLATFORMS="tpu",
         JAX_ENABLE_COMPILATION_CACHE="false",
@@ -56,7 +58,6 @@ def environment(args, inherited=None):
         PJRT_SIM_LIBTPU_PATH=libtpu,
         PJRT_SIM_TPU_TOPOLOGY=topology,
         PJRT_SIM_DEVICE_COUNT=str(devices),
-        PJRT_SIM_BUNDLE_PROFILE=timing,
         PJRT_SIM_BUNDLE_PYTHON=sys.executable,
         TPU_SKIP_MDS_QUERY="1",
     )
@@ -69,15 +70,20 @@ def environment(args, inherited=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
-    for name in ("run", "doctor"):
+    for name in ("run", "compile", "doctor"):
         command = sub.add_parser(name)
-        command.add_argument("--topology", help="Offline TPU topology, e.g. v5e:2x2")
-        command.add_argument("--devices", type=int, help="Simulated devices (default: 1)")
-        command.add_argument("--timing-profile", help="JSON path or 'example' for uncalibrated partial estimates")
+        command.add_argument("--topology", help="Offline TPU topology (default: tpu7x:2x2x1)")
+        command.add_argument("--devices", type=int, help="Simulated devices (default: 8)")
+        if name == "compile":
+            command.add_argument("--output", required=True, metavar="DIRECTORY",
+                                 help="Directory for TPU compilation artifacts (no timing analysis)")
+        else:
+            command.add_argument("--timing-profile", help="JSON path or 'example' for uncalibrated partial estimates")
         command.add_argument("--plugin", help="Override the bundled PJRT shared library")
         command.add_argument("--libtpu", help="Override the installed libtpu shared library")
-        if name == "run":
-            command.add_argument("command", nargs=argparse.REMAINDER)
+        if name != "doctor":
+            command.add_argument("command", nargs=argparse.REMAINDER, metavar="SCRIPT_OR_COMMAND",
+                                 help="Python script or command; following arguments are passed through")
     args = parser.parse_args(argv)
     try:
         env = environment(args)
@@ -97,8 +103,10 @@ def main(argv=None):
         if command[:1] == ["--"]:
             command = command[1:]
         if not command:
-            raise ValueError("Provide a command after --, e.g. -- python script.py")
-        if command[0] in ("python", "python3"):
+            raise ValueError("Provide a command or script, e.g. workload.py")
+        if command[0].endswith(".py"):
+            command.insert(0, sys.executable)
+        elif command[0] in ("python", "python3"):
             command[0] = sys.executable
         os.execvpe(command[0], command, env)
     except (ValueError, OSError) as error:

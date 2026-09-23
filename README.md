@@ -6,6 +6,7 @@ sim-pjrt compiles supported JAX and SGLang-Jax programs with libtpu, supports
 runtime JIT and ahead-of-time compilation, estimates time from Final LLO bundles,
 and simulates outputs on CPU. TPU hardware is not required;
 **libtpu is required at runtime**.
+It can also export JIT compilation artifacts without estimating execution time.
 
 ![sim-pjrt architecture](docs/images/architecture.svg)
 
@@ -73,25 +74,40 @@ Its dependencies install the tested JAX/jaxlib and libtpu versions. No Bazel or
 source checkout is needed to run an installed wheel. The package is not yet
 published to a package index; use the local wheel above.
 
-In that environment, run any Python workload with:
+`spjrt` and `sim-pjrt` share the same CLI, defaulting to TPU v7x with 8 devices
+(`tpu7x:2x2x1`). Override with `--topology` and `--devices`. Run a Python workload with:
 
 ```sh
-sim-pjrt run --topology v5e:2x2 --devices 1 --timing-profile example -- \
-  python your_script.py
+spjrt run --timing-profile example your_script.py
 ```
 
 `example` explicitly selects uncalibrated partial timing estimates. Pass a JSON
 file instead for your own profile. The launcher locates its plugin and libtpu,
 sets the backend environment before JAX starts, and uses its own Python environment.
+Tool options go before the script; arguments after it are passed through unchanged.
+The `--` separator is optional.
+
+To export TPU Final LLO and per-compilation manifests without timing analysis or
+simulated delays:
+
+```sh
+spjrt compile --output ./llo workload.py --batch-size 4
+```
+
+No workload code changes or timing profile are needed. Artifacts are grouped by
+process under `./llo`; the output path must not contain whitespace or quotes.
+Only reached JIT compilations are captured. Execution still uses virtual outputs,
+so data-dependent paths may differ from real model execution.
+
 SGLang-Jax is installed separately in the same environment; there is no extra:
 
 ```sh
-sim-pjrt run --topology v5e:2x2 --devices 4 --timing-profile example -- \
+spjrt run --topology v5e:2x2 --devices 4 --timing-profile example \
   python -m sgl_jax.launch_server --model-path /path/to/model --tp-size 4 --load-format dummy
 ```
 
 With uv, add the wheel to your workload project using `uv add /path/to/wheel.whl`,
-then use `uv run sim-pjrt run ...`. Install SGLang-Jax as a dependency of that
+then use `uv run spjrt run ...` or `uv run spjrt compile ...`. Install SGLang-Jax as a dependency of that
 project as well. See [Python packaging](docs/python-package.md) for configuration,
 build options and validation boundaries.
 

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <utility>
@@ -81,10 +82,25 @@ absl::StatusOr<std::shared_ptr<const std::vector<BundleActivity>>> ReadActivitie
 }
 }  // namespace
 
+bool DumpOnly() {
+  const char* directory = std::getenv("PJRT_SIM_DUMP_DIR");
+  return directory && *directory;
+}
+
 const absl::StatusOr<std::string>& BundleDumpDirectory() {
   static const auto directory = []() -> absl::StatusOr<std::string> {
-    char path[] = "/tmp/pjrt-sim-bundles-XXXXXX";
-    if (!mkdtemp(path))
+    std::string path = "/tmp/pjrt-sim-bundles-XXXXXX";
+    if (DumpOnly()) {
+      const std::filesystem::path root(std::getenv("PJRT_SIM_DUMP_DIR"));
+      // libtpu splits LIBTPU_INIT_ARGS on whitespace without unquoting paths.
+      if (root.string().find_first_of(" \t\r\n\"'") != std::string::npos)
+        return absl::InvalidArgumentError("Dump directory cannot contain whitespace or quotes");
+      std::error_code error;
+      std::filesystem::create_directories(root, error);
+      if (error) return absl::UnavailableError(error.message());
+      path = (root / absl::StrCat("process-", getpid(), "-XXXXXX")).string();
+    }
+    if (!mkdtemp(path.data()))
       return absl::UnavailableError(
           absl::StrCat("Creating bundle directory: ", strerror(errno)));
     return std::string(path);
@@ -92,17 +108,13 @@ const absl::StatusOr<std::string>& BundleDumpDirectory() {
   return directory;
 }
 
-absl::StatusOr<BundleCompilation> EstimateFinalBundles(
+absl::StatusOr<BundleCompilation> FinalizeBundles(
     const std::vector<std::string>& files) {
-  const char* profile = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
-  if (!profile || !*profile)
-    return absl::InvalidArgumentError(
-        "libtpu bundle timing requires PJRT_SIM_BUNDLE_PROFILE");
-  const char* python = std::getenv("PJRT_SIM_BUNDLE_PYTHON");
-  if (!python || !*python) python = "python3";
   if (files.empty()) return absl::InvalidArgumentError("No Final LLO bundles");
   const std::string manifest_path = files.front() + ".manifest.json";
   google::protobuf::Struct manifest;
+  if (DumpOnly())
+    (*manifest.mutable_fields())["status"].set_string_value("compiled");
   auto* paths = (*manifest.mutable_fields())["files"].mutable_list_value();
   for (const auto& file : files) paths->add_values()->set_string_value(file);
   std::string manifest_json;
@@ -112,6 +124,17 @@ absl::StatusOr<BundleCompilation> EstimateFinalBundles(
   output << manifest_json;
   output.close();
   if (!output) return absl::UnavailableError("Cannot write Final LLO manifest");
+  if (DumpOnly()) {
+    BundleCompilation result;
+    result.report_json = std::move(manifest_json);
+    return result;
+  }
+  const char* profile = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
+  if (!profile || !*profile)
+    return absl::InvalidArgumentError(
+        "libtpu bundle timing requires PJRT_SIM_BUNDLE_PROFILE");
+  const char* python = std::getenv("PJRT_SIM_BUNDLE_PYTHON");
+  if (!python || !*python) python = "python3";
   const std::string report_path = manifest_path + ".timing.json";
   std::vector<std::string> command = {
       python,  "-m",        "bundle_timing", manifest_path, "--profile",

@@ -83,6 +83,23 @@ TEST(RuntimeTest, BundleTimingUsesProgramDurationAndWaitsForInputsAndCpu) {
   EXPECT_EQ(ready.Await().code(), absl::StatusCode::kInternal);
 }
 
+TEST(RuntimeTest, DumpOnlySkipsDelaysButPreservesDependencyErrors) {
+  RuntimeConfig config;
+  config.simulate_timing = false;
+  SimRuntime runtime(config);
+  auto [promise, future] = MakePromise();
+  Completion input{0, future};
+  auto transfer = runtime.Transfer(-1, 0, 1000000000000, input, {});
+  auto executions = runtime.ExecuteTimed(1000000000000, false, {0, 1},
+                                         {transfer}, {}, "dump");
+  EXPECT_FALSE(executions[0].future.IsReady());
+  promise.Set(absl::InternalError("dependency failed"));
+  for (const auto& execution : executions) {
+    EXPECT_TRUE(execution.future.IsReady());
+    EXPECT_EQ(execution.future.Await().code(), absl::StatusCode::kInternal);
+  }
+}
+
 TEST(RuntimeTest, CallbackCanSubmitAndWaitWithoutBlockingTimerWorker) {
   SimRuntime runtime(RuntimeConfig{});
   auto [promise, done] = MakePromise();
