@@ -1,0 +1,23 @@
+:root {
+  --sl-color-accent-low: #102e2d;
+  --sl-color-accent: #3d9e92;
+  --sl-color-accent-high: #b4e7dd;
+  --sl-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --sl-content-width: 48rem;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e5f4ee;
+  --sl-color-accent: #227568;
+  --sl-color-accent-high: #164d45;
+}
+.sl-markdown-content { line-height: 1.85; }
+.sl-markdown-content h2 { letter-spacing: -0.025em; }
+.site-title { font-weight: 750; letter-spacing: -0.035em; }
+.hero h1 { letter-spacing: -0.045em; }
+.hero .tagline { max-width: 35rem; line-height: 1.8; }
+.card { border-radius: 0.75rem; }
+.sl-markdown-content table { font-size: 0.9rem; }
+
+@media (min-width: 64rem) {
+  .feature-grid .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

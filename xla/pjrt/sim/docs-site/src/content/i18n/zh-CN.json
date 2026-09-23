@@ -1,0 +1,4 @@
+{
+  "search.label": "搜索文档",
+  "search.devWarning": "开发模式下暂不提供搜索。请运行 npm run build 和 npm run preview，使用完整的本地搜索。"
+}

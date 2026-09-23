@@ -1,0 +1,9 @@
+sim-pjrt
+
+Extracted from the simulator implementation in Yanko-7/pjrt-sim.
+Original source revision is recorded in docs/dependencies.md.
+Existing copyright and license notices are retained.
+
+OpenXLA is a separate build dependency, licensed under Apache-2.0.
+Its sources and transitive dependency licenses remain in the downloaded build
+workspace. Distribution of compiled artifacts must include applicable notices.

@@ -1,0 +1,44 @@
+---
+title: sim-pjrt
+description: 中文开发文档：在 CPU 上探索 TPU 工作负载。
+template: splash
+hero:
+  title: 在 CPU 上，探索 TPU 工作负载。
+  tagline: 从第一个 JAX 程序到虚拟存储、张量并行和性能重放。理解执行过程，让每一项成本估算都有依据。
+  actions:
+    - text: 快速开始
+      link: /getting-started/
+      icon: right-arrow
+    - text: 了解工作原理
+      link: /architecture/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<div className="feature-grid">
+<CardGrid>
+  <Card title="熟悉的 JAX 入口" icon="laptop">
+    通过 PJRT 接入 JAX，以 CPU 运行时承载缓冲区、整数控制逻辑和异步执行。
+  </Card>
+  <Card title="虚拟存储" icon="puzzle">
+    保留逻辑形状，以标量缓冲区承载存储，支持分片、cache 更新和 donation。
+  </Card>
+  <Card title="可追踪的成本" icon="document">
+    将逻辑计算量、通信和依赖映射到在线事件与离线 XProf 时间线。
+  </Card>
+</CardGrid>
+</div>
+
+## 从你的任务出发
+
+<CardGrid>
+  <LinkCard title="使用虚拟存储" description="理解虚拟存储的阈值、初始化方法与数值边界。" href="/guides/virtual-storage/" />
+  <LinkCard title="使用多个设备" description="建立 mesh，运行张量并行并重新分片。" href="/guides/tensor-parallelism/" />
+  <LinkCard title="查看执行时间线" description="采集 XProf，区分观测时间与模型时间。" href="/guides/profiling/" />
+  <LinkCard title="确认支持范围" description="查看已验证路径、成本缺口和当前限制。" href="/reference/limitations/" />
+</CardGrid>
+
+## 当前定位
+
+这是一个单主机的执行与性能建模实验项目。浮点计算使用占位结果，性能参数尚未经过真实 TPU 校准；适合研究执行路径、依赖与成本假设。完整大模型 serving 尚未验证。
