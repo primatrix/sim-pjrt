@@ -34,6 +34,18 @@ class BundleTimingTest(unittest.TestCase):
         self.assertEqual(modules, before)
         self.assertEqual({b["module"] for b in result}, {"kernel"})
 
+    def test_call_expansion_limit_is_optional(self):
+        modules = {
+            "TLP": parse_bundles(
+                "0 : { inlined_call /* kernel */ }\n"
+                "1 : { inlined_call /* kernel */ }"
+            ),
+            "kernel": parse_bundles("0 : {}\n1 : {}"),
+        }
+        with self.assertRaisesRegex(ValueError, "expansion exceeds limit"):
+            compose_final_bundles(modules, limit=3)
+        self.assertEqual(len(compose_final_bundles(modules)), 4)
+
     def test_activity_scopes_preserve_aliases_and_repeated_calls(self):
         program = compose_final_bundles(
             {
@@ -46,7 +58,7 @@ class BundleTimingTest(unittest.TestCase):
             {"fusion.1": "shared", "copy.2": "shared"},
         )
         report = estimate_bundles(program, PROFILE)
-        scopes = [e for e in report["activity_timeline"] if e["track"] == "Kernels"]
+        scopes = [e for e in report["activity_timeline"] if e["track"] == "XLA Ops"]
         self.assertEqual([e["name"] for e in scopes], ["fusion.1", "copy.2"])
         self.assertEqual([(e["start_ns"], e["end_ns"]) for e in scopes], [(0, 2), (2, 4)])
         self.assertTrue(all("module=shared" in e["detail"] for e in scopes))
@@ -56,17 +68,29 @@ class BundleTimingTest(unittest.TestCase):
             program, PROFILE,
             {"path": [{"repeat": 2, "body": [b["address"] for b in program[:2]]}]},
         )
-        scopes = [e for e in repeated["activity_timeline"] if e["track"] == "Kernels"]
+        scopes = [e for e in repeated["activity_timeline"] if e["track"] == "XLA Ops"]
         self.assertEqual(len(scopes), 2)
+
+    def test_instruction_details_do_not_flood_activity_tracks(self):
+        report = estimate_bundles(parse_bundles(
+            "0 : { send 1 ;; sbr 2 }\n1 : { send 1 ;; mystery 2 }\n"
+            "2 : { recv 1 ;; vdelay 3 }"
+        ), dict(PROFILE, vdelay_semantics="additional_cycles"))
+        timeline = report["activity_timeline"]
+        self.assertEqual({e["track"] for e in timeline}, {"XLA Ops", "XLA TraceMe"})
+        self.assertEqual(len([e for e in timeline if e["track"] == "XLA Ops"]), 1)
+        self.assertEqual(len([e for e in timeline if e["track"] == "XLA TraceMe"]), 2)
+        self.assertEqual(report["modeled_cycles"], 6)
+        self.assertTrue(report["gaps"])
 
     def test_no_operation_track(self):
         report = estimate_bundles(parse_bundles(
             "0 : { vadd 1, 2 }\n1 : { vmul 1, 2 }\n2 : { vmov 1, 2 }"
         ), PROFILE)
-        self.assertEqual({e["track"] for e in report["activity_timeline"]}, {"Kernels"})
+        self.assertEqual({e["track"] for e in report["activity_timeline"]}, {"XLA Ops"})
         self.assertEqual(report["modeled_cycles"], 3)
 
-    def test_activity_dma_wait_and_tail_share_the_model_clock(self):
+    def test_activity_dma_and_tail_preserve_wait_time_inside_kernel(self):
         program = parse_bundles(
             "0 : { dma.hbm_to_vmem %src, 1, %dst, [#allocation1] }\n"
             "1 : { dma.hbm_to_vmem %src, 1, %dst, [#allocation2] }\n"
@@ -77,23 +101,26 @@ class BundleTimingTest(unittest.TestCase):
             dma={"hbm_to_vmem": {"bytes_per_second": 1e9, "resource": "hbm"}},
         ))
         timeline = report["activity_timeline"]
-        dma = [e for e in timeline if e["track"] == "DMA / hbm"]
-        self.assertEqual([(e["start_ns"], e["end_ns"]) for e in dma], [(0, 8), (8, 16)])
+        self.assertFalse(any(e["track"].startswith("DMA / ") for e in timeline))
+        dma = [e for e in report["events"] if e["kind"] == "dma"]
+        self.assertEqual([(e["start_cycle"], e["end_cycle"]) for e in dma], [(0, 8), (8, 16)])
         self.assertEqual([e["bytes"] for e in dma], [8, 8])
-        wait = next(e for e in timeline if e["track"] == "Wait")
-        self.assertEqual((wait["start_ns"], wait["end_ns"]), (3, 16))
-        tail = next(e for e in timeline if e["track"] == "Completion")
+        self.assertFalse(any(e["track"] == "Wait" for e in timeline))
+        kernel = next(e for e in timeline if e["track"] == "XLA Ops")
+        self.assertEqual((kernel["start_ns"], kernel["end_ns"]), (0, 16))
+        tail = next(e for e in timeline if e["name"] == "Completion tail")
         self.assertEqual((tail["start_ns"], tail["end_ns"]), (16, 18))
         self.assertEqual(report["modeled_cycles"], 18)
         self.assertTrue(all(0 <= e["start_ns"] <= e["end_ns"] <= 18 for e in timeline))
 
-    def test_unresolved_cost_is_a_marker_not_invented_latency(self):
+    def test_unresolved_cost_annotates_kernel_without_invented_latency(self):
         report = estimate_bundles(parse_bundles("0 : { vwait.ge [sflag:$52], $8 }"), PROFILE)
         timeline = report["activity_timeline"]
         self.assertFalse(any(e["track"] == "Wait" for e in timeline))
-        unknown = next(e for e in timeline if e["track"] == "Unresolved")
-        self.assertEqual(unknown["start_ns"], unknown["end_ns"])
-        self.assertTrue(unknown["cost_gap"])
+        self.assertFalse(any(e["track"] == "Unresolved" for e in timeline))
+        kernel = next(e for e in timeline if e["track"] == "XLA Ops")
+        self.assertTrue(kernel["cost_gap"])
+        self.assertTrue(report["gaps"])
         self.assertEqual(report["modeled_cycles"], 1)
 
     def test_final_control_markers_and_deduplication(self):

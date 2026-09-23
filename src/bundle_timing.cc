@@ -130,6 +130,13 @@ absl::StatusOr<BundleCompilation> EstimateFinalBundles(
         return absl::DataLossError("Invalid Final LLO activity label");
       *target = field->second.string_value();
     }
+    for (auto [key, target] : {std::pair{"hlo_text", &event.hlo_text},
+                               {"tf_op", &event.tf_op},
+                               {"source", &event.source}}) {
+      const auto field = activity.find(key);
+      if (field != activity.end() && field->second.has_string_value())
+        *target = field->second.string_value();
+    }
     for (auto [key, target] : {std::pair{"start_ns", &event.start_ns},
                                {"end_ns", &event.end_ns},
                                {"bytes", &event.bytes}}) {

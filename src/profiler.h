@@ -19,7 +19,11 @@ namespace xla::sim {
 // intervals include submission, queuing and completion notification overhead.
 struct ProfileEvent {
   std::string name;
+  std::string thread_name;
   std::string detail;
+  std::string hlo_text;
+  std::string tf_op;
+  std::string source;
   std::string input_buffers;
   std::string output_buffers;
   int64_t start_ns = 0;
@@ -80,7 +84,10 @@ class ProfileActivity {
   void Interval(const std::string& name, int64_t start, int64_t end,
                 int64_t device, const std::string& track,
                 const std::string& cost_gap = {}, int64_t bytes = -1,
-                const std::string& detail = {}) const;
+                const std::string& detail = {},
+                const std::string& hlo_text = {},
+                const std::string& tf_op = {},
+                const std::string& source = {}) const;
   uint64_t correlation_id() const { return event_.correlation_id; }
 
  private:
@@ -94,7 +101,8 @@ class ProfileActivity {
 // timestamps, callback registrations or serialized records are built then.
 class ProfileCall {
  public:
-  explicit ProfileCall(const char* name, absl::string_view detail = {});
+  explicit ProfileCall(const char* name, absl::string_view detail = {},
+                       const ProfileActivity* parent = nullptr);
   ~ProfileCall() { activity_.Finish(); }
   ProfileCall(const ProfileCall&) = delete;
   ProfileCall& operator=(const ProfileCall&) = delete;

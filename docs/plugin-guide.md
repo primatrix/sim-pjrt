@@ -49,14 +49,17 @@ profiler through `SIM_PROFILE=1 bash tests/run_libtpu_tests.sh`, with the enviro
 in [tests](../tests/README.md). The harness warms all request shapes before capture.
 
 Open the resulting directory with `xprof server --logdir PATH --port 8791`.
-In Trace Viewer, `Simulated TPU N` contains `Bundles`, `Launch` and `DMA`.
-`Host completion / device N` contains observed submit-to-ready intervals.
+In Trace Viewer, `/device:TPU:N` contains native `XLA Modules`, `XLA Ops` and
+`XLA TraceMe` lines. XProf derives `Framework Name Scope`, `Framework Ops` and
+`Source code` from compiler debug labels when available. Observed submit-to-ready
+intervals appear on PJRT lines in `/host:CPU`.
 These use a shared clock but are distinct measurements: a long submit-to-ready
 interval does not imply a long TPU transfer. CPU scheduling can delay notification.
 
 `PJRT_SIM_TRACE=/path/execution` writes JSONL execution metadata and per-program
-bundle reports. Reports retain the Final LLO source file list. No TPU HLO or plan
-snapshot is produced. For a host-observation summary:
+bundle reports. Reports retain the Final LLO source file list and optional TLP
+HLO debug-label file paths. HLO annotations are only for profiling; timing uses
+Final LLO bundles. For a host-observation summary:
 
 ```sh
 python python/profile_report.py PATH --output profile-summary.json

@@ -22,4 +22,11 @@ py_test(
     deps = ["//python:analysis_tools"],
 )
 
-test_suite(name = "python_tests", tests = [":profile_report_test", ":bundle_timing_test", ":launcher_test"])
+py_test(
+    name = "profile_metadata_test",
+    size = "small",
+    srcs = ["profile_metadata_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+test_suite(name = "python_tests", tests = [":profile_metadata_test", ":profile_report_test", ":bundle_timing_test", ":launcher_test"])
