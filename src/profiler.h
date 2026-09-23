@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "src/bundle_timing.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -36,6 +37,7 @@ struct ProfileEvent {
   int64_t num_devices = 0;
   int64_t num_replicas = 1;
   int64_t bytes = -1;
+  int64_t sparse_core = -1;
   bool pending = false;
   bool incomplete = false;
   std::string error;
@@ -54,6 +56,8 @@ class ProfileSession {
   void SetBuffer(size_t index, uint64_t id, int64_t bytes, int64_t device);
   void SetLinks(size_t index, std::string inputs, std::string outputs);
   void SetProgram(size_t index, uint64_t id, int64_t devices, int64_t replicas);
+  void DeferActivities(ProfileEvent event, size_t parent,
+      std::shared_ptr<const std::vector<BundleActivity>> activities);
   void Stop();
   std::string Serialize() const;
 
@@ -65,6 +69,11 @@ class ProfileSession {
   int64_t stopped_ns_ = 0;
   uint64_t dropped_events_ = 0;
   std::vector<ProfileEvent> events_;
+  struct DeferredActivities {
+    ProfileEvent event;
+    std::shared_ptr<const std::vector<BundleActivity>> activities;
+  };
+  std::vector<DeferredActivities> deferred_;
 };
 
 absl::StatusOr<std::shared_ptr<ProfileSession>> StartProfile();
@@ -87,7 +96,10 @@ class ProfileActivity {
                 const std::string& detail = {},
                 const std::string& hlo_text = {},
                 const std::string& tf_op = {},
-                const std::string& source = {}) const;
+                const std::string& source = {}, int64_t sparse_core = -1) const;
+  void Activities(const std::string& name, int64_t start, int64_t device,
+                  bool partial,
+                  std::shared_ptr<const std::vector<BundleActivity>> activities) const;
   uint64_t correlation_id() const { return event_.correlation_id; }
 
  private:

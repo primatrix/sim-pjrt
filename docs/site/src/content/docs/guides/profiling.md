@@ -22,7 +22,9 @@ xprof server --logdir /path/to/run/tp4/xprof --port 8791
 | Framework Ops | XProf 根据同一元数据派生的框架操作 |
 | Source code | XProf 根据编译器源码位置派生的源码轨道 |
 
-框架和源码标签来自 libtpu 的 TLP HLO 调试信息，只用于标注，计时仍完全来自 Final LLO。缺失的标签不推测补齐，因此没有调试信息时对应派生轨道可能缺省。提交与完成事件写入标准 `/host:CPU` 下的 PJRT 线程，保留主机观察值。
+配置了匹配的 `sparsecore.operation_timings` 时，会额外显示 `/device:TPU:N SparseCore C`，包含原生 `Sparse Core Modules`、`Sparse Core Ops`、`SparseCore Offload Type`。这些区间使用实测操作级校准，按输入就绪、消费者等待和 core 排队计算；尚未模拟 SCS/TEC 内部指令、启动和跨设备争用，因此标为部分估计。无校准或依赖不明确的调用保留在报告缺口中，不生成假区间。
+
+框架和源码标签来自 libtpu 的 TLP HLO 调试信息。TensorCore 计时来自 Final LLO；SparseCore 使用显式提供的操作级校准，HLO 操作数关系用于关联依赖。缺失的标签不推测补齐，因此没有调试信息时对应派生轨道可能缺省。提交与完成事件写入标准 `/host:CPU` 下的 PJRT 线程，保留主机观察值。
 
 同步 PJRT 调用使用实际线程 ID，与 JAX 的 `PjRtCApiLoadedExecutable::Execute` 嵌套在同一主机线程。`PJRT_LoadedExecutable_Execute` 内分别记录执行准备、CPU 输出提交、模拟执行入队和输出关联；子阶段继承父提交的 correlation ID 与 program ID。H2D 记录 buffer 准备及入队，D2H 记录入队，`PJRT_Event_Await` 记录实际等待 API 调用。异步 submit-to-ready 区间是诊断视图，不代表独占某个 CPU 线程。
 
@@ -49,3 +51,5 @@ python python/profile_report.py /path/to/xprof --output report.json --trace-outp
 Fusion/copy 的名称来自编译器调用注释；collective、spill/reload 等若没有足够元数据，只在计时报告中保留底层 opcode 或 DMA，不推测高层操作类型。优化掉的操作不产生事件。多设备目前使用相同的程序活动模板，不能据此推断各设备独立的通信时序。
 
 原生轨道导出通过 XProf 官方转换器验证，覆盖框架/源码派生轨道及主机提交到完成的关联。已有 `.xplane.pb` 不会改变；需要更新插件和 Python 计时模块并采集新的 profile 才能看到调整后的轨道。
+
+提交时仅保留可执行文件活动元数据的共享引用，在收集 profile 时展开为 XLA 和 SparseCore 事件。Host Execute 保留实测 CPU 墙钟耗时，尚未校准为真实 TPU 主机提交耗时。

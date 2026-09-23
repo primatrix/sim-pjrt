@@ -1,6 +1,7 @@
 #include "src/profiler.h"
 
 #include <chrono>
+#include <set>
 #include <thread>
 
 #include "google/protobuf/util/message_differencer.h"
@@ -11,6 +12,41 @@
 namespace xla::sim {
 namespace {
 using tensorflow::profiler::XSpace;
+TEST(ProfilerTest, DeferredActivitiesRespectStopAndEventLimit) {
+  ProfileSession session(3);
+  ProfileEvent base;
+  base.name = "model";
+  base.start_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+  base.simulated = true;
+  base.device_id = 0;
+  auto activities = std::make_shared<std::vector<BundleActivity>>(5);
+  for (auto& activity : *activities) {
+    activity.name = "op";
+    activity.track = "XLA Ops";
+    activity.end_ns = 1000000000;
+  }
+  session.DeferActivities(base, static_cast<size_t>(-1), activities);
+  session.Stop();
+  session.DeferActivities(base, static_cast<size_t>(-1), activities);
+  activities.reset();  // Session owns executable metadata through collection.
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session.Serialize()));
+  int count = 0, incomplete = 0;
+  for (const auto& plane : space.planes())
+    for (const auto& line : plane.lines())
+      for (const auto& event : line.events()) {
+        ++count;
+        for (const auto& stat : event.stats())
+          if (plane.stat_metadata().at(stat.metadata_id()).name() == "incomplete")
+            incomplete += stat.int64_value();
+      }
+  EXPECT_EQ(count, 3);
+  EXPECT_EQ(incomplete, 3);
+  ASSERT_EQ(space.warnings_size(), 1);
+  EXPECT_EQ(space.warnings(0), "PJRT simulator dropped 2 events");
+}
+
 TEST(ProfilerTest, HostStagesShareActualThreadAndExecutionCorrelation) {
   ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
   {
@@ -63,6 +99,42 @@ TEST(ProfilerTest, NativeDeviceIdsStayDistinctInStreamingViewer) {
     // Streaming conversion clamps 1 + plane.id() > 500 to device 1.
     EXPECT_LE(1 + space.planes(i).id(), 500);
   }
+}
+
+TEST(ProfilerTest, SparseCorePlanesUseNativeTracksAndDistinctIds) {
+  ProfileSession session;
+  for (int device = 0; device < 8; ++device) {
+    ProfileEvent event;
+    event.name = "model";
+    event.track = "XLA Modules";
+    event.device_id = device;
+    event.simulated = true;
+    session.Begin(event);
+    for (int core = 0; core < 2; ++core) {
+      event.sparse_core = core;
+      for (const char* track : {"Sparse Core Modules", "Sparse Core Ops",
+                                "SparseCore Offload Type"}) {
+        event.track = track;
+        session.Begin(event);
+      }
+    }
+  }
+  session.Stop();
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session.Serialize()));
+  ASSERT_EQ(space.planes_size(), 24);
+  std::set<int64_t> ids;
+  int sparse_planes = 0;
+  for (const auto& plane : space.planes()) {
+    EXPECT_TRUE(ids.insert(plane.id()).second);
+    EXPECT_LE(1 + plane.id(), 500);
+    if (plane.name().find(" SparseCore ") == std::string::npos) continue;
+    ++sparse_planes;
+    std::set<int64_t> lines;
+    for (const auto& line : plane.lines()) lines.insert(line.id());
+    EXPECT_EQ(lines, (std::set<int64_t>{66, 67, 145}));
+  }
+  EXPECT_EQ(sparse_planes, 16);
 }
 
 TEST(ProfilerTest, AsyncLanesDoNotCrossAndHostLagIsNotDeviceWork) {
@@ -118,9 +190,14 @@ TEST(ProfilerTest, ActivityDetailAndCorrelationSurviveExport) {
                           .count();
   ProfileCall call("submit", "model");
   call.activity().SetProgram(42, 1, 1);
-  call.activity().Interval("dma.hbm_to_vmem", now - 1000, now - 500, 0,
-                           "DMA / hbm", "partial bundle cost coverage", 4096,
-                           "module=fusion.1; callsite=0:0x2");
+  auto activities = std::make_shared<std::vector<BundleActivity>>(1);
+  auto& op = activities->front();
+  op.name = "fusion.1";
+  op.track = "XLA Ops";
+  op.end_ns = 500;
+  op.bytes = 4096;
+  op.detail = "module=fusion.1; callsite=0:0x2";
+  call.activity().Activities("model", now - 1000, 0, true, activities);
   StopProfile(session);
   XSpace space;
   ASSERT_TRUE(space.ParseFromString(session->Serialize()));
@@ -129,10 +206,10 @@ TEST(ProfilerTest, ActivityDetailAndCorrelationSurviveExport) {
     for (const auto& line : plane.lines()) {
       for (const auto& event : line.events()) {
         if (plane.event_metadata().at(event.metadata_id()).name() !=
-            "dma.hbm_to_vmem")
+            "fusion.1")
           continue;
         ++transfers;
-        EXPECT_EQ(line.name(), "DMA / hbm");
+        EXPECT_EQ(line.name(), "XLA Ops");
         EXPECT_EQ(event.duration_ps(), 500000);
         bool detail = false, program = false, correlation = false,
              bytes = false;
