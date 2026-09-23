@@ -34,7 +34,7 @@ the previously tested environment.
 ## Run
 
 ```sh
-sim-pjrt run --topology v5e:2x2 --devices 4 --timing-profile example -- \
+spjrt run --topology v5e:2x2 --devices 4 --timing-profile example \
   python -m sgl_jax.launch_server \
   --model-path /path/to/model --tp-size 4 --load-format dummy
 ```
@@ -46,11 +46,19 @@ placeholder outputs do not validate model accuracy.
 
 For a workload managed by uv, run `uv add /absolute/path/to/sim_pjrt-0.1.0-py3-none-linux_x86_64.whl`
 in that workload project, add SGLang-Jax there separately, then use
-`uv run sim-pjrt run ...`. `uvx` uses an isolated tool environment and will not
+`uv run spjrt run ...`. `uvx` uses an isolated tool environment and will not
 automatically see a workload project's SGLang-Jax installation.
 
-`run` accepts any executable after `--`. Bare `python` and `python3` select the
-launcher's interpreter; its environment's executable directory is also prepended
+`spjrt` is an alias for `sim-pjrt`, defaulting to `tpu7x:2x2x1` with 8 devices.
+Both `run` and `compile` accept a script or
+command after tool options, with an optional `--` separator:
+
+```sh
+spjrt run --timing-profile example workload.py --batch-size 4
+```
+
+Arguments after the script or command belong to the workload. `.py` scripts and
+bare `python`/`python3` use the launcher's interpreter; its executable directory is prepended
 to `PATH`. Arguments are passed literally without a shell. Linux `exec` preserves
 exit codes and signals, and worker processes inherit the configured environment.
 Importing `sim_pjrt` alone does not initialize JAX or change the environment.

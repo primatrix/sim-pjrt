@@ -168,7 +168,7 @@ absl::StatusOr<BundleCompilation> CompileTpuBundles(
     const CompilationInput& input, const char* library, const char* topology) {
   ABSL_ASSIGN_OR_RETURN(const PJRT_Api* api, Load(library, topology));
   const char* profile = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
-  if (!profile || !*profile)
+  if (!DumpOnly() && (!profile || !*profile))
     return absl::InvalidArgumentError(
         "libtpu bundle timing requires PJRT_SIM_BUNDLE_PROFILE");
   Artifacts artifacts{api};
@@ -223,6 +223,6 @@ absl::StatusOr<BundleCompilation> CompileTpuBundles(
     return absl::FailedPreconditionError(
         absl::StrCat("libtpu produced no Final LLO bundles in ", dump_dir,
                      "; no assembly or HLO fallback."));
-  return EstimateFinalBundles(fresh);
+  return FinalizeBundles(fresh);
 }
 }  // namespace xla::sim
