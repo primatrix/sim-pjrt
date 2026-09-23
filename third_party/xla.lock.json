@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/openxla/xla.git",
+  "commit": "4426f247713c9f46bad35775cc032265d5795f04",
+  "tree": "6e06da394c8f36c7f5d22ef90df7da956c8bbc5b",
+  "bazel": "8.7.0"
+}

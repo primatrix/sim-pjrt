@@ -1,0 +1,12 @@
+name: Native build and tests
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: [self-hosted, linux, x64, sim-pjrt]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/build.sh --jobs=8
+      - run: ./scripts/bazel test -c opt //xla/pjrt/sim:all --jobs=8 --test_output=errors

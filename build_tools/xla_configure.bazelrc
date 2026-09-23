@@ -1,0 +1,6 @@
+# Portable CPU-only configuration; upstream supplies the hermetic toolchain.
+build --copt=-Wno-sign-compare
+build --copt=-Wno-error=unused-command-line-argument
+build --copt=-Wno-gnu-offsetof-extensions
+build --build_tag_filters=-no_oss,-gpu
+test --test_tag_filters=-no_oss,-gpu

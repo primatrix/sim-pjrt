@@ -1,0 +1,5 @@
+# Install after the framework dependencies in the same environment.
+-c constraints.txt
+xprof==2.23.1
+gcsfs==2026.6.0
+google-api-core==2.28.1

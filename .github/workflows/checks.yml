@@ -1,0 +1,27 @@
+name: Checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: ./scripts/test-python.sh
+  docs:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: xla/pjrt/sim/docs-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: xla/pjrt/sim/docs-site/package-lock.json
+      - run: npm ci
+      - run: npm run build

@@ -1,0 +1,17 @@
+{
+  "name": "TPU7x single chiplet",
+  "source": "https://docs.cloud.google.com/tpu/docs/tpu7x",
+  "hbm_capacity_bytes": 103079215104,
+  "bf16_flops_per_second": 1153500000000000,
+  "hbm_bytes_per_second": 3690000000000,
+  "compute_utilization": 1.0,
+  "bandwidth_utilization": 1.0,
+  "launch_seconds": 0.0,
+  "assumptions": [
+    "Per-chip peak compute and bandwidth are divided equally between two chiplets.",
+    "Logical HLO traffic approximates HBM traffic; fusion and reuse are not modeled.",
+    "Dot FLOPs use a BF16-equivalent rate; dtype-specific rates are not modeled.",
+    "Compute and memory overlap within an execution; executions on one stream are serialized.",
+    "Utilization and launch overhead are uncalibrated scenario parameters."
+  ]
+}
