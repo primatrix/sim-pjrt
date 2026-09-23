@@ -1,11 +1,20 @@
 # sim-pjrt
 
-A PJRT plugin for simulating TPU workloads on CPU.
+An experimental PJRT plugin for TPU workload simulation and performance modeling.
 
-Run JAX and supported SGLang-Jax workloads without TPU hardware or `libtpu`.
-The plugin uses XLA's CPU runtime, models HLO work, and provides profiling,
-offline replay, and optional virtual storage. Floating-point results can be
-placeholders; this is not a TPU compiler or a calibrated latency predictor.
+sim-pjrt provides a CPU-backed environment for analyzing the execution behavior
+and resource demands of TPU-targeted workloads. The current implementation
+integrates with JAX and selected SGLang-Jax workloads through XLA's CPU runtime,
+combining HLO-level cost analysis with execution tracing, profiling, offline
+replay, and optional virtual storage. This execution path requires neither TPU
+hardware nor `libtpu`.
+
+The project is experimental software under active development. Numerical execution may use placeholder
+results, and performance estimates have not been calibrated against TPU hardware.
+Future development may incorporate TPU compiler artifacts,
+including LLO obtained through `libtpu`, to refine workload characterization and
+cost estimates using information from compiled programs. This integration remains
+future work.
 
 ## Build
 
@@ -17,7 +26,8 @@ bazel test //...
 Requires Linux x86-64 and Bazel 8.7.0 (or Bazelisk). Bazel downloads the pinned XLA
 source, Python and C++ toolchains, and dependencies automatically. First builds
 need network access and native build prerequisites; `docker/Dockerfile` lists
-the Ubuntu packages. No TPU, GPU, CUDA, or `libtpu` is required.
+the Ubuntu packages. Building and using the current CPU plugin requires no TPU,
+GPU, CUDA, or `libtpu`. Future compiler integration may have additional requirements.
 
 The plugin is `bazel-bin/pjrt_sim_plugin.so`.
 For offline analysis tools, also build:
@@ -96,4 +106,5 @@ SIM_PYTHON=/path/to/python bash tests/run_tests.sh
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Apache-2.0. See [LICENSE](LICENSE). Third-party dependency provenance is documented
+in [dependencies](docs/dependencies.md).

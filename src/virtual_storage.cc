@@ -1,6 +1,3 @@
-// Copyright 2026 The OpenXLA Authors. All Rights Reserved.
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may obtain a copy at https://www.apache.org/licenses/LICENSE-2.0
 #include "src/virtual_storage.h"
 
 #include <utility>
