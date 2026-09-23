@@ -4,6 +4,12 @@ The simulator was extracted from `Yanko-7/pjrt-sim` revision
 `eb544c640d` and initially used XLA's in-tree build layout. It is now a standalone
 Bazel module; no prepared XLA workspace or parent checkout is needed.
 
+The simulator sources were introduced in project-specific commits beginning with
+`a960b92dc0`; the pinned upstream XLA revision contains no `xla/pjrt/sim` directory.
+The OpenXLA attribution and per-file license headers added with those project
+files have been removed. The project license is maintained in the root `LICENSE`
+file.
+
 `MODULE.bazel` declares the plugin's direct dependencies and pins XLA commit
 `4426f247713c9f46bad35775cc032265d5795f04` with an archive integrity checksum.
 XLA's own module declares its transitive dependencies and toolchains.
@@ -14,7 +20,7 @@ Bazel ignores dependency modules' root-only overrides. Therefore
 XLA revision, and `third_party/xla_patches/` retains their upstream patches.
 Bazel requires these module patches to reside in the root repository; their
 contents are copied unchanged from the pinned upstream source. XLA itself is
-not patched. Existing copyright/license notices are retained.
+not patched. Copyright and license notices in these upstream patches are retained.
 
 The root module also repeats XLA's Python pip repository override and exposes
 the repository names used by XLA's C++ macros. `.bazelrc` carries the CPU build
