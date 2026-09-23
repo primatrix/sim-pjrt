@@ -1,4 +1,4 @@
 .build
-xla/pjrt/sim/docs-site/node_modules
-xla/pjrt/sim/docs-site/dist
-xla/pjrt/sim/docs-site/.astro
+docs/site/node_modules
+docs/site/dist
+docs/site/.astro

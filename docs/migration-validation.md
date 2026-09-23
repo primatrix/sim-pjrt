@@ -1,6 +1,19 @@
 # Validation record
 
-## Current result: standalone Bazel — 2026-09-22
+## Directory organization — 2026-09-22
+
+- Sources, Python tools, tests, configs, runtime requirements, and documentation
+  now live in separate directories. Public build commands remain unchanged;
+  native outputs are directly under `bazel-bin/`.
+- `bazel test //... --jobs=32`: all nine targets passed in **26.839 seconds**,
+  with 19,262 action cache hits and 137 actions. XLA dependencies were reused.
+- JAX smoke tests: all five passed using the relocated plugin.
+- Additional offline tests: 31 of 32 passed. The XProf converter test could not
+  run because host Python lacks `xprof`; install the documented profiling
+  requirements to run it. The full SGLang matrix was not rerun.
+- Documentation production build passed (14 pages).
+
+## Standalone Bazel — 2026-09-22
 
 - Native cold compilation/linking completed with `bazel test //... --jobs=32`:
   **1,518.646 seconds (25 min 19 sec)**, 19,356 actions. Existing downloaded
@@ -37,7 +50,7 @@ Verified locally for the independent repository:
 - Four bootstrap tests cover fetch, dirty-source isolation, repeated preparation,
   relocation, source-tree mismatch, and changed-pin rejection.
 - Nine existing Python scheduling/report tests pass without native dependencies.
-- `scripts/bazel query //xla/pjrt/sim:all` resolves the package targets.
+- `scripts/bazel query //:all` resolves the package targets.
 - Bazel `build --nobuild` successfully analyzes the plugin, native planner, and
   XSpace descriptor with their complete dependency graph. This is analysis only,
   not successful compilation or linking.

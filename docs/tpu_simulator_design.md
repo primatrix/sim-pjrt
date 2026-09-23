@@ -2,7 +2,7 @@
 
 状态：已实现单主机多设备、小模型与 overlap 运行基线；完整性能模拟仍按下述目标扩展。更新日期：2026-09-15。
 
-实现与运行说明见 [sim/README.md](../xla/pjrt/sim/README.md)。当前复用 CPU 运行时，
+实现与运行说明见 [sim/README.md](../docs/plugin-guide.md)。当前复用 CPU 运行时，
 已验证真实 SGLang-Jax 请求与多设备 overlap；现已增加离线事件重放、显式链路通信成本和有限的逐分片工作量推导。
 大张量虚拟存储、完整成本覆盖和驱动框架调度的在线虚拟时钟尚未实现。
 
@@ -104,7 +104,7 @@ PJRT 接口实现与 TPU lowering 兼容性是两个独立问题。
 
 ## 当前实现与验证
 
-- `xla/pjrt/sim/` 提供 PJRT 动态库、HLO 转换、执行记录和参数化报告。
+- `src/` 提供 PJRT 动态库、HLO 转换和执行记录；`python/` 提供参数化报告。
 - 通过 TPU 平台注册进入 JAX 原生 Pallas lowering；C API 适配层复用 CPU 运行时，
   保存真实控制数据和小模型张量，替换浮点 dot 与已识别 Pallas kernel 的数值计算。
 - 占位规则：dot 和非别名 Pallas 输出为零，别名 Pallas 输出保留输入内容。
@@ -125,7 +125,7 @@ PJRT 接口实现与 TPU lowering 兼容性是两个独立问题。
   稳定 buffer ID 串联输入输出及 donation 依赖；现阶段所有事件均为 CPU 观测时间，
   尚未接入模拟时钟。SGLang 的原生 profiler 请求用于采集 scheduler 子进程。
 
-本轮十次迭代的改动和验证记录见 [ITERATIONS.md](../xla/pjrt/sim/ITERATIONS.md)。
+本轮十次迭代的改动和验证记录见 [迭代记录](iterations.md)。
 
 后续按目标架构扩展虚拟存储、kernel 成本模型、统一虚拟时钟和多设备通信成本。
 

@@ -33,5 +33,5 @@ select expressions; they do not enable a GPU build.
 
 Historical framework baseline: SGLang-Jax
 `7ebbbef498b9e484fdc5902986578a3504734e46`, JAX/jaxlib 0.11.1,
-Flax 0.12.9, Python 3.12. `xla/pjrt/sim/constraints.txt` records the tested
+Flax 0.12.9, Python 3.12. `requirements/constraints.txt` records the tested
 framework environment, not a minimal build dependency manifest.
