@@ -1,42 +1,37 @@
-# Source provenance and dependency maintenance
+# XLA dependency and source provenance
 
-Simulator sources were extracted from `Yanko-7/pjrt-sim` commit `eb544c640d63509b0bcb40fb7898a1d330864320`.
-The upstream XLA baseline is `4426f247713c9f46bad35775cc032265d5795f04`.
-At extraction, changes relative to that baseline were confined to
-`xla/pjrt/sim/` and `docs/tpu_simulator_design.md`.
+The simulator was extracted from `Yanko-7/pjrt-sim` revision
+`eb544c640d` and initially used XLA's in-tree build layout. It is now a standalone
+Bazel module; no prepared XLA workspace or parent checkout is needed.
 
-The independent repository starts a new history. Historical design/iteration
-notes describe earlier validation; they are not a claim that those experiments
-were rerun during extraction.
+`MODULE.bazel` declares the plugin's direct dependencies and pins XLA commit
+`4426f247713c9f46bad35775cc032265d5795f04` with an archive integrity checksum.
+XLA's own module declares its transitive dependencies and toolchains.
+`MODULE.bazel.lock` records Bazel's resolved dependency metadata.
 
-## Reproducibility
+Bazel ignores dependency modules' root-only overrides. Therefore
+`third_party/xla_overrides.MODULE.bazel` repeats the overrides required by this
+XLA revision, and `third_party/xla_patches/` retains their upstream patches.
+Bazel requires these module patches to reside in the root repository; their
+contents are copied unchanged from the pinned upstream source. XLA itself is
+not patched. Existing copyright/license notices are retained.
 
-`third_party/xla.lock.json` records the upstream Git URL, full commit ID, Git tree
-ID, and Bazel version. `scripts/prepare.py` fetches that exact commit or exports
-it from a supplied local Git repository, then verifies both identities.
-The upstream `.bazelversion` and root `MODULE.bazel` are retained. XLA supplies
-the compiler/toolchain and transitive dependency pins; this repository supplies
-the CPU flags in `build_tools/xla_configure.bazelrc`.
-
-The generated workspace is local state, ignored by Git. Simulator source is a
-symlink to this checkout, so edits are immediately visible to incremental builds.
-Do not edit downloaded XLA in place. If an upstream patch becomes necessary,
-check it into this repository and apply it deterministically during preparation.
-
-The wrapper deliberately runs Bazel with XLA as the root module. Converting it
-to an external Bzlmod dependency would require reproducing XLA's root-only
-module overrides and validating internal target visibility. A short but incomplete
-`bazel_dep` declaration would not preserve the current build.
+The root module also repeats XLA's Python pip repository override and exposes
+the repository names used by XLA's C++ macros. `.bazelrc` carries the CPU build
+settings needed by those targets. GPU repository mappings exist for upstream
+select expressions; they do not enable a GPU build.
 
 ## Updating
 
-1. Choose an upstream commit and obtain its tree with `git rev-parse COMMIT^{tree}`.
-2. Update `third_party/xla.lock.json` and `.bazelversion` to match that source.
-3. Move `.build/xla` aside, prepare the new dependency, then build and run tests.
-4. Run the JAX/SGLang matrix from the plugin guide, recording Python/package versions.
-5. Review changes to outputs, modeling semantics, and supported PJRT interfaces.
+1. Select an upstream XLA commit and calculate its archive checksum.
+2. Update the archive pin in `MODULE.bazel`, then compare upstream module overrides
+   and refresh the corresponding checked-in patches.
+3. Update `.bazelversion` and `docker/bazel.sha256` if that source needs a new Bazel.
+4. Run `bazel build //:plugin` and `bazel test //...`, then validate the Docker path.
+5. Run the JAX/SGLang matrix before accepting changes to the runtime baseline.
+6. Commit the resulting module lockfile and record the tested environment.
 
-Framework validation baseline: SGLang-Jax
+Historical framework baseline: SGLang-Jax
 `7ebbbef498b9e484fdc5902986578a3504734e46`, JAX/jaxlib 0.11.1,
-Flax 0.12.9, Python 3.12. See `xla/pjrt/sim/constraints.txt` for the
-historically tested environment; it is not a minimal plugin install manifest.
+Flax 0.12.9, Python 3.12. `xla/pjrt/sim/constraints.txt` records the tested
+framework environment, not a minimal build dependency manifest.

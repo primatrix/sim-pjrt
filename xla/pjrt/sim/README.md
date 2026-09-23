@@ -126,13 +126,13 @@ python3.12 -m venv /tmp/pjrt-sim-venv
 From the independent repository root:
 
 ```sh
-./scripts/build.sh --jobs=8
+bazel build //:plugin //:plan_export //:xplane_descriptor --jobs=8
 SIM_PYTHON=/path/to/python bash xla/pjrt/sim/run_tests.sh
 ```
 
-The build wrapper prepares pinned XLA under `.build/xla` and builds only the
+Bazel downloads the pinned XLA source as an external dependency and builds only
 requested targets and their dependencies. See the [repository README](../../../README.md)
-for prerequisites, offline preparation, and fast tests.
+for Docker and native setup. No source-preparation step is required.
 
 The runner builds the plugin and tests HLO substitutions, JAX runtime contracts,
 native/aliased Pallas calls, and real SGLang-Jax requests:
@@ -324,7 +324,7 @@ collects simulator events into standard `*.xplane.pb` files. SGLang-Jax source
 code remains unchanged. In the configured environment, a complete example is:
 
 ```sh
-./scripts/bazel build -c opt //xla/pjrt/sim:pjrt_sim_plugin.so
+bazel build -c opt //xla/pjrt/sim:pjrt_sim_plugin.so
 export PJRT_SIM_DEVICE_COUNT=4
 /tmp/pjrt-sim-venv/bin/python xla/pjrt/sim/sglang_smoke_test.py --tp-size 4 --overlap \
   --profile-dir /tmp/sim-profile
@@ -465,7 +465,7 @@ binding, hardware rates, and communication routes remain outside the plan.
 For older snapshots or a different device count, build the native planner once:
 
 ```sh
-./scripts/bazel build -c opt //xla/pjrt/sim:plan_export
+bazel build -c opt //xla/pjrt/sim:plan_export
 ```
 
 The Python tools locate it under `bazel-bin` automatically. Outside this checkout,
@@ -504,7 +504,7 @@ reserved resources and the event that last blocked it.
 Build the canonical protobuf descriptor once (also included in `run_tests.sh`):
 
 ```sh
-./scripts/bazel build -c opt //xla/pjrt/sim:xplane_descriptor
+bazel build -c opt //xla/pjrt/sim:xplane_descriptor
 ```
 
 Then run replay as above and open its XProf log directory:

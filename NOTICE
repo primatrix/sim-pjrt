@@ -5,5 +5,6 @@ Original source revision is recorded in docs/dependencies.md.
 Existing copyright and license notices are retained.
 
 OpenXLA is a separate build dependency, licensed under Apache-2.0.
-Its sources and transitive dependency licenses remain in the downloaded build
-workspace. Distribution of compiled artifacts must include applicable notices.
+The upstream dependency patches in third_party/xla_patches are copied from the
+pinned OpenXLA source. Other XLA sources and transitive dependency licenses
+remain in Bazel's external repository cache. Distribution of compiled artifacts must include applicable notices.

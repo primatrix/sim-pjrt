@@ -22,42 +22,38 @@ python3.12 -m venv /tmp/pjrt-sim-venv
 
 ## 2. 构建插件
 
-三种方式共用固定的 XLA 版本和同一套构建目标，选择适合当前环境的一种即可。
-
-### 使用仓库提供的 Docker 环境
-
-宿主机只需 Linux x86-64、Bash 和可用的本地 Docker 服务：
+在 Linux x86-64 的宿主机或已配置的容器内，使用 Bazel 8.7.0（或 Bazelisk）：
 
 ```sh
-./scripts/docker.sh ./scripts/build.sh --jobs=8
+bazel build //:plugin
+bazel test //...
 ```
 
-脚本构建固定基础镜像和 Bazel 版本的开发镜像，以当前用户的 UID/GID 运行。
-XLA 源码和编译缓存保留在 `.build/` 下，容器退出后不会丢失。
+Bazel 自动下载固定版本的 XLA 和工具链，无需准备脚本。
+生成文件为 `bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so`。
 
-### 使用已有容器
-
-在已配置好的容器内运行 `./scripts/build.sh --jobs=8`。例如：
+如果使用仓库提供的 Docker 环境，从仓库根目录运行：
 
 ```sh
-docker exec -w /workspace/sim-pjrt xla ./scripts/build.sh --jobs=8
+docker compose run --build --rm bazel build //:plugin
 ```
 
-将 `xla` 和 `/workspace/sim-pjrt` 替换为实际容器名和挂载路径。
-Git、Python、Bazel 等依赖只需在容器中准备。
-
-### 直接在宿主机构建
-
-需要 Linux x86-64、Git、Python 3.12+、Bazel 8.7.0（或 Bazelisk）和基础 C++ 构建工具：
+镜像默认使用 UID/GID 1000；与宿主机用户不一致时，先在当前终端设置：
 
 ```sh
-./scripts/build.sh --jobs=8
+export BUILD_UID=$(id -u)
+export BUILD_GID=$(id -g)
 ```
 
-三种方式均生成 `bazel-bin/xla/pjrt/sim/pjrt_sim_plugin.so`。
-首次自动准备固定版本的 XLA，仅构建插件、原生规划工具、描述文件及其传递依赖。
-无需 TPU、GPU、CUDA 或 `libtpu`。同一仓库在不同构建环境间应顺序使用，
-需要并发构建时使用不同 checkout。
+Docker 只是构建环境，缓存保留在 `.build/docker-cache`。
+离线分析需要的原生工具可以单独构建：
+
+```sh
+bazel build //:plan_export //:xplane_descriptor
+```
+
+无需 TPU、GPU、CUDA 或 `libtpu`。首次构建需要下载和编译依赖。
+同一 checkout 的宿主机和 Docker 构建应顺序运行。
 
 ## 3. 选择模拟后端
 

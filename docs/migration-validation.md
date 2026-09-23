@@ -1,4 +1,32 @@
-# Extraction validation — 2026-09-22
+# Validation record
+
+## Current result: standalone Bazel — 2026-09-22
+
+- Native cold compilation/linking completed with `bazel test //... --jobs=32`:
+  **1,518.646 seconds (25 min 19 sec)**, 19,356 actions. Existing downloaded
+  dependency archives were cached; this is not an uncached network benchmark.
+  The command builds the plugin, tools, and tests, not only the plugin.
+- That first run passed all six C++ test targets and exposed three Python import
+  failures. After declaring their runfiles import path, the final full suite
+  passed **all nine targets** (35 C++ cases plus nine Python cases). The cached
+  rerun took **1.801 seconds**; native results were reused, Python tests reran.
+- The newly linked plugin passed all **five JAX smoke tests** on the host with
+  JAX/jaxlib 0.11.1, including device discovery, transfers/control values,
+  donation, memory accounting, and simulated matmul.
+- Docker Compose: three Python targets pass; complete plugin/planner/descriptor
+  dependency analysis passes in a separate checkout. Native compilation was
+  validated on the host, not repeated as another Docker cold build.
+- Documentation production build passes (14 pages). The full SGLang integration
+  matrix has not been rerun during this build-system migration.
+
+The sections below preserve earlier migration checks and describe superseded
+build wrappers where explicitly noted.
+
+## Historical extraction — 2026-09-22
+
+The preparation scripts described in this section were subsequently removed in
+favor of the standalone Bazel module. These are historical results, not current
+build instructions.
 
 Verified locally for the independent repository:
 
@@ -37,3 +65,23 @@ in the plugin guide and iteration notes predates this extraction.
 - Native cold compilation/linking and the full framework matrix remain untested
   for this independent checkout. The Docker image is a build environment, not a
   precompiled plugin or a preconfigured SGLang runtime.
+
+## Standalone Bazel migration — 2026-09-22
+
+The repository is now the Bazel root module. XLA is an integrity-pinned external
+archive; preparation/build wrapper scripts and their bootstrap tests are removed.
+Eleven required upstream dependency patches are copied unchanged into the root
+module, as required by Bazel's override rules. XLA itself is unmodified.
+
+Verified for the new layout:
+
+- Native and Docker Compose dependency analysis succeeds for plugin, planner,
+  and descriptor targets.
+- Compose executes the three Bazel Python test targets successfully (nine cases).
+  Their import paths are explicitly declared for Bazel runfiles.
+- The Chinese documentation site builds all 14 pages.
+- Compose/workflow configuration parses, and patch contents match pinned upstream.
+
+Docker validation used a separate checkout and a populated repository download
+cache. This tests the new module/Compose path without touching the native build's
+artifact symlinks. Download-cache reuse is distinct from compiled-action reuse.

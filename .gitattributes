@@ -1,0 +1,2 @@
+# Preserve upstream patch context and mail trailers byte-for-byte.
+third_party/xla_patches/**/*.patch -whitespace

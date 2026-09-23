@@ -1,0 +1,20 @@
+services:
+  bazel:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_UID: ${BUILD_UID:-1000}
+        BUILD_GID: ${BUILD_GID:-1000}
+    init: true
+    platform: linux/amd64
+    working_dir: ${PWD}
+    volumes:
+      # Equal paths keep Bazel artifact symlinks usable outside the container.
+      - type: bind
+        source: .
+        target: ${PWD}
+    environment:
+      XDG_CACHE_HOME: ${PWD}/.build/docker-cache
+    entrypoint: [bazel, --batch, '--output_user_root=${PWD}/.build/docker-cache/bazel']
+    command: [build, '//:plugin']

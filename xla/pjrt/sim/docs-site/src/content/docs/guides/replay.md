@@ -26,7 +26,7 @@ ls "$sim_capture"
 旧快照或更改设备数时，需要原生计划工具：
 
 ```sh
-./scripts/bazel build -c opt //xla/pjrt/sim:plan_export
+bazel build -c opt //xla/pjrt/sim:plan_export
 ```
 
 Python 默认从仓库的 `bazel-bin` 查找该工具；在其他位置运行时，设置 `PJRT_SIM_PLAN_EXPORT=/path/to/plan_export`。也可以先导出新计划，再把快照复制到没有原生工具的机器：
@@ -40,7 +40,7 @@ bazel-bin/xla/pjrt/sim/plan_export 4 < original.program.json > replanned.program
 构建原生 XSpace 导出所用的 protobuf descriptor：
 
 ```sh
-./scripts/bazel build -c opt //xla/pjrt/sim:xplane_descriptor
+bazel build -c opt //xla/pjrt/sim:xplane_descriptor
 ```
 
 将下面的路径换成同一次运行中的 profile 和 JSONL：

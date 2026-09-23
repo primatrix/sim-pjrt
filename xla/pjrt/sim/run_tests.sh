@@ -9,7 +9,7 @@ sim_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 cd "$sim_root"
 mkdir -p "$sim_results"
 
-"$sim_root/scripts/bazel" test -c opt //xla/pjrt/sim:hlo_model_test \
+bazel test -c opt //xla/pjrt/sim:hlo_model_test \
   //xla/pjrt/sim:profiler_test //xla/pjrt/sim:instrumentation_test \
   //xla/pjrt/sim:runtime_test //xla/pjrt/sim:execution_plan_test \
   //xla/pjrt/sim:virtual_storage_test \
