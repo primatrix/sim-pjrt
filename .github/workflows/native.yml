@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.ref_type != 'tag'
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
@@ -22,17 +23,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Check release version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          python - <<'PY'
-          import os, tomllib
-          from pathlib import Path
-          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
-          tag = os.environ['GITHUB_REF_NAME']
-          if tag != f'v{version}':
-              raise SystemExit(f'Tag {tag} does not match package version {version}')
-          PY
       - name: Make room for XLA
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
@@ -78,15 +68,56 @@ jobs:
 
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs: build
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          name: manylinux-2-34-x86_64-wheel
-          path: dist
+          python-version: '3.12'
+      - name: Check release version
+        run: |
+          python - <<'PY'
+          import os, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+          tag = os.environ['GITHUB_REF_NAME']
+          if tag != f'v{version}':
+              raise SystemExit(f'Tag {tag} does not match package version {version}')
+          PY
+      - name: Download validated main build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          commit=$(git rev-parse HEAD)
+          run_id=$(gh run list --workflow native.yml --branch main \
+            --commit "$commit" --status success --limit 1 \
+            --json databaseId --jq '.[0].databaseId // empty')
+          if [[ -z "$run_id" ]]; then
+            echo "::error::No successful main build for $commit. Wait for that build to pass, then rerun this release."
+            exit 1
+          fi
+          gh run download "$run_id" --name manylinux-2-34-x86_64-wheel --dir dist
+      - name: Verify release wheel
+        run: |
+          (cd dist && sha256sum --check --strict SHA256SUMS)
+          python - <<'PYCODE'
+          import tomllib, zipfile
+          from email.parser import Parser
+          from pathlib import Path
+          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+          wheels = list(Path('dist').glob('*.whl'))
+          if len(wheels) != 1:
+              raise SystemExit('Expected exactly one release wheel')
+          with zipfile.ZipFile(wheels[0]) as wheel:
+              metadata, = (name for name in wheel.namelist() if name.endswith('.dist-info/METADATA'))
+              package = Parser().parsestr(wheel.read(metadata).decode())
+          if package['Name'] != 'sim-pjrt' or package['Version'] != version:
+              raise SystemExit('Wheel metadata does not match the release package/version')
+          PYCODE
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
