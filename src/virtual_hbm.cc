@@ -304,6 +304,18 @@ private:
 };
 } // namespace
 
+absl::StatusOr<PjRtRawBufferRef> VirtualRawAlias(
+    PjRtBuffer* buffer, std::shared_ptr<SimRuntime> runtime, Completion ready) {
+  const auto& shape = buffer->on_device_shape();
+  if (!shape.IsArray() || shape.is_dynamic())
+    return absl::UnimplementedError("RawBuffer requires a static array");
+  ABSL_ASSIGN_OR_RETURN(auto bytes, buffer->GetOnDeviceSizeInBytes());
+  if (auto* virtual_buffer = dynamic_cast<VirtualBuffer*>(buffer))
+    return MakeRawAlias(virtual_buffer->storage(), bytes, HasPlaceholder(shape),
+                        std::move(runtime), std::move(ready));
+  return MakeRawAlias(buffer, bytes, false, std::move(runtime), std::move(ready));
+}
+
 absl::Status VirtualizeModule(HloModule &module) {
   for (HloComputation *computation : module.computations()) {
     for (HloInstruction *instruction : computation->instructions()) {

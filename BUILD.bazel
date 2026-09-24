@@ -43,6 +43,7 @@ xla_cc_test(
         ":virtual_hbm",
         ":runtime",
         ":profiler",
+        "@xla//xla/pjrt/c:pjrt_c_api_raw_buffer_internal",
         "@xla//xla/pjrt/c:pjrt_c_api_cpu_internal",
         "@xla//xla/pjrt/c:pjrt_c_api_helpers",
         "@xla//xla/pjrt/c:pjrt_c_api_status_utils",
@@ -67,6 +68,7 @@ xla_cc_binary(
         ":runtime",
         ":profiler",
         "@xla//xla/backends/profiler/plugin:profiler_error",
+        "@xla//xla/pjrt/c:pjrt_c_api_raw_buffer_internal",
         "@xla//xla/pjrt/c:pjrt_c_api_cpu_internal",
         "@xla//xla/pjrt/c:pjrt_c_api_helpers",
         "@xla//xla/pjrt/c:pjrt_c_api_hdrs",
@@ -120,6 +122,7 @@ cc_library(
     srcs = ["src/virtual_hbm.cc"],
     hdrs = ["src/virtual_hbm.h"],
     deps = [
+        ":raw_buffer",
         ":hlo_utils",
         "@xla//xla:literal_util",
         "@xla//xla:shape_util",
@@ -276,5 +279,37 @@ xla_cc_test(
         "@com_google_absl//absl/status",
         "@tsl//tsl/platform:status_matchers",
         "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "raw_buffer",
+    srcs = ["src/raw_buffer.cc"],
+    hdrs = ["src/raw_buffer.h"],
+    deps = [
+        ":runtime",
+        ":profiler",
+        "@xla//xla:future",
+        "@xla//xla/pjrt:pjrt_client",
+        "@xla//xla/pjrt:raw_buffer",
+        "@xla//xla/pjrt:common_pjrt_client",
+        "@xla//xla/pjrt:device_event",
+        "@xla//xla/pjrt/cpu:abstract_cpu_buffer",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/status:status_macros",
+    ],
+)
+
+xla_cc_test(
+    name = "raw_buffer_test",
+    srcs = ["tests/cpp/raw_buffer_test.cc"],
+    deps = [
+        ":raw_buffer",
+        "@xla//xla:literal_util",
+        "@xla//xla/pjrt/plugin/xla_cpu:cpu_client_options",
+        "@xla//xla/pjrt/plugin/xla_cpu:xla_cpu_pjrt_client",
+        "@com_google_googletest//:gtest_main",
+        "@tsl//tsl/platform:status_matchers",
     ],
 )

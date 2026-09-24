@@ -32,6 +32,10 @@ D2H 时才创建所需尺寸的主机目标，复制控制值或填充浮点零�
 
 ## API 边界
 
+PJRT RawBuffer 扩展支持 Raiden 的缓冲区注册、逻辑尺寸查询和按字节偏移的 H2D / D2H，并通过完成事件报告传输状态。控制值读写 CPU shadow storage；浮点 payload 写入时丢弃、读出时填零。RawBuffer 别名保留底层存储，但调用方必须等待传输完成，再执行、读取或 donation 同一缓冲区，并保持主机目标和源内存有效直到完成。
+
+Raiden 可经主机 staging 传输；主机 DMA 注册为无操作，不锁页。直接 RawBuffer 设备间复制尚不支持；网络部分使用真实主机传输，不代表 TPU 网络性能。
+
 设备缓冲区支持逻辑尺寸查询、就绪事件、普通执行 donation 和本地设备复制。原始设备指针不可导出。当前不支持动态 shape、HLO tuple 参数、嵌套 tuple 输出、远程 buffer copy 和 buffer bitcast。
 
 整数控制结果可以保留；从浮点占位数据派生的比较、采样或专家路由没有真实数值意义。编译内存分析不能用底层 CPU backing 的大小代替原始 TPU 工作负载。
