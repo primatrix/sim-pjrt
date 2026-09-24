@@ -185,6 +185,9 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
   const int64_t start =
       Reserve(release + config_.launch_ns, duration_ns, resources);
   const int64_t end = start + duration_ns;
+  // All devices share the same input dependencies. Join them once, not once
+  // per device (large models have thousands of parameter buffers).
+  const auto inputs_ready = JoinFutures(predecessors);
   std::vector<Completion> result;
   for (int64_t device : devices) {
     profile.Interval("device launch", Epoch(release),
@@ -193,9 +196,7 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
                      partial ? "partial bundle cost coverage" : "");
     profile.Activities(name, Epoch(start), device, partial, activities);
     Completion completion = CompleteAt(end);
-    auto waits = predecessors;
-    waits.push_back(completion.future);
-    completion.future = JoinFutures(waits);
+    completion.future = JoinFutures({inputs_ready, completion.future});
     execution_tail_[device] = completion;
     result.push_back(std::move(completion));
   }

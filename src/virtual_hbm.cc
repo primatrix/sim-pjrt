@@ -4,23 +4,36 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status_macros.h"
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/blocking_counter.h"
 #include "src/hlo_utils.h"
 #include "tsl/platform/env.h"
 #include "xla/hlo/builder/xla_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
+#include "xla/hlo/transforms/simplifiers/hlo_dce.h"
 #include "xla/layout_util.h"
 #include "xla/literal_util.h"
 #include "xla/pjrt/c/pjrt_c_api_helpers.h"
 #include "xla/pjrt/c/pjrt_c_api_status_utils.h"
 #include "xla/pjrt/c/pjrt_c_api_wrapper_impl.h"
+#include "xla/pjrt/common_pjrt_client.h"
+#include "xla/pjrt/host_callback.h"
 #include "xla/primitive_util.h"
 #include "xla/service/computation_layout.h"
 #include "xla/shape_util.h"
 
 namespace xla::sim {
 namespace {
+ExecuteOptions OutputExecutionOptions(ExecuteOptions options) {
+  // Placeholder programs look cheap to the CPU backend, which would otherwise
+  // run them inline even with an asynchronous client.
+  if (options.execution_mode == ExecuteOptions::ExecutionMode::kDefault)
+    options.execution_mode = ExecuteOptions::ExecutionMode::kAsynchronous;
+  return options;
+}
+
 void ZeroWhenReady(Future<> ready, void* destination, int64_t size,
                    Promise<> promise) {
   ready.OnReady([destination, size, promise = std::move(promise)](
@@ -75,6 +88,17 @@ absl::Status NoData() {
   return absl::FailedPreconditionError(
       "Virtual HBM has no materialized data on device; pointer export is "
       "unavailable; use D2H for simulated data");
+}
+
+bool CompatibleBufferShape(const Shape& actual, const Shape& expected) {
+  // Static arrays are the common Virtual HBM case. Avoid the general recursive
+  // comparator while keeping its fallback for dynamic and non-array shapes.
+  if (actual.IsArrayExcludingBuffer() && expected.IsArrayExcludingBuffer() &&
+      actual.is_static() &&
+      expected.is_static())
+    return actual.element_type() == expected.element_type() &&
+           actual.dimensions() == expected.dimensions();
+  return ShapeUtil::Compatible(actual, expected);
 }
 
 class VirtualBuffer final : public PjRtBuffer {
@@ -187,9 +211,10 @@ private:
 class LogicalExecutable final : public PjRtExecutable {
 public:
   LogicalExecutable(PjRtLoadedExecutable *physical,
-                    std::shared_ptr<HloModule> logical, CompileOptions options)
+                    std::shared_ptr<HloModule> logical, CompileOptions options,
+                    std::vector<int64_t> parameters)
       : physical_(physical), logical_(std::move(logical)),
-        options_(std::move(options)) {}
+        options_(std::move(options)), parameters_(std::move(parameters)) {}
   int num_replicas() const override { return physical_->num_replicas(); }
   int num_partitions() const override { return physical_->num_partitions(); }
   int64_t SizeOfGeneratedCodeInBytes() const override {
@@ -202,7 +227,15 @@ public:
   }
   absl::StatusOr<std::vector<std::vector<absl::string_view>>>
   GetParameterMemoryKinds() const override {
-    return physical_->GetParameterMemoryKinds();
+    ABSL_ASSIGN_OR_RETURN(auto kinds, physical_->GetParameterMemoryKinds());
+    ABSL_ASSIGN_OR_RETURN(
+        auto memory,
+        physical_->addressable_devices().front()->default_memory_space());
+    std::vector<absl::string_view> logical_kinds(
+        logical_->entry_computation()->num_parameters(), memory->kind());
+    for (int i = 0; i < parameters_.size(); ++i)
+      logical_kinds[parameters_[i]] = kinds.front()[i];
+    return std::vector<std::vector<absl::string_view>>{std::move(logical_kinds)};
   }
   absl::StatusOr<std::vector<std::vector<absl::string_view>>>
   GetOutputMemoryKinds() const override {
@@ -216,15 +249,18 @@ private:
   PjRtLoadedExecutable *physical_;
   std::shared_ptr<HloModule> logical_;
   CompileOptions options_;
+  std::vector<int64_t> parameters_;
 };
 
 class VirtualExecutable final : public PjRtLoadedExecutable {
 public:
   VirtualExecutable(std::unique_ptr<PjRtLoadedExecutable> physical,
-                    std::shared_ptr<HloModule> logical, CompileOptions options)
+                    std::shared_ptr<HloModule> logical, CompileOptions options,
+                    std::vector<int64_t> parameters)
       : physical_(std::move(physical)),
-        metadata_(physical_.get(), logical, std::move(options)),
-        signature_(logical->entry_computation_layout().ComputeProgramShape()) {}
+        metadata_(physical_.get(), logical, std::move(options), parameters),
+        signature_(logical->entry_computation_layout().ComputeProgramShape()),
+        parameters_(std::move(parameters)) {}
   PjRtExecutable *GetExecutable() const override { return &metadata_; }
   PjRtClient *client() const override { return physical_->client(); }
   const DeviceAssignment &device_assignment() const override {
@@ -243,13 +279,36 @@ public:
   Execute(absl::Span<const std::vector<PjRtBuffer *>> arguments,
           const ExecuteOptions &options,
           std::optional<std::vector<Future<>>> &futures) const override {
-    std::vector<std::vector<PjRtBuffer *>> unwrapped;
-    for (const auto &device_args : arguments) {
-      ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(device_args));
-      unwrapped.push_back(std::move(args));
+    std::vector<std::vector<PjRtBuffer *>> unwrapped(arguments.size());
+    auto* common = dynamic_cast<CommonPjRtClient*>(client());
+    // Amortize pool dispatch for large signatures. Reuse the backend's workers;
+    // never create per-execution threads or schedule recursively in a callback.
+    constexpr int kParallelPrepareMinArgs = 256;
+    if (arguments.size() > 1 &&
+        signature_.parameters_size() >= kParallelPrepareMinArgs && common &&
+        common->async_work_runner() && !ThisThreadIsInsideHostCallback()) {
+      absl::BlockingCounter done(arguments.size());
+      std::vector<absl::Status> status(arguments.size());
+      for (size_t i = 0; i < arguments.size(); ++i) {
+        common->async_work_runner()->Execute([&, i] {
+          auto args = Unwrap(arguments[i]);
+          if (args.ok()) unwrapped[i] = std::move(*args);
+          else status[i] = args.status();
+          done.DecrementCount();
+        });
+      }
+      // Wait for input validation, not device execution. All workers must finish
+      // before returning an error or releasing the borrowed argument pointers.
+      done.Wait();
+      for (const auto& result : status) ABSL_RETURN_IF_ERROR(result);
+    } else {
+      for (size_t i = 0; i < arguments.size(); ++i) {
+        ABSL_ASSIGN_OR_RETURN(unwrapped[i], Unwrap(arguments[i]));
+      }
     }
-    ABSL_ASSIGN_OR_RETURN(auto outputs,
-                          physical_->Execute(unwrapped, options, futures));
+    ABSL_ASSIGN_OR_RETURN(
+        auto outputs,
+        physical_->Execute(unwrapped, PhysicalOptions(options), futures));
     for (auto &device_outputs : outputs)
       Wrap(device_outputs);
     return outputs;
@@ -261,7 +320,8 @@ public:
     ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(arguments));
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
-        physical_->ExecuteSharded(args, device, options, future, fill));
+        physical_->ExecuteSharded(args, device, PhysicalOptions(options),
+                                  future, fill));
     Wrap(outputs);
     return outputs;
   }
@@ -272,12 +332,21 @@ public:
     ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(arguments));
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
-        physical_->ExecutePortable(args, device, options, future, fill));
+        physical_->ExecutePortable(args, device, PhysicalOptions(options),
+                                   future, fill));
     Wrap(outputs);
     return outputs;
   }
 
 private:
+  ExecuteOptions PhysicalOptions(const ExecuteOptions& options) const {
+    auto physical = OutputExecutionOptions(options);
+    physical.non_donatable_input_indices.clear();
+    for (int i = 0; i < parameters_.size(); ++i)
+      if (options.non_donatable_input_indices.contains(parameters_[i]))
+        physical.non_donatable_input_indices.insert(i);
+    return physical;
+  }
   absl::StatusOr<std::vector<PjRtBuffer *>>
   Unwrap(absl::Span<PjRtBuffer *const> arguments) const {
     if (arguments.size() != signature_.parameters_size()) {
@@ -285,16 +354,20 @@ private:
           "Virtual executable argument count mismatch");
     }
     std::vector<PjRtBuffer *> result;
+    result.reserve(parameters_.size());
     for (int i = 0; i < arguments.size(); ++i) {
       PjRtBuffer *buffer = arguments[i];
       const Shape &expected = signature_.parameters(i);
       auto *virtual_buffer = dynamic_cast<VirtualBuffer *>(buffer);
-      if (!ShapeUtil::Compatible(buffer->on_device_shape(), expected) ||
-          !virtual_buffer) {
+      if (!CompatibleBufferShape(buffer->on_device_shape(), expected) ||
+          !virtual_buffer || virtual_buffer->IsDeleted()) {
         return absl::InvalidArgumentError(
             "Virtual executable argument storage or shape mismatch");
       }
-      result.push_back(virtual_buffer->storage());
+    }
+    for (int64_t parameter : parameters_) {
+      result.push_back(
+          static_cast<VirtualBuffer*>(arguments[parameter])->storage());
     }
     return result;
   }
@@ -310,7 +383,67 @@ private:
   std::unique_ptr<PjRtLoadedExecutable> physical_;
   mutable LogicalExecutable metadata_;
   ProgramShape signature_;
+  std::vector<int64_t> parameters_;
 };
+// Keep the public signature intact; only the CPU placeholder program drops
+// dead inputs. Aliases, donors and nondefault memory layouts retain their inputs.
+absl::StatusOr<std::vector<int64_t>> PruneCpuParameters(
+    HloModule& module, CompileOptions& options) {
+  ABSL_RETURN_IF_ERROR(HloDCE().Run(&module).status());
+  auto* entry = module.entry_computation();
+  std::vector<int64_t> parameters;
+  // RemoveParameter renumbers later parameters without moving control edges.
+  for (auto* parameter : entry->parameter_instructions()) {
+    if (parameter->HasControlDependencies()) {
+      for (int64_t i = 0; i < entry->num_parameters(); ++i)
+        parameters.push_back(i);
+      return parameters;
+    }
+  }
+  std::vector<int64_t> remap(entry->num_parameters(), -1);
+  for (auto* parameter : entry->parameter_instructions()) {
+    const int64_t i = parameter->parameter_number();
+    const auto& shape = parameter->shape();
+    if (!parameter->IsDead() ||
+        module.input_output_alias_config().ParameterHasAlias(i, {}) ||
+        module.buffer_donor_config().ParameterIsBufferDonor(i, {}) ||
+        (shape.has_layout() && shape.layout().memory_space() != 0)) {
+      remap[i] = parameters.size();
+      parameters.push_back(i);
+    }
+  }
+  HloInputOutputAliasConfig aliases(entry->root_instruction()->shape());
+  ABSL_RETURN_IF_ERROR(module.input_output_alias_config().ForEachAliasWithStatus(
+      [&](const ShapeIndex& output, const HloInputOutputAliasConfig::Alias& alias) {
+        return aliases.SetUpAlias(output, remap[alias.parameter_number],
+                                  alias.parameter_index, alias.kind);
+      }));
+  HloBufferDonorConfig donors;
+  for (const auto& donor : module.buffer_donor_config().buffer_donor())
+    ABSL_RETURN_IF_ERROR(donors.AddBufferDonor(remap[donor.param_number],
+                                             donor.param_index));
+  for (int64_t i = remap.size(); i-- > 0;)
+    if (remap[i] < 0) ABSL_RETURN_IF_ERROR(entry->RemoveParameter(i));
+  module.input_output_alias_config() = std::move(aliases);
+  module.buffer_donor_config() = std::move(donors);
+  *module.mutable_entry_computation_layout() =
+      ComputationLayout(entry->ComputeProgramShape());
+  if (options.argument_layouts) {
+    std::vector<Shape> layouts;
+    for (int64_t i : parameters) layouts.push_back((*options.argument_layouts)[i]);
+    options.argument_layouts = std::move(layouts);
+  }
+  auto& build = options.executable_build_options;
+  const auto propagation = build.allow_spmd_sharding_propagation_to_parameters();
+  if (propagation.size() > 1) {
+    if (propagation.size() != remap.size())
+      return absl::InvalidArgumentError("Parameter propagation count mismatch");
+    absl::InlinedVector<bool, 1> selected;
+    for (int64_t i : parameters) selected.push_back(propagation[i]);
+    build.set_allow_spmd_sharding_propagation_to_parameters(selected);
+  }
+  return parameters;
+}
 } // namespace
 
 absl::StatusOr<PjRtRawBufferRef> VirtualRawAlias(
@@ -443,11 +576,13 @@ CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,
   if (const Shape *layout = options.executable_build_options.result_layout()) {
     options.executable_build_options.set_result_layout(PhysicalShape(*layout));
   }
+  ABSL_ASSIGN_OR_RETURN(auto parameters, PruneCpuParameters(*module, options));
   ABSL_ASSIGN_OR_RETURN(
       auto physical, client->CompileAndLoad(XlaComputation(module->ToProto()),
                                             std::move(options)));
   return std::make_unique<VirtualExecutable>(
-      std::move(physical), std::move(logical), std::move(logical_options));
+      std::move(physical), std::move(logical), std::move(logical_options),
+      std::move(parameters));
 }
 
 PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args) {

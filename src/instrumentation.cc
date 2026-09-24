@@ -1,5 +1,6 @@
 #include "src/instrumentation.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -8,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "src/profiler.h"
 #include "src/virtual_hbm.h"
@@ -21,10 +23,15 @@
 namespace xla::sim {
 namespace {
 
+struct BufferState {
+  uint64_t id;
+  Completion completion;
+  bool ready = false;
+};
+
 struct Registry {
   std::mutex mutex;
-  std::unordered_map<PJRT_Buffer*, uint64_t> buffers;
-  std::unordered_map<PJRT_Buffer*, Completion> completions;
+  absl::flat_hash_map<PJRT_Buffer*, BufferState> buffers;
   std::unordered_map<PJRT_Client*, std::shared_ptr<SimRuntime>> runtimes;
   uint64_t next_buffer_id = 1;
   std::unordered_map<PJRT_LoadedExecutable*, ExecutableWork> work;
@@ -48,10 +55,14 @@ Registry& State() {
   return registry;
 }
 
-uint64_t TrackLocked(PJRT_Buffer* buffer) {
-  auto [it, inserted] = State().buffers.emplace(buffer, State().next_buffer_id);
-  if (inserted) ++State().next_buffer_id;
+BufferState& BufferLocked(PJRT_Buffer* buffer) {
+  auto [it, inserted] = State().buffers.try_emplace(buffer);
+  if (inserted) it->second.id = State().next_buffer_id++;
   return it->second;
+}
+
+uint64_t TrackLocked(PJRT_Buffer* buffer) {
+  return BufferLocked(buffer).id;
 }
 
 uint64_t Track(PJRT_Buffer* buffer) {
@@ -66,13 +77,19 @@ std::shared_ptr<SimRuntime> Runtime(PJRT_Client* client) {
 
 Completion Producer(PJRT_Buffer* buffer) {
   std::lock_guard<std::mutex> lock(State().mutex);
-  auto it = State().completions.find(buffer);
-  return it == State().completions.end() ? Completion{} : it->second;
+  auto it = State().buffers.find(buffer);
+  return it == State().buffers.end() ? Completion{} : it->second.completion;
+}
+
+void SetProducerLocked(PJRT_Buffer* buffer, Completion completion) {
+  auto& tracked = BufferLocked(buffer);
+  tracked.completion = std::move(completion);
+  tracked.ready = false;
 }
 
 void SetProducer(PJRT_Buffer* buffer, Completion completion) {
   std::lock_guard<std::mutex> lock(State().mutex);
-  State().completions[buffer] = std::move(completion);
+  SetProducerLocked(buffer, std::move(completion));
 }
 
 Future<> BufferReady(PJRT_Buffer* buffer) {
@@ -90,11 +107,6 @@ void TransferBuffer(PJRT_Buffer* buffer, int64_t source,
   // Store the modeled future; callers join CPU readiness only when data is
   // observed. Functional execution can run ahead without changing the model.
   SetProducer(buffer, std::move(completion));
-}
-
-void AppendId(std::string& ids, uint64_t id) {
-  if (!ids.empty()) ids += ',';
-  ids += std::to_string(id);
 }
 
 void ProfileBuffer(const ProfileActivity& activity, PJRT_Buffer* buffer,
@@ -125,7 +137,7 @@ PJRT_Error* FromHost(PJRT_Client_BufferFromHostBuffer_Args* args) {
     }
     ProfileBuffer(profile.activity(), args->buffer, "H2D submit-to-ready");
     if (profile.activity())
-      profile.activity().SetLinks({}, std::to_string(Track(args->buffer)));
+      profile.activity().SetLinks({}, {Track(args->buffer)});
   }
   if (error)
     profile.activity().Finish(
@@ -142,8 +154,8 @@ PJRT_Error* Copy(PJRT_Buffer_CopyToMemory_Args* args) {
                    Producer(args->buffer), profile.activity());
     ProfileBuffer(profile.activity(), args->dst_buffer, "Copy submit-to-ready");
     if (profile.activity())
-      profile.activity().SetLinks(std::to_string(Track(args->buffer)),
-                                  std::to_string(Track(args->dst_buffer)));
+      profile.activity().SetLinks({Track(args->buffer)},
+                                  {Track(args->dst_buffer)});
   }
   if (error)
     profile.activity().Finish(
@@ -160,8 +172,8 @@ PJRT_Error* Bitcast(PJRT_Buffer_Bitcast_Args* args) {
     SetProducer(args->out_buffer, Producer(args->buffer));
     ProfileBuffer(profile.activity(), args->out_buffer);
     if (profile.activity())
-      profile.activity().SetLinks(std::to_string(Track(args->buffer)),
-                                  std::to_string(Track(args->out_buffer)));
+      profile.activity().SetLinks({Track(args->buffer)},
+                                  {Track(args->out_buffer)});
   }
   if (error)
     profile.activity().Finish(
@@ -176,8 +188,8 @@ PJRT_Error* CopyToDevice(PJRT_Buffer_CopyToDevice_Args* args) {
     TransferBuffer(args->dst_buffer, args->buffer->buffer->device()->id(),
                    Producer(args->buffer), profile.activity());
     ProfileBuffer(profile.activity(), args->dst_buffer, "Copy submit-to-ready");
-    profile.activity().SetLinks(std::to_string(Track(args->buffer)),
-                                std::to_string(Track(args->dst_buffer)));
+    profile.activity().SetLinks({Track(args->buffer)},
+                                {Track(args->dst_buffer)});
   }
   return error;
 }
@@ -283,7 +295,6 @@ PJRT_Error* DestroyBuffer(PJRT_Buffer_Destroy_Args* args) {
   {
     std::lock_guard<std::mutex> lock(State().mutex);
     State().buffers.erase(args->buffer);
-    State().completions.erase(args->buffer);
   }
   return pjrt::PJRT_Buffer_Destroy(args);
 }
@@ -296,7 +307,7 @@ PJRT_Error* MemoryStats(PJRT_Device_MemoryStats_Args* args) {
   args->bytes_limit = int64_t{96} << 30;
   args->bytes_limit_is_set = true;
   std::lock_guard<std::mutex> lock(State().mutex);
-  for (const auto& [buffer, id] : State().buffers) {
+  for (const auto& [buffer, state] : State().buffers) {
     if (buffer->buffer->device() == args->device->device &&
         !buffer->buffer->IsDeleted()) {
       PJRT_ASSIGN_OR_RETURN(size_t bytes,
@@ -363,17 +374,32 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     work.bundle_timing = std::move(selected);
   }
   std::vector<Completion> dependencies;
-  for (size_t d = 0; d < args->num_devices; ++d)
-    for (size_t a = 0; a < args->num_args; ++a)
-      dependencies.push_back(Producer(args->argument_lists[d][a]));
-  std::string inputs;
-  if (profile.activity()) {
-    for (size_t device = 0; device < args->num_devices; ++device) {
-      for (size_t arg = 0; arg < args->num_args; ++arg) {
-        AppendId(inputs, Track(args->argument_lists[device][arg]));
+  dependencies.reserve(args->num_devices * args->num_args);
+  Completion ready_dependencies;
+  std::vector<uint64_t> inputs;
+  if (profile.activity()) inputs.reserve(args->num_devices * args->num_args);
+  {
+    // Snapshot the launch once, rather than locking twice per device argument.
+    std::lock_guard<std::mutex> lock(State().mutex);
+    for (size_t d = 0; d < args->num_devices; ++d) {
+      for (size_t a = 0; a < args->num_args; ++a) {
+        auto* buffer = args->argument_lists[d][a];
+        auto& tracked = BufferLocked(buffer);
+        const auto& input = tracked.completion;
+        // Successful futures are immutable. Check weights once, until their
+        // producer changes; keep failed/pending futures and the time boundary.
+        if (!tracked.ready && input.future.IsKnownReady())
+          tracked.ready = input.future.Await().ok();
+        if (tracked.ready)
+          ready_dependencies.end_ns =
+              std::max(ready_dependencies.end_ns, input.end_ns);
+        else
+          dependencies.push_back(input);
+        if (profile.activity()) inputs.push_back(tracked.id);
       }
     }
   }
+  dependencies.push_back(std::move(ready_dependencies));
   PJRT_ASSIGN_OR_RETURN(auto types,
                         args->executable->get()->GetOutputElementTypes());
   if (types.size() != 1) {
@@ -417,12 +443,14 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     enqueue.activity().Finish();
     ProfileCall outputs("PJRT output association", {}, &profile.activity());
 
-    for (size_t d = 0; d < args->num_devices; ++d) {
-      execute_args.device_complete_events[d]->future =
-          JoinFutures({completed[d].future,
-                       execute_args.device_complete_events[d]->future});
-      for (size_t output = 0; output < types.front().size(); ++output)
-        SetProducer(args->output_lists[d][output], completed[d]);
+    for (size_t d = 0; d < args->num_devices; ++d)
+      execute_args.device_complete_events[d]->future = JoinFutures(
+          {completed[d].future, execute_args.device_complete_events[d]->future});
+    {
+      std::lock_guard<std::mutex> lock(State().mutex);
+      for (size_t d = 0; d < args->num_devices; ++d)
+        for (size_t output = 0; output < types.front().size(); ++output)
+          SetProducerLocked(args->output_lists[d][output], completed[d]);
     }
   }
   if (!error && profile.activity()) {
@@ -442,11 +470,13 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     return error;
   }
   std::lock_guard<std::mutex> lock(State().mutex);
-  std::string outputs;
+  std::vector<uint64_t> outputs;
+  if (profile.activity())
+    outputs.reserve(args->num_devices * types.front().size());
   for (size_t device = 0; device < args->num_devices; ++device) {
     for (size_t output = 0; output < types.front().size(); ++output) {
       const uint64_t id = TrackLocked(args->output_lists[device][output]);
-      if (profile.activity()) AppendId(outputs, id);
+      if (profile.activity()) outputs.push_back(id);
     }
   }
   profile.activity().SetLinks(std::move(inputs), std::move(outputs));
