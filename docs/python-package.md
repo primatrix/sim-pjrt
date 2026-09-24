@@ -140,12 +140,12 @@ budget, not an OS memory cap. It stops after five hours to leave time for saving
 completed actions before the hosted job's six-hour limit. Failure/timeout saves
 progress; cancellation may not. Rerun a timed-out build to reuse its cache.
 
-Each run attempt saves an immutable cache snapshot. The prefix covers the
+Each build attempt saves an immutable cache snapshot. The prefix covers the
 manylinux image, Bazel configuration, dependencies and patches; Bazel invalidates
 changed source actions individually. GitHub's cache scope applies: keep `main`
 as the default branch so branches/tags can reuse its snapshots. Eviction can
 still cause cold builds, which may require multiple attempts. Only successful
-builds produce release artifacts; hosted completion remains to be validated.
+builds produce release artifacts.
 
 For shared caching, create a [BuildBuddy API key](https://www.buildbuddy.io/docs/guide-auth/).
 Store a read-only key as the repository secret `BUILDBUDDY_API_KEY`; CI then reads
@@ -171,16 +171,21 @@ build options for cache reuse. Credentials are kept outside cached directories.
 This enables remote caching only, not remote execution.
 
 Use **Run workflow** on a branch to validate the pipeline and download its wheel
-artifact without publishing. To release, update `pyproject.toml`'s version,
-commit it, then push a matching tag, for example:
+artifact without publishing. To release, merge the `pyproject.toml` version update
+into `main` and wait for its native build to pass. Tag that exact commit:
 
 ```sh
-git tag v0.1.0
+git fetch origin main
+git tag v0.1.0 origin/main
 git push origin v0.1.0
 ```
 
-A tag/version mismatch fails before compilation. After all checks pass, the
-workflow creates a GitHub Release containing the Linux wheel and `SHA256SUMS`.
+Tag pushes skip compilation. The release job downloads the artifact from a
+successful `main` build of the exact tagged commit, verifies the version and
+checksums, and publishes the wheel and `SHA256SUMS`. Missing or expired artifacts
+fail the release; no other commit is substituted. If the main build is still
+running, wait for it to pass and rerun the release workflow. If its artifact has
+expired, rerun the original `main` build before retrying the release.
 Prerelease tags such as `v0.2.0rc1` require the same version spelling
 in `pyproject.toml` and are published as prereleases. Manual runs never publish.
 The release job alone receives `contents: write` permission. The host runner
