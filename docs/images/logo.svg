@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="8 12 48 48" role="img" aria-labelledby="title desc">
+  <title id="title">sim-pjrt</title>
+  <desc id="desc">A slate-blue virtual TPU with four compute units.</desc>
+  <style>
+    .mark { color: #5b7194; }
+    @media (prefers-color-scheme: dark) {
+      .mark { color: #a3b8d8; }
+    }
+  </style>
+  <g class="mark" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <path d="M42 16H20a8 8 0 0 0-8 8v24a8 8 0 0 0 8 8h24a8 8 0 0 0 8-8V26"/>
+  </g>
+  <g class="mark" fill="currentColor">
+    <rect x="22" y="26" width="8" height="8" rx="1.5"/>
+    <rect x="35" y="26" width="8" height="8" rx="1.5"/>
+    <rect x="22" y="39" width="8" height="8" rx="1.5"/>
+    <rect x="35" y="39" width="8" height="8" rx="1.5"/>
+  </g>
+</svg>
