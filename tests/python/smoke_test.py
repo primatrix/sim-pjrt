@@ -14,6 +14,9 @@ class RuntimeTest(unittest.TestCase):
         self.assertTrue(device.device_kind.startswith("TPU"), device.device_kind)
         self.assertEqual(tuple(device.coords), (0, 0, 0))
         self.assertEqual(device.core_on_chip, 0)
+        from jax.experimental.pallas import tpu
+        self.assertGreater(device.num_cores, 0)
+        self.assertEqual(tpu.get_tpu_info().num_cores, device.num_cores)
 
     def test_memory_accounting(self):
         (device,) = jax.devices()

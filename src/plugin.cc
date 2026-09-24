@@ -79,7 +79,7 @@ PJRT_Error* Create(PJRT_Client_Create_Args* args) {
     coordinates.value_size = 3;
     auto& attributes = args->client->owned_devices[i].description.attributes;
     attributes.push_back(coordinates);
-    for (const absl::string_view name : {"core_on_chip", "slice_index"}) {
+    for (const absl::string_view name : {"core_on_chip", "slice_index", "num_cores"}) {
       PJRT_NamedValue value = {};
       value.struct_size = PJRT_NamedValue_STRUCT_SIZE;
       value.name = name.data();
@@ -87,6 +87,7 @@ PJRT_Error* Create(PJRT_Client_Create_Args* args) {
       value.type = PJRT_NamedValue_kInt64;
       value.int64_value =
           name == "core_on_chip" ? target->devices[i].core_on_chip : 0;
+      if (name == "num_cores") value.int64_value = target->devices[i].num_cores;
       value.value_size = 1;
       attributes.push_back(value);
     }
