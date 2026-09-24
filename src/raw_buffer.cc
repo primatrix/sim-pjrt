@@ -95,8 +95,10 @@ class RawAlias final : public CommonPjRtRawBufferImpl {
       completion.future = JoinFutures({completion.future, data_ready});
       state_->tail = completion;
     }
-    // Callbacks can run inline. Never register them while holding the state lock.
-    RunWhenReady(dependencies,
+    // Even ready transfers run off-thread: large copies must not block submit
+    // or the thread delivering a dependency's completion notification.
+    auto* client = static_cast<CommonPjRtClient*>(memory_space()->client());
+    ExecuteWhenReady(dependencies, client->async_work_runner(),
         [self = tsl::FormRef(this), dependencies, src, dst, offset, size, h2d,
          promise = std::move(promise)]() mutable {
           auto status = GetErrors(dependencies);
