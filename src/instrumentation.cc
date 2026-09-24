@@ -14,6 +14,7 @@
 #include "tsl/platform/env.h"
 #include "xla/pjrt/c/pjrt_c_api_cpu_internal.h"
 #include "xla/pjrt/c/pjrt_c_api_helpers.h"
+#include "xla/pjrt/c/pjrt_c_api_raw_buffer_internal.h"
 #include "xla/pjrt/c/pjrt_c_api_status_utils.h"
 #include "xla/pjrt/c/pjrt_c_api_wrapper_impl.h"
 
@@ -490,6 +491,24 @@ PJRT_Error* DestroyExecutable(PJRT_LoadedExecutable_Destroy_Args* args) {
 
 }  // namespace
 
+PJRT_RawBuffer_Extension RawBufferExtension(PJRT_Extension_Base* next) {
+  auto extension = pjrt::CreateRawBufferExtension(next);
+  extension.PJRT_RawBuffer_CreateRawAliasOfBuffer =
+      [](PJRT_RawBuffer_CreateRawAliasOfBuffer_Args* args) -> PJRT_Error* {
+    PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+        "PJRT_RawBuffer_CreateRawAliasOfBuffer_Args",
+        PJRT_RawBuffer_CreateRawAliasOfBuffer_Args_STRUCT_SIZE, args->struct_size));
+    if (!args->buffer)
+      return pjrt::StatusToPjRtError(absl::InvalidArgumentError("Buffer is null"));
+    PJRT_ASSIGN_OR_RETURN(auto raw, VirtualRawAlias(
+        args->buffer->buffer.get(), Runtime(args->buffer->client),
+        Producer(args->buffer)));
+    args->raw_buffer = raw.release();
+    return nullptr;
+  };
+  return extension;
+}
+
 void RegisterWork(PJRT_LoadedExecutable* executable, ExecutableWork work,
                   const std::string& program_json) {
   std::lock_guard<std::mutex> lock(State().mutex);
@@ -515,6 +534,24 @@ void RegisterRuntime(PJRT_Client* client, RuntimeConfig config) {
 }
 
 void AddInstrumentation(PJRT_Api& api) {
+  // CPU transfers already address host memory directly; mapping does not pin
+  // pages or register physical TPU DMA. Ownership remains with the caller.
+  api.PJRT_Client_DmaMap = [](PJRT_Client_DmaMap_Args* args) -> PJRT_Error* {
+    PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+        "PJRT_Client_DmaMap_Args", PJRT_Client_DmaMap_Args_STRUCT_SIZE,
+        args->struct_size));
+    if (!args->client || (args->size && !args->data))
+      return pjrt::StatusToPjRtError(absl::InvalidArgumentError("Invalid DMA mapping"));
+    return nullptr;
+  };
+  api.PJRT_Client_DmaUnmap = [](PJRT_Client_DmaUnmap_Args* args) -> PJRT_Error* {
+    PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+        "PJRT_Client_DmaUnmap_Args", PJRT_Client_DmaUnmap_Args_STRUCT_SIZE,
+        args->struct_size));
+    if (!args->client)
+      return pjrt::StatusToPjRtError(absl::InvalidArgumentError("Client is null"));
+    return nullptr;
+  };
   // Even small CPU-backed control values are simulated device memory. Force
   // frameworks through D2H so host reads receive transfer timing and events.
   api.PJRT_Buffer_IsOnCpu = [](PJRT_Buffer_IsOnCpu_Args* args) -> PJRT_Error* {
