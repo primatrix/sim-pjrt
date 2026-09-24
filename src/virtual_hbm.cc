@@ -7,6 +7,7 @@
 #include "absl/status/status_macros.h"
 #include "absl/strings/str_cat.h"
 #include "src/hlo_utils.h"
+#include "tsl/platform/env.h"
 #include "xla/hlo/builder/xla_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/layout_util.h"
@@ -20,6 +21,18 @@
 
 namespace xla::sim {
 namespace {
+void ZeroWhenReady(Future<> ready, void* destination, int64_t size,
+                   Promise<> promise) {
+  ready.OnReady([destination, size, promise = std::move(promise)](
+                    absl::Status status) mutable {
+    tsl::Env::Default()->SchedClosure(
+        [destination, size, promise = std::move(promise), status]() mutable {
+          if (status.ok() && size) std::memset(destination, 0, size);
+          promise.Set(status);
+        });
+  });
+}
+
 Shape PhysicalShape(Shape shape) {
   if (shape.IsTuple()) {
     for (Shape &child : *shape.mutable_tuple_shapes())
@@ -109,7 +122,11 @@ public:
     // Do not retain this buffer across asynchronous callbacks.
     auto ready = storage_->GetReadyFuture();
     Shape shape = shape_;
-    std::move(generator)().OnReady(
+    // The generator may allocate a large host literal as well.
+    tsl::Env::Default()->SchedClosure(
+        [generator = std::move(generator), promise = std::move(promise),
+         ready, shape]() mutable {
+      std::move(generator)().OnReady(
         [promise = std::move(promise), ready,
          shape](absl::StatusOr<MutableLiteralBase *> result) mutable {
           if (!result.ok()) {
@@ -122,13 +139,10 @@ public:
                 absl::InvalidArgumentError("Virtual D2H shape mismatch"));
             return;
           }
-          ready.OnReady([promise = std::move(promise),
-                         literal](absl::Status status) mutable {
-            if (status.ok() && literal->size_bytes())
-              std::memset(literal->untyped_data(), 0, literal->size_bytes());
-            promise.Set(status);
-          });
+          ZeroWhenReady(ready, literal->untyped_data(), literal->size_bytes(),
+                        std::move(promise));
         });
+    });
     return future;
   }
   Future<> CopyRawToHost(void *destination, int64_t offset,
@@ -142,13 +156,8 @@ public:
     if (!HasPlaceholder(shape_))
       return storage_->CopyRawToHost(destination, offset, size);
     auto [promise, future] = MakePromise();
-    storage_->GetReadyFuture().OnReady([promise = std::move(promise),
-                                        destination,
-                                        size](absl::Status status) mutable {
-      if (status.ok() && size)
-        std::memset(destination, 0, size);
-      promise.Set(status);
-    });
+    ZeroWhenReady(storage_->GetReadyFuture(), destination, size,
+                  std::move(promise));
     return future;
   }
   void CopyToRemoteDevice(Future<std::string>,
