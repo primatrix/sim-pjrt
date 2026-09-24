@@ -34,7 +34,7 @@ def hlo_profile_metadata(text):
         op = re.match(r'\s*(?:ROOT )?%([\w.-]+) = ', line)
         if not op:
             continue
-        attributes = re.search(r'metadata=\{([^}]*)\}', line)
+        attributes = re.search(r'\bmetadata=\{([^}]*)\}', line)
         info = {'hlo_text': stripped}
         if attributes:
             attrs = attributes[1]

@@ -47,11 +47,12 @@ so data-dependent paths may differ from execution on real hardware.
 ### Simulate execution
 
 ```sh
-spjrt run --timing-profile example workload.py
+spjrt run workload.py
 ```
 
-`example` selects an **uncalibrated profile that permits partial estimates**.
-Supply a profile JSON path for your own timing configuration. Override the
+The default `tpu7x` profile provides approximate v7x timing estimates.
+Use `--timing-profile PATH` for your own configuration, or `--timing-profile example`
+for the uncalibrated example. Override the
 topology and device count as needed:
 
 ```sh
@@ -62,7 +63,7 @@ spjrt run --topology v5e:2x2 --devices 4 \
 For SGLang-Jax, install it separately in the same environment:
 
 ```sh
-spjrt run --timing-profile example \
+spjrt run \
   python -m sgl_jax.launch_server \
   --model-path /path/to/model --tp-size 8 --load-format dummy
 ```

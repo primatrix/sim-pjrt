@@ -70,11 +70,12 @@ def environment(args, inherited=None):
         env.pop("PJRT_SIM_BUNDLE_PROFILE", None)
     else:
         env.pop("PJRT_SIM_DUMP_DIR", None)
-        timing = args.timing_profile or env.get("PJRT_SIM_BUNDLE_PROFILE")
-        if not timing:
-            raise ValueError("Specify --timing-profile PATH (or use sim-pjrt compile to export without timing)")
-        if timing == "example":
-            timing = package / "configs/bundle_timing_example.json"
+        timing = args.timing_profile or env.get("PJRT_SIM_BUNDLE_PROFILE") or "tpu7x"
+        if timing in ("tpu7x", "example"):
+            filename = "tpu7x.json" if timing == "tpu7x" else "bundle_timing_example.json"
+            timing = package / "configs" / filename
+            if not timing.is_file():  # Source checkout.
+                timing = package.parents[1] / "configs" / filename
         env["PJRT_SIM_BUNDLE_PROFILE"] = existing_file(timing, "Timing profile")
     env.update(
         JAX_PLATFORMS="tpu",
@@ -103,7 +104,7 @@ def main(argv=None):
             command.add_argument("--output", required=True, metavar="DIRECTORY",
                                  help="Directory for TPU compilation artifacts (no timing analysis)")
         else:
-            command.add_argument("--timing-profile", help="JSON path or 'example' for uncalibrated partial estimates")
+            command.add_argument("--timing-profile", help="JSON path, 'tpu7x' (default), or 'example'")
         command.add_argument("--plugin", help="Override the bundled PJRT shared library")
         command.add_argument("--libtpu", help="Override the installed libtpu shared library")
         if name != "doctor":
