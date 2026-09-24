@@ -171,8 +171,10 @@ PJRT_Error* Compile(PJRT_Client_Compile_Args* args) {
 const PJRT_Api* Api() {
   // Expose only extensions implemented by this adapter. In particular, phased
   // compilation must not bypass CompileProgram via the CPU extension.
+  static PJRT_RawBuffer_Extension raw_buffers =
+      RawBufferExtension(&ProfilerExtension()->base);
   static PJRT_Layouts_Extension layouts =
-      pjrt::CreateLayoutsExtension(&ProfilerExtension()->base);
+      pjrt::CreateLayoutsExtension(&raw_buffers.base);
   static const PJRT_Api api = [] {
     PJRT_Api result = *pjrt::cpu_plugin::GetCpuPjrtApi();
     result.extension_start = &layouts.base;
