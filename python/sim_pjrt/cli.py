@@ -2,6 +2,7 @@
 
 import argparse
 import importlib.util
+from importlib.metadata import PackageNotFoundError, distribution
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,29 @@ def existing_file(value, label):
     if not path.is_file():
         raise ValueError(f"{label} not found: {path}")
     return str(path)
+
+
+def check_versions(libtpu):
+    # Keep this baseline aligned with pyproject.toml's JAX TPU extra.
+    for name, expected in (("jax", "0.11.1"), ("jaxlib", "0.11.1"),
+                           ("libtpu", "0.0.46.*")):
+        try:
+            package = distribution(name)
+        except PackageNotFoundError:
+            actual = "not installed"
+        else:
+            actual = package.version
+            if name == "libtpu" and not any(
+                Path(package.locate_file(file)).resolve() == Path(libtpu)
+                for file in package.files or () if file.name == "libtpu.so"
+            ):
+                actual = "unknown (custom library)"
+        compatible = (actual.startswith(expected[:-1]) if expected.endswith(".*")
+                      else actual == expected)
+        if not compatible:
+            detail = f"; loading {libtpu}" if name == "libtpu" else ""
+            print(f"sim-pjrt: warning: {name} {actual}; expected {expected}{detail}",
+                  file=sys.stderr)
 
 
 def environment(args, inherited=None):
@@ -32,6 +56,7 @@ def environment(args, inherited=None):
     if not libtpu:
         raise ValueError("Install libtpu in this Python environment or pass --libtpu")
     libtpu = existing_file(libtpu, "libtpu library")
+    check_versions(libtpu)
     topology = args.topology or env.get("PJRT_SIM_TPU_TOPOLOGY", "tpu7x:2x2x1")
     devices = args.devices if args.devices is not None else env.get("PJRT_SIM_DEVICE_COUNT", "8")
     try:
