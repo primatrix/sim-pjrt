@@ -29,6 +29,7 @@ class BuildPy(build_py):
         package = Path(self.build_lib) / "sim_pjrt"
         for source, relative in (
             (plugin, "lib/pjrt_sim_plugin.so"),
+            (ROOT / "configs/tpu7x.json", "configs/tpu7x.json"),
             (ROOT / "configs/bundle_timing_example.json",
              "configs/bundle_timing_example.json"),
         ):

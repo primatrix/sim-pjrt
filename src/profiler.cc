@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "tsl/platform/env.h"
 #include "tsl/profiler/protobuf/xplane.pb.h"
 #include "xla/tsl/profiler/utils/xplane_builder.h"
@@ -88,8 +89,8 @@ void ProfileSession::Stop() {
   }
 }
 
-void ProfileSession::SetLinks(size_t index, std::string inputs,
-                              std::string outputs) {
+void ProfileSession::SetLinks(size_t index, std::vector<uint64_t> inputs,
+                              std::vector<uint64_t> outputs) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (stopped_ || index >= events_.size()) return;
   events_[index].input_buffers = std::move(inputs);
@@ -293,10 +294,10 @@ std::string ProfileSession::Serialize() const {
                        event.detail);
     if (!event.input_buffers.empty())
       out.AddStatValue(*builder.GetOrCreateStatMetadata("input_buffers"),
-                       event.input_buffers);
+                       absl::StrJoin(event.input_buffers, ","));
     if (!event.output_buffers.empty())
       out.AddStatValue(*builder.GetOrCreateStatMetadata("output_buffers"),
-                       event.output_buffers);
+                       absl::StrJoin(event.output_buffers, ","));
     if (!event.error.empty())
       out.AddStatValue(*builder.GetOrCreateStatMetadata("error"), event.error);
   }
@@ -369,7 +370,7 @@ void ProfileActivity::SetProgram(uint64_t id, int64_t devices,
   if (session_) session_->SetProgram(index_, id, devices, replicas);
 }
 
-void ProfileActivity::SetLinks(std::string inputs, std::string outputs) const {
+void ProfileActivity::SetLinks(std::vector<uint64_t> inputs, std::vector<uint64_t> outputs) const {
   if (session_)
     session_->SetLinks(index_, std::move(inputs), std::move(outputs));
 }

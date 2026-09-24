@@ -71,8 +71,8 @@ class LauncherTest(unittest.TestCase):
             environment(args, inherited)
         args.devices = 1
         args.timing_profile = None
-        with self.assertRaisesRegex(ValueError, "timing-profile"):
-            environment(args, inherited)
+        self.assertEqual(Path(environment(args, inherited)["PJRT_SIM_BUNDLE_PROFILE"]).name,
+                         "tpu7x.json")
 
     def test_compile_script_forwards_arguments_without_timing(self):
         output = str(self.file.parent / "dumps")

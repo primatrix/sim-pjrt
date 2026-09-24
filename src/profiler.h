@@ -25,8 +25,8 @@ struct ProfileEvent {
   std::string hlo_text;
   std::string tf_op;
   std::string source;
-  std::string input_buffers;
-  std::string output_buffers;
+  std::vector<uint64_t> input_buffers;
+  std::vector<uint64_t> output_buffers;
   int64_t start_ns = 0;
   int64_t end_ns = 0;
   int64_t thread_id = 0;
@@ -54,7 +54,7 @@ class ProfileSession {
   size_t Begin(ProfileEvent event, size_t parent = static_cast<size_t>(-1));
   void Finish(size_t index, const absl::Status& status);
   void SetBuffer(size_t index, uint64_t id, int64_t bytes, int64_t device);
-  void SetLinks(size_t index, std::string inputs, std::string outputs);
+  void SetLinks(size_t index, std::vector<uint64_t> inputs, std::vector<uint64_t> outputs);
   void SetProgram(size_t index, uint64_t id, int64_t devices, int64_t replicas);
   void DeferActivities(ProfileEvent event, size_t parent,
       std::shared_ptr<const std::vector<BundleActivity>> activities);
@@ -84,7 +84,7 @@ class ProfileActivity {
   ProfileActivity() = default;
   void Finish(const absl::Status& status = absl::OkStatus()) const;
   void SetBuffer(uint64_t id, int64_t bytes, int64_t device) const;
-  void SetLinks(std::string inputs, std::string outputs) const;
+  void SetLinks(std::vector<uint64_t> inputs, std::vector<uint64_t> outputs) const;
   void SetProgram(uint64_t id, int64_t devices, int64_t replicas) const;
   void Ready(const Future<>& future, const char* name, int64_t device = -1,
              uint64_t buffer_id = 0, int64_t bytes = -1) const;
