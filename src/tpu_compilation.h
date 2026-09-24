@@ -15,6 +15,7 @@ struct TpuDeviceDescription {
   int id;
   std::array<int64_t, 3> coords{};
   int64_t core_on_chip = 0;
+  int64_t num_cores = 0;
 };
 struct TpuTopology {
   std::string kind;

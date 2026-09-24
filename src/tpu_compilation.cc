@@ -152,11 +152,17 @@ absl::StatusOr<TpuTopology> DescribeTpuTopology(const char* library,
       } else if (name == "core_on_chip" &&
                  attr.type == PJRT_NamedValue_kInt64) {
         device.core_on_chip = attr.int64_value;
+      } else if (name == "num_cores" &&
+                 attr.type == PJRT_NamedValue_kInt64) {
+        device.num_cores = attr.int64_value;
       }
     }
     if (!has_coords)
       return absl::UnimplementedError(
           "libtpu topology has no device coordinates");
+    if (device.num_cores <= 0)
+      return absl::UnimplementedError(
+          "libtpu topology has no positive num_cores attribute");
     result.devices.push_back(device);
   }
   std::sort(result.devices.begin(), result.devices.end(),

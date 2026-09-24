@@ -169,6 +169,15 @@ JAX/SGLang matrix requires its documented Python environment and is run separate
 SIM_PYTHON=/path/to/python bash tests/run_tests.sh
 ```
 
+## TODO
+
+- Complete bundle control-flow, DMA and collective synchronization semantics.
+- Make simulated scheduling independent of host CPU timing.
+- Extend SparseCore, communication contention and memory accounting coverage.
+- Validate timing accuracy against real TPU workloads across shapes and topologies.
+
+See the [detailed roadmap](docs/site/src/content/docs/development/roadmap.md).
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE). Third-party dependency provenance is documented
