@@ -122,17 +122,13 @@ integration tests require their documented Python environment; see
 
 ## TODO
 
-- [ ] Integrate accurate timing estimation for Final LLO bundles.
-- [ ] Resolve input-dependent control flow and scalar arguments across kernel calls.
-- [ ] Model DMA completion, collective synchronization, and shared-link contention.
-- [ ] Extend SparseCore timing beyond calibrated operation durations to include
-      startup, internal transfers, and synchronization.
-- [ ] Drive execution with virtual time to reduce host scheduling effects on
-      overlap and end-to-end estimates.
-- [ ] Support executable serialization and persistent compilation caching.
-- [ ] Improve alias-aware memory accounting and KV-cache update tracking.
-- [ ] Validate estimates against real TPU traces and publish accuracy results
-      across workload shapes and topologies.
+### P0 — Timing accuracy and validation
+
+- [ ] Establish a real TPU trace baseline, then validate on held-out workload
+      shapes and topologies and publish estimation errors.
+- [ ] Improve the Final LLO timing model: resolve input-dependent control flow
+      and cross-kernel scalar bindings, complete DMA and collective synchronization
+      and shared-link contention modeling, and calibrate latency parameters.
 
 See the [detailed roadmap](docs/site/src/content/docs/development/roadmap.md).
 
