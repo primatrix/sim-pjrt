@@ -8,6 +8,12 @@ __pycache__/
 *.xplane.pb
 .bazelrc.local
 .env
+.env.*
+!.env.example
+!.env.template
+.aws/
+*.pem
+*.key
 demo/
 /demo.py
 # Machine-specific editor database, dependency links, and clangd index.

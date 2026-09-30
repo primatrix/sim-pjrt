@@ -1,6 +1,7 @@
 {
-  "description": "Uncalibrated example. Partial linear-scan timing is explicitly allowed for simulator smoke tests, not a TPU latency prediction.",
+  "description": "Uncalibrated example for simulator smoke tests, not a TPU latency prediction. Partial timing costs are allowed; unresolved runtime conditions use conservative segment bounds with DMA drained at joins. Branch delays require assembly metadata or an explicit profile value.",
   "allow_partial": true,
+  "assume_peers_ready": true,
   "frequency_hz": 1000000000,
   "bundle_issue_cycles": 1,
   "completion_tail_cycles": 0,
@@ -18,6 +19,8 @@
     }
   },
   "runtime": {
+    "hbm_capacity_bytes": 103079215104,
+    "hbm_reserved_bytes": 0,
     "launch_ns": 1000,
     "transfer_ns": 2000,
     "link_ns": 1000,

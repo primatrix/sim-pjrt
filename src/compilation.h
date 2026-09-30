@@ -8,6 +8,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/executable_work.h"
+#include "src/memory.h"
 #include "xla/pjrt/pjrt_client.h"
 
 namespace xla::sim {
@@ -31,7 +32,8 @@ struct CompiledProgram {
 // Independently compile virtual simulated outputs on the CPU backend.
 absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
                                                PjRtClient *output_client,
-                                               bool capture_snapshot);
+                                               bool capture_snapshot,
+                                               std::shared_ptr<MemoryBudget> memory = {});
 
 } // namespace xla::sim
 #endif // XLA_PJRT_SIM_COMPILATION_H_

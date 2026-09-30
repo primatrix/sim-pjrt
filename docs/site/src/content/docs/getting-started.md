@@ -1,110 +1,66 @@
 ---
 title: 快速开始
-description: 构建插件，选择模拟后端并运行第一个 JAX 程序。
+description: 安装后，用 spjrt 运行已有的 JAX 程序。
 ---
 
-下面的模拟器命令均从 **仓库根目录**执行。文档站本身无需构建模拟器；只想阅读文档可直接运行文档站的 npm 命令。
+模拟运行只需要 CPU。源码安装要求 Linux x86-64、Python 3.12 或 3.13。
 
-## 1. 准备环境
+## 1. 安装
 
-需要可用的 Bazel 构建环境，以及与本仓库基线兼容的 JAX/jaxlib。框架集成基线为 Python 3.12、JAX/jaxlib 0.11.1、Flax 0.12.9。
-
-SGLang-Jax 的测试提交为 `cd0b4bf6d92d8aac9ba74ca329cd8f059a3859e4`。如果要运行完整框架集成，在该版本的源码目录安装 CPU 依赖：
-
-```sh
-python3.12 -m venv /tmp/pjrt-sim-venv
-/tmp/pjrt-sim-venv/bin/pip install -c requirements/constraints.txt \
-  '/path/to/sglang-jax/python[cpu]'
-/tmp/pjrt-sim-venv/bin/pip install -r requirements/profiling-requirements.txt
-```
-
-将 `/path/to/sglang-jax` 换成自己的源码路径。后续示例中的 `python` 应来自已配置的环境。
-
-## 2. 构建插件
-
-在 Linux x86-64 的宿主机或已配置的容器内，使用 Bazel 8.7.0（或 Bazelisk）：
+本文对应当前源码；旧版 `0.1.0.dev1` wheel 没有采集、replay 和 `--report`。
+准备好[构建工具](https://github.com/primatrix/sim-pjrt/blob/main/docs/building.md)，
+在仓库根目录、运行工作负载的 Python 环境里安装：
 
 ```sh
-bazel build //:plugin
-bazel test //...
+python -m pip install .
+spjrt doctor
 ```
 
-Bazel 自动下载固定版本的 XLA 和工具链，无需准备脚本。
-生成文件为 `bazel-bin/pjrt_sim_plugin.so`。
+`doctor` 检查插件、libtpu 和配置路径。已有插件时可按
+[打包说明](https://github.com/primatrix/sim-pjrt/blob/main/docs/python-package.md#build-and-install)复用构建产物。
+正常使用无需手配 PJRT 环境变量。
 
-如果使用仓库提供的 Docker 环境，从仓库根目录运行：
+## 2. 确认后端
 
 ```sh
-docker compose run --build --rm bazel build //:plugin
+spjrt run python -c "import jax; print(jax.devices())"
 ```
 
-镜像默认使用 UID/GID 1000；与宿主机用户不一致时，先在当前终端设置：
+应看到模拟 TPU 设备。默认模拟 TPU v7x 的 8 个设备。
+
+## 3. 运行你的程序
+
+将 `workload.py` 换成已有的 JAX 程序：
 
 ```sh
-export BUILD_UID=$(id -u)
-export BUILD_GID=$(id -g)
+spjrt run --report ./run workload.py
+cat ./run/summary.json
 ```
 
-Docker 只是构建环境，缓存保留在 `.build/docker-cache`。
-构建不需要 TPU 硬件；运行必须安装 libtpu（已验证 0.0.48）。首次构建需要下载和编译依赖。
-同一 checkout 的宿主机和 Docker 构建应顺序运行。
+报告包含程序预测耗时、未建模成本和显存统计。每次运行使用新的报告目录。
+浮点输出是占位值；模拟耗时用于估计性能，不能据此验证模型数值正确性。
 
-## 3. 选择模拟后端
-
-在新的 Python 进程启动前设置：
+需要其他拓扑，或需要向程序传参数时：
 
 ```sh
-export PYTHONPATH="$PWD/python${PYTHONPATH:+:$PYTHONPATH}"
-export JAX_PLATFORMS=tpu
-export JAX_ENABLE_COMPILATION_CACHE=false
-export PJRT_NAMES_AND_LIBRARY_PATHS="tpu:$PWD/bazel-bin/pjrt_sim_plugin.so"
-export PJRT_SIM_DEVICE_COUNT=1
-export PJRT_SIM_LIBTPU_PATH="$PWD/.venv/lib/python3.12/site-packages/libtpu/libtpu.so"
-export PJRT_SIM_TPU_TOPOLOGY=v5e:2x2
-export PJRT_SIM_BUNDLE_PYTHON="$PWD/.venv/bin/python"
-export PJRT_SIM_BUNDLE_PROFILE="$PWD/configs/bundle_timing_example.json"
-export TPU_SKIP_MDS_QUERY=1
-export TPU_WORKER_HOSTNAMES=localhost
-export TPU_ACCELERATOR_TYPE=v5litepod-4
+spjrt run --topology v5e:2x2 --devices 4 --timing-profile example \
+  workload.py --batch-size 4
 ```
 
-插件使用 `tpu` 名称，以便 JAX 采用 TPU/Pallas lowering。持久化可执行文件缓存不受支持。
-
-## 4. 执行第一个程序
-
-```python
-import jax
-import jax.numpy as jnp
-
-print(jax.devices())
-
-@jax.jit
-def increment(x):
-    return x + 1
-
-result = increment(jnp.array([1, 2, 3], dtype=jnp.int32))
-result.block_until_ready()
-print(result)  # [2 3 4]
-```
-
-这里用整数运算验证执行路径。浮点矩阵乘法等结果遵循模拟器的占位策略，不能用于数值正确性验证。
-
-也可以运行已有 smoke test：
-
-```sh
-python tests/python/smoke_test.py -v
-```
-
-## 下一步
-
-- [Virtual HBM](/guides/virtual-hbm/)：了解逻辑形状、物理存储与初始化方式。
-- [张量并行](/guides/tensor-parallelism/)：使用多个设备和显式分片。
-- [性能分析](/guides/profiling/)：采集并解释时间线。
+脚本名之前是模拟器选项，之后是程序自己的参数。`spjrt run --help` 可查看全部选项。
 
 ## 常见问题
 
-**后端没有生效：** 检查插件是否已构建、路径是否为绝对路径，并在设置环境变量后启动新进程。
+| 问题 | 处理方式 |
+| --- | --- |
+| 找不到插件或 libtpu | 在同一个 Python 环境运行 `spjrt doctor`；从源码使用时可指定 `--plugin` |
+| 找不到工作负载依赖 | 把依赖安装到 `spjrt` 所在的环境 |
+| 浮点结果全是零 | 这是占位输出，属于预期行为 |
+| 第一次运行很慢 | 包含编译时间；预测耗时看报告，不能直接用 CPU 墙钟代替 |
+| 出现成本缺口或循环解析失败 | 查看[支持范围](/reference/limitations/)，当前模型仍有未支持的路径 |
 
-**首次运行很慢：** 编译和 CPU 执行也会消耗真实时间，不能把这一耗时当成模拟 TPU 的计算时间。
+## 下一步
 
-**初始化时主机内存占用过高：** Virtual HBM 始终启用，但不会消除加载器创建的主机数组。使用 dummy 权重和编译后的形状初始化，避免先下载并创建完整主机权重。
+- [性能分析](/guides/profiling/)：采集并查看执行时间线。
+- [张量并行](/guides/tensor-parallelism/)：使用多个设备和分片。
+- [Virtual HBM](/guides/virtual-hbm/)：理解显存占用和输出行为。

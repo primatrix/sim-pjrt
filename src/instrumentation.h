@@ -15,6 +15,7 @@ namespace xla::sim {
 void AddInstrumentation(PJRT_Api& api);
 PJRT_RawBuffer_Extension RawBufferExtension(PJRT_Extension_Base* next);
 void RegisterRuntime(PJRT_Client* client, RuntimeConfig config);
+std::shared_ptr<MemoryBudget> ClientMemory(PJRT_Client* client);
 void RegisterWork(PJRT_LoadedExecutable* executable, ExecutableWork work,
                   const std::string& program_json = {});
 }  // namespace xla::sim

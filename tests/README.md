@@ -1,28 +1,30 @@
 # Tests
 
-`bazel test //...` runs six native test targets and three pure Python targets.
-It covers CPU output substitution, Virtual HBM, bundle runtime readiness,
-profiling, API error ownership, compilation validation and bundle estimation.
-Real libtpu native compilation cases are optional in Bazel and run with an
-explicit library/profile environment; there is no fake local estimator.
-
-## Integration
-
-The [installed Python package](../docs/python-package.md) also provides a direct
-launcher integration check. With the wheel and SGLang-Jax installed in the same
-environment, run:
+## Fast regression suite
 
 ```sh
-SIM_HTTP_TP_SIZE=4 /path/to/venv/bin/python tests/python/serving_launcher_test.py
+bazel test //...
 ```
 
-It starts a dummy-model HTTP server through `sim-pjrt run`, sends a token-ID
-request, checks bundle provenance, and tests SIGTERM shutdown. No tokenizer
-download is needed. Artifacts remain under `/tmp/sim-pjrt-http-*`.
+Seven C++ targets cover compilation, CPU output substitution, Virtual HBM,
+raw-buffer ownership, runtime readiness, profiling and API error ownership.
+Nine Python targets cover LLO program loading, control flow and timing, SparseCore,
+profile metadata/import/reporting, collection and replay, the launcher. The collection suite also checks predictor fallback
+and the difference between compile lookups and execution counts.
 
-Use Python 3.12 with JAX/jaxlib 0.11.1, Flax 0.12.9, libtpu 0.0.48 and
-SGLang-Jax checkout `cd0b4bf6d92d8aac9ba74ca329cd8f059a3859e4`.
-Install `requirements/profiling-requirements.txt` for XProf validation.
+These targets need no hardware, captured profile or SGLang installation.
+Native libtpu cases skip unless their explicit library environment is supplied.
+The HLO-parser cases need installed jaxlib and can be run separately:
+
+```sh
+PYTHONPATH=python .venv/bin/python tests/python/profile_import_test.py -v
+```
+
+## Native integration
+
+Use Python 3.12, JAX/jaxlib 0.11.1 and libtpu 0.0.48. Install
+`requirements/profiling-requirements.txt` for XProf conversion and configure
+SGLang-Jax as described in [dependencies](../docs/dependencies.md).
 
 ```sh
 export SIM_PYTHON="$PWD/.venv/bin/python"
@@ -35,50 +37,48 @@ export NUMBA_CACHE_DIR=/tmp/sim-numba-cache
 bash tests/run_tests.sh
 ```
 
-The script builds/tests the plugin, runs JAX control/donation/transfers,
-Virtual HBM, Pallas, real offline TPU compilation, multi-device execution,
-and SGLang requests. It defaults to the explicitly partial
-`configs/bundle_timing_example.json`; set `PJRT_SIM_BUNDLE_PROFILE` for another
-profile. The compilation integration test checks delayed readiness, 32 MiB D2H,
-Final LLO provenance, and strict rejection of unresolved timing semantics.
-Oversized weight tests use 512 MiB total weights so the real TPU compiler can
-accept the fixture within the selected topology's memory constraints.
+The runner builds/tests the plugin and runs these integration checks sequentially
+because libtpu takes a process lock even during offline compilation:
 
-For only the serving matrix using an already-built plugin:
+| File | Coverage |
+| --- | --- |
+| `smoke_test.py` | Device discovery, placeholder outputs, integer control, transfers and donation; also used to verify the release wheel |
+| `tpu_compilation_test.py` | Real Final LLO compilation, delayed readiness, provenance, strict unresolved-cost rejection and conservative segment timing |
+| `virtual_hbm_test.py` | Large logical tensors, Pallas, control flow, transfer lifetime and asynchronous completion |
+| `memory_budget_test.py` | Per-device OOM, donation, copies and release with a self-configured tiny capacity |
+| `multidevice_test.py` | Topology, integer collectives, virtual tensor parallelism, resharding and distributed Pallas |
+| `profiler_smoke_test.py` | Real PJRT events through XProf conversion, correlation, device tracks and session isolation |
+| `sglang_smoke_test.py` | Serving requests, overlap, future-token reuse, prefix cache and optional XProf validation |
 
-```sh
-bash tests/run_libtpu_tests.sh
-```
+The default `configs/bundle_timing_example.json` is explicitly uncalibrated and
+allows partial cost estimates. Missing branch delays need an explicit profile
+value; the v5e compilation check supplies a six-slot assumption. Unknown loop
+bounds and scalar-analysis work limits still fail rather than returning a truncated estimate. Large-model
+integration may hit these limits; see [timing limitations](../docs/bundle-timing.md#model).
+Bundled profiles assume peers are ready: marked readiness polls run once with
+zero external wait, while modeled DMA still counts. The timing JSON records this
+assumption; it does not establish hardware timing accuracy.
 
-This defaults to TP1/2/4, with overlap for TP2/4. Every execution must use
-`libtpu_bundles`. Each overlap case completes 11 requests including prefill,
-decode, unequal concurrent lengths, future-token reuse, prefix caching and flush.
+On 2026-09-30, JAX/jaxlib 0.11.1 and libtpu 0.0.48 passed Virtual HBM 9/9 and
+multi-device 9/9 at both TP2 and TP4 on the simulated TPU7x topology. This covers
+decode, collectives, resharding and Pallas. Both memory-budget tests passed in
+the 2026-09-29 audit. The full SGLang serving suite has not been rerun.
 
-A large-model profile uses the same environment:
-
-```sh
-SIM_TP_SIZES=4 SIM_HIDDEN_SIZE=4096 SIM_NUM_LAYERS=32 \
-SIM_INTERMEDIATE_SIZE=11008 SIM_PROFILE=1 SIM_TEST_TIMEOUT=1800 \
-  bash tests/run_libtpu_tests.sh
-```
-
-This is a Llama-sized trunk with a small test vocabulary and dummy/virtual
-weights. The harness warms a full request round and flushes the cache before
-profiling a second full round. It checks that capture contains no backend
-compilation, async lanes do not cross, and model durations match bundle reports
-inside their correlated submission-to-completion spans.
-
-`SIM_RESULTS_DIR` selects the artifact parent directory; each run gets a fresh
-subdirectory. `SIM_TP_SIZES` must fit the topology. Run libtpu cases sequentially
-because the library takes a process lock even during offline compilation.
-
-For a two-layer Qwen3 MoE case (128 experts, top-8, expert width 768):
+For just SGLang against an already-built plugin:
 
 ```sh
-SIM_MODEL=qwen3_moe SIM_TP_SIZES=4 SIM_HIDDEN_SIZE=2048 SIM_NUM_LAYERS=2 \
-SIM_PROFILE=1 SIM_TEST_TIMEOUT=1800 bash tests/run_libtpu_tests.sh
+SIM_PROFILE=1 bash tests/run_libtpu_tests.sh
 ```
 
-This uses dummy weights and Virtual HBM. It validates serving control flow,
-Final LLO compilation and profiling, not checkpoint accuracy or real expert load.
-When profiling, `model_config.json` is saved alongside the XProf directory.
+This defaults to TP1/2/4, with overlap for TP2/4. `SIM_TP_SIZES` must fit the
+configured topology. `SIM_RESULTS_DIR` selects the artifact directory.
+`SIM_MODEL=qwen3_moe`, `SIM_HIDDEN_SIZE`, `SIM_NUM_LAYERS`,
+`SIM_INTERMEDIATE_SIZE` and `SIM_TEST_TIMEOUT` select larger serving experiments.
+Dummy weights validate serving and simulator behavior, not numerical accuracy.
+
+## Hardware measurements
+
+See [collection](../docs/collection.md) for profiling your workloads and
+[benchmark](../docs/benchmark.md) for prediction comparisons and recorded TPU
+measurements. Keep captures, local paths, credentials and internal experiment
+identifiers out of source control.

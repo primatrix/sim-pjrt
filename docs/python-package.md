@@ -12,7 +12,7 @@ uv pip install --python /path/to/venv/bin/python dist/sim_pjrt-0.1.0-py3-none-li
 ```
 
 The setuptools build invokes `bazel build //:plugin`, then includes the resulting
-library, Python analysis modules and example timing profile in the wheel.
+library, Python analysis modules and timing profiles in the wheel.
 To package an explicitly selected, already-built artifact without invoking Bazel:
 
 ```sh
@@ -23,7 +23,8 @@ The caller is responsible for ensuring that this artifact matches the source.
 Source builds need the prerequisites in [building](building.md). Wheel installs
 do not compile native code. Use wheel installs, or `uv run --no-editable` when
 working in this repository: editable installs are not the supported route for
-bundled native assets. Runtime paths never fall back to a source checkout.
+bundled native assets. When running directly from a checkout, pass `--plugin`
+to select the built native library.
 
 Runtime dependencies follow SGLang-Jax's `jax[tpu]==0.11.1` extra, which selects
 JAX/jaxlib 0.11.1 and libtpu 0.0.46.*, with Python >=3.12,<3.14.
@@ -69,14 +70,15 @@ CLI options override environment values. The launcher accepts:
 
 | Option | Environment fallback | Default |
 | --- | --- | --- |
-| `--topology` | `PJRT_SIM_TPU_TOPOLOGY` | Required |
-| `--devices` | `PJRT_SIM_DEVICE_COUNT` | 1 |
-| `--timing-profile` | `PJRT_SIM_BUNDLE_PROFILE` | Required |
+| `--topology` | `PJRT_SIM_TPU_TOPOLOGY` | `tpu7x:2x2x1` |
+| `--devices` | `PJRT_SIM_DEVICE_COUNT` | 8 |
+| `--timing-profile` | `PJRT_SIM_BUNDLE_PROFILE` | Bundled `tpu7x` profile |
 | `--plugin` | `SIM_PJRT_PLUGIN_PATH` | Bundled plugin |
 | `--libtpu` | `PJRT_SIM_LIBTPU_PATH` | Installed libtpu library |
 
 `--timing-profile example` explicitly selects the bundled, uncalibrated profile
-that allows partial estimates. Otherwise supply a JSON path. This option does
+that allows partial estimates. Use `tpu7x` for the default or a JSON path for
+custom parameters. This option does
 not enable profiling. Existing options such as `PJRT_SIM_TRACE` remain available.
 The native backend validates that the topology has enough devices.
 
@@ -113,18 +115,10 @@ fully validate. The package is not yet published to an index.
 Launcher tests cover command arguments, interpreter selection, configuration
 precedence, exit status and signals. Runtime validation should install the wheel
 outside the checkout and run the existing JAX and SGLang-Jax integration tests.
-The existing SGLang fixture exercises `Engine.generate()` with local dummy
-models. An additional installed-package HTTP check starts a local dummy Llama
-server, sends token IDs to `/generate`, checks libtpu bundle provenance, and
-verifies shutdown on SIGTERM:
-
-```sh
-SIM_HTTP_TP_SIZE=4 /path/to/venv/bin/python tests/python/serving_launcher_test.py
-```
-
-SGLang-Jax must be installed in that environment. This check skips tokenizer
-initialization and does not need downloaded model assets. Run libtpu integration
-checks sequentially because libtpu takes a process lock.
+The SGLang fixture exercises `Engine.generate()` with local dummy models;
+see [the test runner](../tests/README.md#native-integration). It requires no
+model download. Run libtpu integration checks sequentially because libtpu takes
+a process lock.
 
 ## Automated releases
 

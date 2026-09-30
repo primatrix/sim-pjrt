@@ -16,6 +16,7 @@ struct RawState {
   std::mutex mutex;
   std::shared_ptr<SimRuntime> runtime;
   Completion tail;
+  std::shared_ptr<void> allocation;
 };
 
 class RawAlias final : public CommonPjRtRawBufferImpl {
@@ -129,7 +130,8 @@ class RawAlias final : public CommonPjRtRawBufferImpl {
 
 absl::StatusOr<PjRtRawBufferRef> MakeRawAlias(
     PjRtBuffer* storage, int64_t bytes, bool placeholder,
-    std::shared_ptr<SimRuntime> runtime, Completion ready) {
+    std::shared_ptr<SimRuntime> runtime, Completion ready,
+    std::shared_ptr<void> allocation) {
   if (storage->IsDeleted())
     return absl::InvalidArgumentError("Cannot alias a deleted buffer");
   ready.future = JoinFutures({ready.future, storage->GetReadyFuture()});
@@ -137,6 +139,7 @@ absl::StatusOr<PjRtRawBufferRef> MakeRawAlias(
   auto state = std::make_shared<RawState>();
   state->runtime = std::move(runtime);
   state->tail = ready;
+  state->allocation = std::move(allocation);
   return tsl::MakeRef<RawAlias>(std::move(raw), bytes, placeholder,
       storage->device()->id(), std::move(state), ToCpuEvent(ready.future));
 }

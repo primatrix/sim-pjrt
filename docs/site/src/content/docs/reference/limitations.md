@@ -14,14 +14,14 @@ description: 执行流程、数值结果、存储和性能模型的边界。
 - 原始设备指针、远程 buffer copy、buffer bitcast、动态 shape、HLO tuple 参数和嵌套 tuple 输出不受支持。
 - 未识别的 custom call 和不受支持的外部副作用会报错。
 
-主机加载器、CPU 控制状态和 D2H 目标仍可能分配大数组。`memory_stats()` 跟踪逻辑 buffer 字节数，不是实际 CPU RSS；别名、编译临时存储和完整物理 HBM 分配尚未准确重建。
+主机加载器、CPU 控制状态和 D2H 目标仍可能分配大数组。`memory_stats()` 跟踪逻辑 buffer 字节数，包括显式 donation/alias 的共享计数；编译临时存储、碎片和实际 CPU RSS 不在该统计内。
 
 ## 性能覆盖
 
 | 部分 | 当前边界 |
 | --- | --- |
 | 调用 | 使用编译器去重映射展开 Final LLO kernel；跨调用参数绑定不完整 |
-| 控制流 | 未指定执行路径时线性扫描；动态循环次数与谓词结果可能未知 |
+| 控制流 | 已知条件按值执行；未知分支分段取最大耗时；内置配置假设跨设备就绪轮询不等待，其余无法界定的循环报错 |
 | 指令 | 计 bundle 发射成本，部分额外延迟和指令语义未覆盖 |
 | DMA / 同步 | 仅支持部分传输参数与完成 credit；通用 DMA 和 collective 仍有缺口 |
 | 硬件 | profile 提供频率、带宽和延迟；示例值未校准 |
@@ -33,4 +33,4 @@ description: 执行流程、数值结果、存储和性能模型的边界。
 
 测试 harness 包含 dummy Llama 和 Qwen3 MoE，可覆盖 prefill、decode、overlap、缓存复用、flush 和 XProf。dummy 权重与占位浮点输出不验证文本生成质量，也不代表真实 MoE 专家选择、负载均衡或生产吞吐。
 
-复现步骤见[测试与验证](/development/testing/)。Virtual HBM 去阈值版本已用小型 Llama TP4 overlap 流程验证；Qwen3 MoE 和完整回归套件尚未重新运行，不能直接沿用旧版本的通过记录。
+复现步骤与验证结果见[测试与验证](/development/testing/)。Virtual HBM 和 TP2/TP4 多设备用例已通过；额外同步等待按 0 计，仍缺少真实的跨设备等待模型。完整 SGLang serving 与 Qwen3 MoE 尚未重新验证。

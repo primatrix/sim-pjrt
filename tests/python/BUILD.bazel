@@ -16,6 +16,20 @@ py_test(
 )
 
 py_test(
+    name = "llo_control_flow_test",
+    size = "small",
+    srcs = ["llo_control_flow_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+py_test(
+    name = "llo_program_test",
+    size = "small",
+    srcs = ["llo_program_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+py_test(
     name = "launcher_test",
     size = "small",
     srcs = ["launcher_test.py"],
@@ -36,4 +50,32 @@ py_test(
     deps = ["//python:analysis_tools"],
 )
 
-test_suite(name = "python_tests", tests = [":sparsecore_test", ":profile_metadata_test", ":profile_report_test", ":bundle_timing_test", ":launcher_test"])
+py_test(
+    name = "collection_test",
+    size = "small",
+    srcs = ["collection_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+py_test(
+    name = "profile_import_test",
+    size = "small",
+    srcs = ["profile_import_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+
+test_suite(
+    name = "python_tests",
+    tests = [
+        ":bundle_timing_test",
+        ":llo_control_flow_test",
+        ":llo_program_test",
+        ":collection_test",
+        ":launcher_test",
+        ":profile_import_test",
+        ":profile_metadata_test",
+        ":profile_report_test",
+        ":sparsecore_test",
+    ],
+)

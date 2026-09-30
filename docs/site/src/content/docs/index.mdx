@@ -41,4 +41,4 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## 当前定位
 
-这是一个单主机的执行与性能建模实验项目。浮点计算使用占位结果，性能参数尚未经过真实 TPU 校准；适合研究执行路径、依赖与成本假设。已用 dummy 权重运行过 Llama 和 Qwen3 MoE 的 serving 流程，覆盖范围与验证状态见[当前限制](/reference/limitations/)。
+这是一个单主机的执行与性能建模实验项目。浮点计算使用占位结果，LLO 成本覆盖仍不完整；可采集真实 TPU 耗时供精确 replay 使用。已用 dummy 权重运行过 Llama 和 Qwen3 MoE 的 serving 流程，覆盖范围与验证状态见[当前限制](/reference/limitations/)。

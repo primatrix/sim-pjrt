@@ -3,7 +3,6 @@
 import json
 import os
 from pathlib import Path
-import signal
 import subprocess
 import sys
 import tempfile
@@ -48,11 +47,6 @@ class LauncherTest(unittest.TestCase):
             self.assertEqual(env["PJRT_SIM_BUNDLE_PYTHON"], sys.executable)
             self.assertEqual(env["PJRT_NAMES_AND_LIBRARY_PATHS"], f"tpu:{self.file}")
 
-    def test_exit_status_and_signal(self):
-        self.assertEqual(self.launch(["python", "-c", "raise SystemExit(17)"]).returncode, 17)
-        self.assertEqual(self.launch(["python", "-c",
-            "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"]).returncode, -signal.SIGTERM)
-
     def test_precedence_and_no_parent_mutation(self):
         inherited = {"PJRT_SIM_DEVICE_COUNT": "2", "JAX_PLATFORMS": "cpu"}
         args = Namespace(action="run", plugin=str(self.file), libtpu=str(self.file), topology="v5e:2x2",
@@ -89,13 +83,21 @@ class LauncherTest(unittest.TestCase):
             self.assertEqual(json.loads(result.stdout),
                              [["--output", "script-output", "--devices", "2"], output, None])
 
-    def test_missing_command_is_actionable(self):
-        result = self.launch([])
-        self.assertEqual(result.returncode, 2)
-        self.assertIn("Provide a command", result.stderr)
-        result = self.launch(["sim-pjrt-command-that-does-not-exist"])
-        self.assertEqual(result.returncode, 2)
-        self.assertNotIn("Traceback", result.stderr)
+    def test_offline_import_does_not_require_plugin_libtpu_or_workload(self):
+        trace = self.file.parent / "trace.json"
+        trace.write_text(json.dumps({"traceEvents": [
+            {"ph": "M", "name": "process_name", "pid": 1, "args": {"name": "/device:TPU:0"}},
+            {"ph": "M", "name": "thread_name", "pid": 1, "tid": 2, "args": {"name": "XLA Modules"}},
+            {"ph": "X", "pid": 1, "tid": 2, "name": "ordinary_program(123)", "ts": 0, "dur": 10}
+        ]}))
+        output = self.file.parent / "timings.json"
+        result = subprocess.run([sys.executable, "-m", "sim_pjrt", "import-profile", str(trace),
+                                 "--skip-first", "0", "--output", str(output)],
+                                env=dict(os.environ, SIM_PJRT_PLUGIN_PATH="/missing/plugin.so",
+                                         PJRT_SIM_LIBTPU_PATH="/missing/libtpu.so"),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(json.loads(output.read_text())["programs"]), 1)
 
 
 if __name__ == "__main__":

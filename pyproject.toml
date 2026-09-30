@@ -12,11 +12,17 @@ license = "Apache-2.0"
 # Follow SGLang-Jax's TPU extra; see docs/dependencies.md for the upstream revision.
 dependencies = ["jax[tpu]==0.11.1"]
 
+[project.optional-dependencies]
+collect = ["xprof==2.23.1"]
+
 [project.scripts]
 sim-pjrt = "sim_pjrt.cli:main"
 spjrt = "sim_pjrt.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "python"}
-packages = ["sim_pjrt"]
-py-modules = ["bundle_timing", "profile_report", "profile_metadata", "sparsecore", "llo_scalar"]
+py-modules = ["bundle_timing", "profile_report"]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["sim_pjrt*"]

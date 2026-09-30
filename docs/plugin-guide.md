@@ -1,86 +1,69 @@
-# Plugin guide
+# Run workloads and inspect profiles
 
-The plugin has one performance path: original StableHLO → libtpu TPU
-compilation → Final LLO bundles → pure bundle timing → runtime completion.
-CPU lowering provides control values and placeholder outputs with Virtual HBM.
-HLO is only an internal representation for CPU output lowering; it is not a
-performance model. See [compilation architecture](compilation-architecture.md).
+Install sim-pjrt in your workload's Python environment, then start with
+`spjrt doctor` and `spjrt run workload.py`. See [installation](../README.md#installation).
+The launcher sets up the simulated backend; manual PJRT environment variables
+are unnecessary for normal use.
 
-This path supports runtime JIT during JAX/SGLang-Jax execution and explicit
-ahead-of-time compilation via `.lower(...).compile()`. Both use libtpu without
-requiring physical TPU hardware.
+## SGLang-Jax
 
-## Setup
-
-Build with `bazel build //:plugin`. Use Python 3.12, JAX/jaxlib 0.11.1,
-Flax 0.12.9 and libtpu 0.0.48 for the tested integration environment.
-SGLang-Jax checkout: `cd0b4bf6d92d8aac9ba74ca329cd8f059a3859e4`.
-Install its CPU runtime dependencies and the optional XProf dependencies in
-`requirements/profiling-requirements.txt`. The build container supplies build
-tools; it does not install this runtime environment.
-
-Set the environment in [README](../README.md#use) before importing JAX.
-`PJRT_SIM_LIBTPU_PATH` and `PJRT_SIM_TPU_TOPOLOGY` are required. Timing mode also
-requires `PJRT_SIM_BUNDLE_PROFILE`. The selected topology must contain all simulated devices.
-
-The example bundle profile explicitly permits partial, uncalibrated estimates.
-A strict profile omits `allow_partial` or sets it to false. Unresolved control
-flow, DMA/wait or instruction semantics then reject compilation. There is no
-fallback estimator. See [bundle timing](bundle-timing.md).
-
-## Export JIT artifacts without timing
+Install SGLang-Jax separately in the same environment; see the tested
+[dependency versions](dependencies.md#python-runtime-baseline). Then run:
 
 ```sh
-spjrt compile --output ./llo workload.py --batch-size 4
+spjrt run python -m sgl_jax.launch_server \
+  --model-path /path/to/model --tp-size 8 --load-format dummy
 ```
 
-`spjrt` is an alias for `sim-pjrt`; CLI defaults are `tpu7x:2x2x1` and 8 devices.
-Tool options precede the script; all arguments after it are passed through.
-`.py` files use the current Python interpreter; `--` is an optional separator.
-The workload needs no code changes. Each process writes TPU Final LLO and a
-per-compilation `*.manifest.json` under the output directory (no whitespace or quotes). Timing analysis,
-launch delays and transfer delays are skipped; no timing profile is required.
-Direct plugin users can set `PJRT_SIM_DUMP_DIR` to enable the same mode.
-Only reached JIT compilations are captured. Execution still uses Virtual HBM
-placeholders, so data-dependent paths need not match real model execution.
+Replace `/path/to/model` with your model configuration/tokenizer directory.
+`--tp-size` must fit the simulated device count. Dummy weights avoid loading
+model weights; simulated outputs do not validate model quality.
 
-## Storage and execution
+## View a simulated XProf trace
 
-All device buffers use Virtual HBM, without a size threshold or a materialized
-mode. Floating payloads use scalar placeholders. Integer, boolean and single-value float control
-values retain CPU shadow storage. D2H copies control values or fills floating
-placeholders in a host destination; it does not reconstruct real model data.
-Device pointers cannot be exported. See [compilation architecture](compilation-architecture.md).
+Install `xprof==2.23.1`. In a single-process JAX workload, warm up the function
+before tracing and wait for its results before ending the capture:
 
-Input dependencies, per-device execution ordering, program duration and CPU
-completion all gate readiness. Program timing comes from the bundle profile.
-Launch and explicit PJRT transfers use the same profile's `runtime` object. Internal
-collective semantics require bundle/scenario coverage; a coarse program interval
-does not reconstruct network contention between programs.
+```python
+with jax.profiler.trace("./profile"):
+    result = compiled(*inputs)
+    jax.block_until_ready(result)
+```
 
-## Profiling
-
-Use JAX's profiler for a single-process JAX program. For SGLang, use the scheduler
-profiler through `SIM_PROFILE=1 bash tests/run_libtpu_tests.sh`, with the environment
-in [tests](../tests/README.md). The harness warms all request shapes before capture.
-
-Open the resulting directory with `xprof server --logdir PATH --port 8791`.
-In Trace Viewer, `/device:TPU:N` contains native `XLA Modules`, `XLA Ops` and
-`XLA TraceMe` lines. XProf derives `Framework Name Scope`, `Framework Ops` and
-`Source code` from compiler debug labels when available. Observed submit-to-ready
-intervals appear on PJRT lines in `/host:CPU`.
-These use a shared clock but are distinct measurements: a long submit-to-ready
-interval does not imply a long TPU transfer. CPU scheduling can delay notification.
-
-`PJRT_SIM_TRACE=/path/execution` writes JSONL execution metadata and per-program
-bundle reports. Reports retain the Final LLO source file list and optional TLP
-HLO debug-label file paths. TensorCore timing uses Final LLO bundles. HLO supplies debug labels and
-SparseCore dependency links; optional SparseCore operation timing uses explicitly
-provided hardware calibration. For a host-observation summary:
+Run the workload with `spjrt run`, then open the trace:
 
 ```sh
-python python/profile_report.py PATH --output profile-summary.json
+xprof server --logdir ./profile --port 8791
 ```
 
-Run [the test harness](../tests/README.md) for readiness, donation, Virtual HBM,
-multi-device execution, SGLang overlap and native XProf validation.
+Open `http://localhost:8791` and select Trace Viewer.
+
+| Track | What it shows |
+| --- | --- |
+| XLA Modules | Predicted duration of each compiled program |
+| XLA Ops | Predicted operation intervals and missing-cost annotations |
+| Host / PJRT | Time observed on the CPU running the simulator |
+
+These views overlap; do not add their durations together. Host waits include
+CPU scheduling and are not measured TPU delays. Add `--report ./run` to
+`spjrt run` to save JSON reports for inspecting unresolved costs.
+
+For SGLang capture, use its scheduler profiler; the configured
+[integration runner](../tests/README.md#native-integration) supports
+`SIM_PROFILE=1 bash tests/run_libtpu_tests.sh`. For real TPU measurements, use
+[collection](collection.md).
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| Plugin or libtpu not found | Run `spjrt doctor` in the same environment; source builds can pass `--plugin` |
+| Workload module not found | Install its dependencies in the environment containing `spjrt` |
+| Floating outputs are zero | These are expected placeholders; simulation checks execution and timing |
+| First run is slow | Compilation is included in CPU wall time; inspect the predicted durations in the report |
+| Virtual HBM OOM | Reduce logical allocations or set the target's `--hbm-capacity-gib` / `--hbm-reserved-gib` |
+| Bundle timing has unresolved semantics | Inspect the cost gaps; strict profiles reject them, partial profiles only time covered work |
+| Unknown loop bound or analysis limit | This path is currently unsupported even with partial timing; simplify the workload |
+
+For implementation details, see [architecture](compilation-architecture.md)
+and the [timing reference](bundle-timing.md).

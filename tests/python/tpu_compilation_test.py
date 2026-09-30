@@ -37,6 +37,9 @@ class TpuCompilationTest(unittest.TestCase):
                 (root / "configs/bundle_timing_example.json").read_text()
             )
             profile["bundle_issue_cycles"] = 100000
+            # This target's assembly uses an implicit branch delay. Supply an
+            # explicit six-slot assumption in this uncalibrated smoke profile.
+            profile["branch_delay_slots"] = 6
             profile_path = Path(directory) / "profile.json"
             profile_path.write_text(json.dumps(profile))
             env = dict(os.environ)
@@ -76,6 +79,14 @@ records = [json.loads(line) for p in Path(os.environ["PJRT_SIM_TRACE"]).parent.g
            for line in p.read_text().splitlines()]
 assert elapsed >= records[-1]["bundle_duration_ns"] / 1e9 * 0.8, (elapsed, records[-1])
 np.testing.assert_array_equal(np.asarray(z), np.zeros((4096, 2048), np.float32))
+
+@jax.jit
+def conditional(pred, a):
+    return jax.lax.cond(pred, lambda: a @ a, lambda: a + 1)
+
+small = jax.device_put(np.ones((128, 128), np.float32))
+for predicate in (False, True):
+    conditional(np.asarray(predicate), small).block_until_ready()
 """,
                 ],
                 env=env,
@@ -90,6 +101,10 @@ np.testing.assert_array_equal(np.asarray(z), np.zeros((4096, 2048), np.float32))
                 for line in path.read_text().splitlines()
             ]
             self.assertTrue(records)
+            branches = [r for r in records if r['name'] == 'jit_conditional']
+            self.assertEqual(len(branches), 2)
+            self.assertEqual(branches[0]['program_id'], branches[1]['program_id'])
+            self.assertEqual(branches[0]['bundle_duration_ns'], branches[1]['bundle_duration_ns'])
             self.assertTrue(
                 all(r["analysis_source"] == "libtpu_bundles" for r in records)
             )
@@ -98,6 +113,13 @@ np.testing.assert_array_equal(np.asarray(z), np.zeros((4096, 2048), np.float32))
                 for path in Path(directory).glob("*.program*.json")
             ]
             self.assertTrue(snapshots)
+            for snapshot in snapshots:
+                self.assertEqual(snapshot['runtime_branch_policy'], 'segment_bound')
+                self.assertEqual(snapshot['timing_semantics'], 'conservative_modeled_cost')
+                for segment in snapshot['runtime_segments']:
+                    self.assertEqual(segment['modeled_cycles'], max(segment['alternative_cycles']))
+                    self.assertEqual(segment['modeled_cycles'],
+                                     segment['alternative_cycles'][segment['selected_alternative']])
             self.assertTrue(all("hlo" not in s and "plan" not in s for s in snapshots))
             self.assertTrue(all(s["scheduled_bundle_count"] > 0 for s in snapshots))
             self.assertTrue(all(r["bundle_duration_ns"] > 0 for r in records))
