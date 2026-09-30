@@ -22,7 +22,7 @@ CPU 输出编译内部仍使用 HLO 表示、SPMD 分区和存储改写；它不
 
 bundle 解析和估时采用纯函数。C++ 负责调用编译器、收集 Final LLO 文件、调用估时模块和驱动完成事件。Python 估时模块结合 deduplication-map，按 TLP 调用点展开 kernel，未知分支分段取最大成本。随包 profile 显式允许部分估算；严格 profile 拒绝成本缺口。
 
-采集使用真实 TPU 的 XProf。离线导入解析模块、算子耗时及 shape/dtype；可选的编译标识把测量绑定到 replay。普通 profile 中的 program ID 只在本次采集内有效。
+采集使用真实 TPU 的 XProf，并自动记录编译标识，将实测耗时绑定到 replay。离线导入解析模块、算子耗时及 shape/dtype；普通 profile 中的 program ID 只在本次采集内有效。
 
 执行等待输入依赖与设备先前任务，按程序时长预留 compute/HBM 资源；公开 ready 还要等待 CPU 输出就绪。显式 H2D/D2H 和设备 copy 单独计时，程序内部通信需要 bundle 模型覆盖。
 

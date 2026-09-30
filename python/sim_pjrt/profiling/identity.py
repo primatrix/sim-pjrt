@@ -1,4 +1,4 @@
-"""Optional JAX compile identities for exact replay; not used by offline import."""
+"""JAX compile identities recorded during collection and matched during replay."""
 
 from contextlib import contextmanager
 from importlib.metadata import version

@@ -46,7 +46,7 @@ class ReplayPredictor:
             raise ValueError("Collection database is missing executables")
         if not self.database["executables"]:
             raise ValueError("No exact replay identities in this profile database; "
-                             "use collect --record-identities or import-profile --identities FILE. "
+                             "use collect or import-profile --identities FILE. "
                              "Capture-local program IDs cannot identify a new compilation.")
 
     def predict(self, key):
