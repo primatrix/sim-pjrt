@@ -66,29 +66,42 @@ absl::StatusOr<RuntimeConfig> RuntimeConfig::FromProfile(
       ABSL_RETURN_IF_ERROR(read(config.link_bytes_per_second, 1e30));
     } else if (name == "communication_scale") {
       ABSL_RETURN_IF_ERROR(read(config.communication_scale, 1e6));
+    } else if (name == "hbm_capacity_bytes") {
+      ABSL_RETURN_IF_ERROR(read(config.hbm_capacity_bytes, 1e15));
+    } else if (name == "hbm_reserved_bytes") {
+      ABSL_RETURN_IF_ERROR(read(config.hbm_reserved_bytes, 1e15, true));
     } else
       return absl::InvalidArgumentError(
           absl::StrCat("Unknown profile.runtime field: ", name));
   }
+  if (config.hbm_reserved_bytes > config.hbm_capacity_bytes)
+    return absl::InvalidArgumentError("HBM reservation exceeds capacity");
   return config;
 }
 
 absl::StatusOr<RuntimeConfig> RuntimeConfig::FromEnvironment() {
-  if (DumpOnly()) {
-    RuntimeConfig config;
-    config.simulate_timing = false;
-    return config;
-  }
+  RuntimeConfig config;
+  config.simulate_timing = !DumpOnly();
   // One timing configuration: both runtime and bundle estimator read this file.
-  const char* path = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
-  if (!path || !*path)
-    return absl::InvalidArgumentError("PJRT_SIM_BUNDLE_PROFILE is required");
-  std::ifstream file(path);
-  if (!file)
-    return absl::InvalidArgumentError(
-        absl::StrCat("Cannot read profile: ", path));
-  std::string json(std::istreambuf_iterator<char>{file}, {});
-  ABSL_ASSIGN_OR_RETURN(auto config, FromProfile(json));
+  if (!DumpOnly()) {
+    const char* path = std::getenv("PJRT_SIM_BUNDLE_PROFILE");
+    if (!path || !*path)
+      return absl::InvalidArgumentError("PJRT_SIM_BUNDLE_PROFILE is required");
+    std::ifstream file(path);
+    if (!file)
+      return absl::InvalidArgumentError(absl::StrCat("Cannot read profile: ", path));
+    std::string json(std::istreambuf_iterator<char>{file}, {});
+    ABSL_ASSIGN_OR_RETURN(config, FromProfile(json));
+  }
+  for (auto [name, value] : {
+           std::pair{"PJRT_SIM_HBM_CAPACITY_BYTES", &config.hbm_capacity_bytes},
+           std::pair{"PJRT_SIM_HBM_RESERVED_BYTES", &config.hbm_reserved_bytes}}) {
+    if (const char* text = std::getenv(name))
+      if (!absl::SimpleAtoi(text, value) || *value < 0 || *value > 1000000000000000LL)
+        return absl::InvalidArgumentError(absl::StrCat("Invalid ", name));
+  }
+  if (!config.hbm_capacity_bytes || config.hbm_reserved_bytes > config.hbm_capacity_bytes)
+    return absl::InvalidArgumentError("HBM capacity must be positive and cover its reservation");
   for (const char* old :
        {"PJRT_SIM_LAUNCH_NS", "PJRT_SIM_TRANSFER_NS", "PJRT_SIM_LINK_NS",
         "PJRT_SIM_HOST_BYTES_PER_SECOND", "PJRT_SIM_LINK_BYTES_PER_SECOND",
@@ -103,6 +116,8 @@ absl::StatusOr<RuntimeConfig> RuntimeConfig::FromEnvironment() {
 
 SimRuntime::SimRuntime(RuntimeConfig config)
     : config_(config),
+      memory_(std::make_shared<MemoryBudget>(config.hbm_capacity_bytes,
+                                             config.hbm_reserved_bytes)),
       epoch_offset_(tsl::Env::Default()->NowNanos() - Now()),
       worker_([this] { Run(); }) {}
 
@@ -162,7 +177,8 @@ int64_t SimRuntime::Reserve(int64_t start, int64_t duration,
 std::vector<Completion> SimRuntime::ExecuteTimed(
     int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
     const std::vector<Completion>& inputs, const ProfileActivity& profile,
-    const std::string& name, std::shared_ptr<const std::vector<BundleActivity>> activities) {
+    const std::string& name, std::shared_ptr<const std::vector<BundleActivity>> activities,
+    const std::string& analysis_source) {
   if (!config_.simulate_timing) {
     std::vector<Future<>> predecessors;
     for (const auto& input : inputs) predecessors.push_back(input.future);
@@ -193,7 +209,7 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
     profile.Interval("device launch", Epoch(release),
                      Epoch(release + config_.launch_ns), device, "XLA TraceMe");
     profile.Interval(name, Epoch(start), Epoch(end), device, "XLA Modules",
-                     partial ? "partial bundle cost coverage" : "");
+                     partial ? "partial bundle cost coverage" : "", -1, analysis_source);
     profile.Activities(name, Epoch(start), device, partial, activities);
     Completion completion = CompleteAt(end);
     completion.future = JoinFutures({inputs_ready, completion.future});

@@ -25,12 +25,10 @@ struct BundleActivity {
 };
 
 struct BundleTiming {
+  std::string analysis_source = "libtpu_bundles";
   int64_t duration_ns = 0;
   int64_t bundles = 0;
   int64_t cost_gaps = 0;
-  // Boolean scalar input indices, with little-endian bitmask case selection.
-  std::vector<int64_t> branch_parameters;
-  std::vector<std::shared_ptr<const BundleTiming>> branch_cases;
   // Shared immutable metadata avoids copying the timeline on every dispatch.
   std::shared_ptr<const std::vector<BundleActivity>> activities =
       std::make_shared<const std::vector<BundleActivity>>();
@@ -48,5 +46,8 @@ const absl::StatusOr<std::string>& BundleDumpDirectory();
 // Write a compilation manifest; estimate timing unless dump-only mode is active.
 absl::StatusOr<BundleCompilation> FinalizeBundles(
     const std::vector<std::string>& files);
+// Read a measured prediction attached to the compile input by the launcher.
+// Replay contains only a module duration, never a fabricated bundle timeline.
+absl::StatusOr<BundleCompilation> ReadReplayTiming(const std::string& json);
 }  // namespace xla::sim
 #endif

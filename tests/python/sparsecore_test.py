@@ -1,64 +1,30 @@
 import unittest
 
-from sparsecore import (align_offloads, branch_variants, calibrate_operations,
-                        mark_unmodeled, offload_inventory, operation_key)
+from sim_pjrt.llo.sparsecore import (calibrate_operations, control_flow_metadata,
+                        mark_unmodeled, offload_inventory, operation_key, bound_offloads)
 
 
 class SparseCoreTest(unittest.TestCase):
-    def test_branch_cases_bind_inputs_and_exclude_inactive_calls(self):
-        nodes = {
-            'pred': dict(opcode='parameter', inputs=[], computation='main',
-                         entry=True, parameter=3, scalar_predicate=True),
-            'selector': dict(opcode='convert', inputs=['pred'], computation='main', entry=True),
-            'input': dict(opcode='fusion', inputs=[], computation='main', entry=True),
-            'tuple': dict(opcode='tuple', inputs=['input'], computation='main', entry=True),
-            'cond': dict(opcode='conditional', inputs=['selector', 'tuple', 'tuple'],
-                         computation='main', entry=True, branches=['false', 'true']),
-            'consumer': dict(opcode='fusion', inputs=['cond'], computation='main', entry=True),
-        }
-        calls, metadata = [], {}
-        for branch, shape in [('false', 8), ('true', 16)]:
-            for name, opcode, inputs, extra in [
-                ('param', 'parameter', [], dict(parameter=0)),
-                ('get', 'get-tuple-element', [branch + '_param'], dict(index=0)),
-                ('update', 'call-update', [branch + '_launch', branch + '_get'], {}),
-                ('done', 'call-done', [branch + '_update'], dict(root=True)),
-            ]:
-                nodes[branch + '_' + name] = dict(opcode=opcode, inputs=inputs,
-                                                 computation=branch, entry=False, **extra)
-            calls.append(dict(call=branch + '_launch', op=branch + '_reduce',
-                              computation=branch, entry=False, core_ids=[0],
-                              offload_type='OFFLOAD_COLLECTIVE'))
-            metadata[branch + '_reduce'] = {'hlo_text': f'%reduce = f32[{shape}] all-reduce(%p)'}
-        calibration = calibrate_operations(calls, metadata, [
-            dict(op='false_reduce', duration_ns=20), dict(op='true_reduce', duration_ns=50)])
-        report = dict(profile={'frequency_hz': 1e9}, modeled_seconds=20e-9,
-                      activity_timeline=[dict(name='input', track='XLA Ops', start_ns=0, end_ns=10),
-                                         dict(name='consumer', track='XLA Ops', start_ns=10, end_ns=20)],
-                      gaps=[], assumptions=[])
-        branch_variants(report, calls, nodes, metadata, calibration)
-        self.assertEqual(report['branch_parameters'], [3])
-        for case, branch, duration in zip(report['branch_cases'], ['false', 'true'], [20, 50]):
-            sc = [e for e in case['activity_timeline'] if e['track'] == 'Sparse Core Ops']
-            self.assertEqual([(e['name'], e['start_ns'], e['end_ns']) for e in sc],
-                             [(branch + '_reduce', 10, 10 + duration)])
-            self.assertEqual(case['duration_ns'], 20 + duration)
-            self.assertEqual(case['sparsecore']['missing'], [])
-        # A separate unresolved computation is still a gap in every case.
-        unknown = dict(calls[0], call='unknown_launch', computation='loop_body')
-        branch_variants(report, calls + [unknown], nodes, metadata, calibration)
-        for case in report['branch_cases']:
-            self.assertEqual(case['sparsecore']['missing'][0]['call'], 'unknown_launch')
-        # A selector computed from data must not be guessed from the profile.
-        nodes['pred']['scalar_predicate'] = False
-        report.pop('branch_cases')
-        report.pop('branch_parameters')
-        branch_variants(report, calls, nodes, metadata, calibration)
-        self.assertNotIn('branch_cases', report)
-        # Shared computations need call-site-specific binding, not overwriting.
-        nodes['pred']['scalar_predicate'] = True
-        nodes['other_cond'] = dict(nodes['cond'])
-        branch_variants(report, calls, nodes, metadata, calibration)
+    def test_segment_bounds_do_not_enumerate_conditional_combinations(self):
+        calls, nodes, metadata, samples = [], {}, {}, []
+        for i in range(6):
+            branches = [f'c{i}_false', f'c{i}_true']
+            nodes.update(control_flow_metadata(f"""ENTRY %main (x: pred[]) -> f32[8] {{
+ %cond{i} = f32[8] conditional(%x, %a, %b), branch_computations={{%{branches[0]}, %{branches[1]}}}
+}}"""))
+            for branch, size, duration in zip(branches, (8, 16), (10, 20)):
+                calls.append(dict(call=branch + '_call', op=branch, computation=branch,
+                                  entry=False, core_ids=[0, 1], offload_type='OFFLOAD_COLLECTIVE'))
+                metadata[branch] = {'hlo_text': f'%reduce = f32[{size}] all-reduce(%p)'}
+                samples.append(dict(op=branch, duration_ns=duration))
+        calibration = calibrate_operations(calls, metadata, samples)
+        report = dict(profile={'frequency_hz': 1e9}, modeled_seconds=10e-9,
+                      activity_timeline=[], assumptions=[])
+        bound_offloads(report, calls, nodes, metadata, calibration)
+        self.assertAlmostEqual(report['modeled_seconds'], 130e-9)
+        self.assertEqual(len(report['sparsecore']['runtime_segments']), 6)
+        self.assertEqual(report['sparsecore']['aligned_calls'], 6)
+        self.assertFalse(report['sparsecore']['missing'])
         self.assertNotIn('branch_cases', report)
 
     def test_call_metadata_is_not_execution_timing(self):
@@ -82,21 +48,9 @@ ENTRY %main (x: f32[8]) -> f32[8] {
         self.assertEqual(report['activity_timeline'], [])
         self.assertIn('SparseCore', report['gaps'][0]['reason'])
 
-    def test_no_sparsecore_leaves_report_unchanged(self):
-        report = {}
-        mark_unmodeled(report, [], [])
-        self.assertEqual(report, {})
-
-    def test_input_ready_overlap_and_consumer_wait(self):
+    def test_calibrated_calls_are_serialized_after_tensorcore(self):
         call = dict(call='launch', op='reduce', core_ids=[0, 1],
-                    offload_type='OFFLOAD_COLLECTIVE', entry=True)
-        nodes = {
-            'input': dict(opcode='fusion', inputs=[]),
-            'update': dict(opcode='call-update', inputs=['launch', 'input']),
-            'done': dict(opcode='call-done', inputs=['update']),
-            'independent': dict(opcode='fusion', inputs=[]),
-            'consumer': dict(opcode='fusion', inputs=['done']),
-        }
+                    offload_type='OFFLOAD_COLLECTIVE', computation='main', entry=True)
         metadata = {'reduce': {'hlo_text': '%reduce = f32[8] all-reduce(%p)'}}
         def event(name, start, end):
             return dict(name=name, track='XLA Ops', start_ns=start, end_ns=end)
@@ -108,14 +62,14 @@ ENTRY %main (x: f32[8]) -> f32[8] {
         mark_unmodeled(report, [call], [])
         calibration = calibrate_operations([call], metadata,
             [{'op': 'reduce', 'duration_ns': 50}])
-        align_offloads(report, [call], nodes, metadata, calibration)
+        bound_offloads(report, [call], {}, metadata, calibration)
         tc = [e for e in report['activity_timeline'] if e['track'] == 'XLA Ops']
-        self.assertEqual([(e['start_ns'], e['end_ns']) for e in tc], [(0, 10), (10, 30), (60, 70)])
+        self.assertEqual([(e['start_ns'], e['end_ns']) for e in tc], [(0, 10), (10, 30), (30, 40)])
         sc = [e for e in report['activity_timeline'] if e['track'] == 'Sparse Core Ops']
         self.assertEqual(len(sc), 2)
         self.assertEqual({e['sparse_core'] for e in sc}, {0, 1})
-        self.assertTrue(all((e['start_ns'], e['end_ns']) == (10, 60) for e in sc))
-        self.assertEqual(report['sparsecore']['added_critical_path_ns'], 30)
+        self.assertTrue(all((e['start_ns'], e['end_ns']) == (40, 90) for e in sc))
+        self.assertEqual(report['sparsecore']['added_critical_path_ns'], 50)
         self.assertEqual(report['sparsecore']['aligned_calls'], 1)
         self.assertEqual(report['sparsecore']['missing'], [])
         self.assertEqual(report['status'], 'partial')
@@ -128,18 +82,18 @@ ENTRY %main (x: f32[8]) -> f32[8] {
         with self.assertRaises(ValueError):
             calibrate_operations([call], {}, [{'op': 'reduce', 'duration_ns': float('nan')}])
 
-    def test_unexecuted_branch_is_not_scheduled(self):
+    def test_unknown_loop_multiplicity_remains_a_gap(self):
         call = dict(call='launch', op='reduce', core_ids=[0],
-                    offload_type='OFFLOAD_COLLECTIVE', entry=False)
+                    offload_type='OFFLOAD_COLLECTIVE', computation='loop_body', entry=False)
         metadata = {'reduce': {'hlo_text': '%reduce = f32[8] all-reduce(%p)'}}
         calibration = calibrate_operations([call], metadata, [{'op': 'reduce', 'duration_ns': 50}])
         report = dict(profile={'frequency_hz': 1e9}, modeled_seconds=10e-9,
                       activity_timeline=[], gaps=[], assumptions=[])
         mark_unmodeled(report, [call], [])
-        align_offloads(report, [call], {}, metadata, calibration)
+        bound_offloads(report, [call], {}, metadata, calibration)
         self.assertEqual(report['activity_timeline'], [])
         self.assertEqual(report['sparsecore']['aligned_calls'], 0)
-        self.assertIn('execution path', report['sparsecore']['missing'][0]['reason'])
+        self.assertIn('unbound loop or call multiplicity', report['sparsecore']['missing'][0]['reason'])
 
 
 if __name__ == '__main__':

@@ -72,5 +72,24 @@ TEST(RawBufferTest, ProducerErrorPropagatesWithoutWritingDestination) {
   EXPECT_EQ(copy.Await().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(output, 42);
 }
+
+TEST(RawBufferTest, RawSlicesRetainOneLogicalAllocationAfterBufferDeletion) {
+  ASSERT_OK_AND_ASSIGN(auto client, GetXlaPjrtCpuClient(CpuClientOptions()));
+  auto literal = LiteralUtil::CreateR0<float>(0);
+  ASSERT_OK_AND_ASSIGN(auto buffer,
+      client->BufferFromHostLiteral(literal, client->memory_spaces()[0]));
+  auto memory = std::make_shared<MemoryBudget>(4096, 0);
+  ASSERT_OK_AND_ASSIGN(auto allocation, memory->Allocate(0, 4096));
+  ASSERT_OK_AND_ASSIGN(auto raw,
+      MakeRawAlias(buffer.get(), 4096, true, nullptr, {}, allocation));
+  ASSERT_OK_AND_ASSIGN(auto slice, raw->Slice(100, 50));
+  allocation.reset();
+  buffer.reset();
+  raw.reset();
+  EXPECT_EQ(memory->Stats(0).used, 4096);
+  EXPECT_EQ(memory->Stats(0).allocations, 1);
+  slice.reset();
+  EXPECT_EQ(memory->Stats(0).used, 0);
+}
 }  // namespace
 }  // namespace xla::sim

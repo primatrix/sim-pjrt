@@ -2,54 +2,51 @@
 title: XProf 性能分析
 ---
 
-插件通过原生 `PJRT_Profiler_Extension` 输出 `*.xplane.pb`，无 Python 导出助手。
-
-设置[后端环境](/getting-started/)，安装 `requirements/profiling-requirements.txt`，运行：
+先完成[快速开始](/getting-started/)，再安装 XProf：
 
 ```sh
-SIM_PYTHON=.venv/bin/python SIM_TP_SIZES=4 SIM_PROFILE=1 bash tests/run_libtpu_tests.sh
-xprof server --logdir /path/to/run/tp4/xprof --port 8791
+python -m pip install 'xprof==2.23.1'
 ```
 
-在 Trace Viewer 展开 `/device:TPU:0` 等设备行，使用与真实 TPU 相同的 XProf 轨道：
+## 采集模拟时间线
+
+在已有的单进程 JAX 程序中，先编译、预热，再包住需要观察的调用：
+
+```python
+with jax.profiler.trace("./profile"):
+    result = compiled(*inputs)
+    jax.block_until_ready(result)
+```
+
+等待结果就绪后再结束采集，避免缺少完成事件。然后运行程序并打开 XProf：
+
+```sh
+spjrt run workload.py
+xprof server --logdir ./profile --port 8791
+```
+
+浏览器打开 `http://localhost:8791`，选择 Trace Viewer。
+SGLang 使用 scheduler 进程里的 profiler；已配置的
+[集成测试](/development/testing/)可通过 `SIM_PROFILE=1 bash tests/run_libtpu_tests.sh` 采集。
+
+## 看哪些轨道
 
 | 轨道 | 含义 |
 | --- | --- |
-| XLA Modules | 整个编译程序的模拟执行区间 |
-| XLA Ops | Final LLO 对应的编译器操作调用，保留去重前名称 |
-| XLA TraceMe | TLP 管理段、模拟启动、传输、通信标记和收尾等待 |
-| Framework Name Scope | XProf 根据编译器 `tf_op` 元数据派生的框架作用域 |
-| Framework Ops | XProf 根据同一元数据派生的框架操作 |
-| Source code | XProf 根据编译器源码位置派生的源码轨道 |
+| XLA Modules | 整个编译程序的预测执行时间 |
+| XLA Ops | 编译器操作的预测区间，可查看 `cost_gap` 等详情 |
+| XLA TraceMe | 管理段、启动、显式传输和等待 |
+| Host / PJRT | 当前 CPU 上实测的提交和等待时间 |
+| Framework / Source code | 有编译器调试信息时显示框架及源码位置 |
 
-配置了匹配的 `sparsecore.operation_timings` 时，会额外显示 `/device:TPU:N SparseCore C`，包含原生 `Sparse Core Modules`、`Sparse Core Ops`、`SparseCore Offload Type`。这些区间使用实测操作级校准，按输入就绪、消费者等待和 core 排队计算；尚未模拟 SCS/TEC 内部指令、启动和跨设备争用，因此标为部分估计。无校准或依赖不明确的调用保留在报告缺口中，不生成假区间。
+先看 Modules 的整段时间，再展开 Ops 定位成本。轨道可能嵌套、重叠，不能相加。
+Host 等待包含 CPU 调度和通知延迟，不代表真实 TPU 的传输或执行时间。
 
-框架和源码标签来自 libtpu 的 TLP HLO 调试信息。TensorCore 计时来自 Final LLO；SparseCore 使用显式提供的操作级校准，HLO 操作数关系用于关联依赖。缺失的标签不推测补齐，因此没有调试信息时对应派生轨道可能缺省。提交与完成事件写入标准 `/host:CPU` 下的 PJRT 线程，保留主机观察值。
+有缺口时，可运行 `spjrt run --report ./run workload.py`，查看程序报告中的原因。
+缺少源码轨道通常表示编译产物没有对应调试标签。
 
-同步 PJRT 调用使用实际线程 ID，与 JAX 的 `PjRtCApiLoadedExecutable::Execute` 嵌套在同一主机线程。`PJRT_LoadedExecutable_Execute` 内分别记录执行准备、CPU 输出提交、模拟执行入队和输出关联；子阶段继承父提交的 correlation ID 与 program ID。H2D 记录 buffer 准备及入队，D2H 记录入队，`PJRT_Event_Await` 记录实际等待 API 调用。异步 submit-to-ready 区间是诊断视图，不代表独占某个 CPU 线程。
+## 需要真实 TPU 耗时
 
-真实 libtpu 的 `pjrt_tpu_execute` 是线程池名称；模拟器不创建同名假线程，也不伪造 allocator、semaphore 或驱动内部事件。主机阶段可以语义对应，但本机 CPU 观测时长不等于真实 TPU 主机开销预测。
-
-模型区间与 host 共用时间基准，但 `simulated` 和 `cpu_wall` 不是同一种测量。长 H2D submit-to-ready 可能来自主机通知延迟，不能当作 DMA 时长。异步区间分配到不交叉的行。逐 buffer 的 ready 查询、销毁、回调注册和额外通知延迟事件不再采集。
-
-SGLang profiler 在 scheduler 进程中启停。脚本先预热完整请求流程、flush 缓存，再采集第二轮；不会在导出后压缩或删除时间空隙。
-
-`correlation_id` 关联提交与完成，`sim_program_id` 关联执行程序。设置 `PJRT_SIM_TRACE` 可保留执行 JSONL 和每个程序的 bundle 报告，其中有 Final LLO 文件与去重映射路径。
-
-```sh
-python python/profile_report.py /path/to/xprof --output report.json --trace-output trace.json
-```
-
-累计 pending 区间可能重叠，不等于计算利用率。设备时间是部分、未校准的估算；停止时未完成的事件会标记 `incomplete`。每个 session 最多收集一百万个事件，并报告丢弃数。
-
-连续 decode 可以提前排队，掩盖主机开销；请求结束或 batch 切换时队列可能耗尽。此时的 bubble 包含主机调度、输入准备和通知延迟，不能直接解释为真实 TPU 内部停顿。
-
-内部活动直接来自同一次 Final LLO 估时，使用相对于 executable 开始的时间偏移；不按总耗时平均切分。同一调用片段内的连续发射区间会合并，内部 DMA 仅保留在计时报告中，不单独显示轨道；显式 H2D/D2H/设备 copy 仍保留。等待、延迟和控制操作的耗时包含在 kernel 区间内，不再逐条导出；未解析成本通过 kernel 的 `cost_gap` 标注，完整原因仍保留在 bundle 报告。点击事件可查看 `detail` 中的模块、调用位置与 bundle 地址范围，以及 `bytes`、`cost_gap`。
-
-`XLA Modules`、`XLA Ops` 与底层活动是同一执行的不同视图，区间可能包含或重叠，不能相加。嵌套调用会形成多个连续片段，尚未导出完整的父子调用树。
-
-Fusion/copy 的名称来自编译器调用注释；collective、spill/reload 等若没有足够元数据，只在计时报告中保留底层 opcode 或 DMA，不推测高层操作类型。优化掉的操作不产生事件。多设备目前使用相同的程序活动模板，不能据此推断各设备独立的通信时序。
-
-原生轨道导出通过 XProf 官方转换器验证，覆盖框架/源码派生轨道及主机提交到完成的关联。已有 `.xplane.pb` 不会改变；需要更新插件和 Python 计时模块并采集新的 profile 才能看到调整后的轨道。
-
-提交时仅保留可执行文件活动元数据的共享引用，在收集 profile 时展开为 XLA 和 SparseCore 事件。Host Execute 保留实测 CPU 墙钟耗时，尚未校准为真实 TPU 主机提交耗时。
+在真实 TPU 上用 `spjrt collect --output ./capture workload.py`。
+采集结束后，`capture/timings.json` 保存实测耗时，`capture/profile/` 保存原始 profile。
+模拟 profile 展示的是预测结果；真机采集才可用于校准和准确性验证。

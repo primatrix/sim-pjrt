@@ -18,13 +18,30 @@ namespace xla::sim {
 namespace {
 
 absl::StatusOr<std::unique_ptr<HloModule>>
-LowerToHlo(const CompilationInput &input, CompileOptions &options) {
+LowerToHlo(const CompilationInput &input, CompileOptions &options,
+           std::string& prediction, ExecutableWork& work, std::string& clean_code) {
   XlaComputation computation;
   const auto format = input.format;
   if (format == "mlir") {
     mlir::MLIRContext context;
     ABSL_ASSIGN_OR_RETURN(auto module,
                           ParseMlirModuleString(input.code, context));
+    if (auto timing = (*module)->getAttrOfType<mlir::StringAttr>("sim_pjrt.timing")) {
+      prediction = timing.getValue().str();
+      (*module)->removeAttr("sim_pjrt.timing");
+    }
+    if (auto key = (*module)->getAttrOfType<mlir::StringAttr>("sim_pjrt.execution_key")) {
+      work.execution_key = key.getValue().str();
+      (*module)->removeAttr("sim_pjrt.execution_key");
+    }
+    if (auto miss = (*module)->getAttrOfType<mlir::BoolAttr>("sim_pjrt.replay_miss")) {
+      work.replay_miss = miss.getValue();
+      (*module)->removeAttr("sim_pjrt.replay_miss");
+    }
+    if (!work.execution_key.empty() || !prediction.empty() || work.replay_miss) {
+      llvm::raw_string_ostream stream(clean_code);
+      (*module)->print(stream, mlir::OpPrintingFlags().enableDebugInfo());
+    }
     ABSL_RETURN_IF_ERROR(MlirToXlaComputation(
         *module, computation, options.parameter_is_tupled_arguments,
         /*return_tuple=*/false, &options.executable_build_options));
@@ -51,7 +68,8 @@ LowerToHlo(const CompilationInput &input, CompileOptions &options) {
 
 absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
                                                PjRtClient *output_client,
-                                               bool capture_snapshot) {
+                                               bool capture_snapshot,
+                                               std::shared_ptr<MemoryBudget> memory) {
   // Output lowering and partitioning may change these options. Never modify
   // the original options needed by another compiler backend.
   CompileOptions options = input.options;
@@ -63,16 +81,33 @@ absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
     return absl::InvalidArgumentError(
         "Executable needs more devices than PJRT_SIM_DEVICE_COUNT");
   }
-  ABSL_ASSIGN_OR_RETURN(auto module, LowerToHlo(input, options));
+  std::string prediction;
+  std::string clean_code;
+  CompiledProgram result;
+  ABSL_ASSIGN_OR_RETURN(auto module, LowerToHlo(input, options, prediction, result.work, clean_code));
   const bool partitioned = build.num_partitions() > 1;
   if (partitioned) {
     ABSL_RETURN_IF_ERROR(PartitionForVirtualHbm(*module, options));
   }
 
-  CompiledProgram result;
+  const char* selected = std::getenv("PJRT_SIM_PREDICTOR");
+  const char* miss_policy = std::getenv("PJRT_SIM_REPLAY_MISS");
+  const bool fallback = result.work.replay_miss && miss_policy &&
+                        std::string(miss_policy) == "llo";
+  const bool replay = !DumpOnly() && selected && std::string(selected) == "replay" && !fallback;
+  if (selected && *selected && std::string(selected) != "llo" &&
+      std::string(selected) != "replay")
+    return absl::InvalidArgumentError("Unknown PJRT_SIM_PREDICTOR");
+  if (replay && prediction.empty())
+    return absl::FailedPreconditionError(
+        "Replay requires executable metadata; use spjrt run --predictor replay --database FILE");
+  CompilationInput clean = input;
+  // Simulator annotations never reach the TPU compiler or its cache key.
+  if (!clean_code.empty()) clean.code = clean_code;
   ABSL_ASSIGN_OR_RETURN(
-      auto timing, CompileTpuBundles(input, std::getenv("PJRT_SIM_LIBTPU_PATH"),
-                                     std::getenv("PJRT_SIM_TPU_TOPOLOGY")));
+      auto timing, replay ? ReadReplayTiming(prediction)
+                          : CompileTpuBundles(clean, std::getenv("PJRT_SIM_LIBTPU_PATH"),
+                                              std::getenv("PJRT_SIM_TPU_TOPOLOGY")));
   result.work.num_replicas = build.num_replicas();
   result.work.num_partitions = build.num_partitions();
   if (capture_snapshot)
@@ -84,7 +119,8 @@ absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
                         SubstituteSimulationOutputs(*module));
   ABSL_ASSIGN_OR_RETURN(
       result.executable,
-      CompileVirtual(output_client, std::move(module), std::move(options)));
+      CompileVirtual(output_client, std::move(module), std::move(options),
+                     std::move(memory)));
   return result;
 }
 

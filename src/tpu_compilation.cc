@@ -48,7 +48,7 @@ absl::StatusOr<const PJRT_Api*> Load(const char* path, const char* topology) {
       " --xla_sc_dump_bundles_to=", dump_dir,
       " --xla_jf_dump_llo_text=true --xla_jf_dump_hlo_text=true",
       " --xla_jf_debug_level=2 --xla_jf_dump_use_subdirectories=false",
-      " --xla_jf_dump_llo_pass_label_regex=^(final_bundles|deduplication-map)"
+      " --xla_jf_dump_llo_pass_label_regex=^(final_bundles|assembly-pre-overlay|deduplication-map)"
       "$");
   if (setenv("LIBTPU_INIT_ARGS", flags.c_str(), 1))
     return absl::UnavailableError("Cannot configure libtpu bundle dumps");
@@ -193,6 +193,7 @@ absl::StatusOr<BundleCompilation> CompileTpuBundles(
       const std::string name = it->path().filename().string();
       if (name.find("schedule-analysis") == std::string::npos &&
           (absl::EndsWith(name, "-final_bundles.txt") ||
+           absl::EndsWith(name, "-assembly-pre-overlay.txt") ||
            absl::EndsWith(name, "-deduplication-map.txt") ||
            absl::EndsWith(name, "-TLP-hlo.txt") ||
            absl::EndsWith(name, "_bundles.txt")))

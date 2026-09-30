@@ -103,12 +103,16 @@ bool CompatibleBufferShape(const Shape& actual, const Shape& expected) {
 
 class VirtualBuffer final : public PjRtBuffer {
 public:
-  VirtualBuffer(std::unique_ptr<PjRtBuffer> storage, Shape shape)
-      : storage_(std::move(storage)), shape_(std::move(shape)) {
+  VirtualBuffer(std::unique_ptr<PjRtBuffer> storage, Shape shape,
+                std::shared_ptr<MemoryAllocation> allocation)
+      : storage_(std::move(storage)), shape_(std::move(shape)),
+        allocation_(std::move(allocation)) {
     if (!shape_.has_layout())
       LayoutUtil::SetToDefaultLayout(&shape_);
   }
   PjRtBuffer *storage() const { return storage_.get(); }
+  const std::shared_ptr<MemoryAllocation>& allocation() const { return allocation_; }
+  void ReleaseDonation() { if (storage_->IsDeleted()) allocation_.reset(); }
   const Shape &on_device_shape() const override { return shape_; }
   PjRtMemorySpace *memory_space() const override {
     return storage_->memory_space();
@@ -119,7 +123,7 @@ public:
     return ShapeUtil::ByteSizeOf(shape_);
   }
   Future<> GetReadyFuture() override { return storage_->GetReadyFuture(); }
-  void Delete() override { storage_->Delete(); }
+  void Delete() override { storage_->Delete(); allocation_.reset(); }
   bool IsDeleted() const override { return storage_->IsDeleted(); }
   bool IsOnCpu() const override { return false; }
   absl::StatusOr<std::unique_ptr<ExternalReference>>
@@ -191,8 +195,13 @@ public:
   }
   absl::StatusOr<std::unique_ptr<PjRtBuffer>>
   CopyToMemorySpace(PjRtMemorySpace *memory) override {
+    std::shared_ptr<MemoryAllocation> allocation;
+    if (allocation_) {
+      ABSL_ASSIGN_OR_RETURN(allocation, allocation_->budget->Allocate(
+          memory->devices().front()->id(), ShapeUtil::ByteSizeOf(shape_)));
+    }
     ABSL_ASSIGN_OR_RETURN(auto copy, storage_->CopyToMemorySpace(memory));
-    return std::make_unique<VirtualBuffer>(std::move(copy), shape_);
+    return std::make_unique<VirtualBuffer>(std::move(copy), shape_, std::move(allocation));
   }
   absl::StatusOr<std::unique_ptr<PjRtBuffer>>
   Bitcast(PrimitiveType, absl::Span<const int64_t>, const Layout *) override {
@@ -203,6 +212,7 @@ public:
 private:
   std::unique_ptr<PjRtBuffer> storage_;
   Shape shape_;
+  std::shared_ptr<MemoryAllocation> allocation_;
 };
 
 // Derive public layouts and shapes from the logical module, never the scalar
@@ -256,11 +266,12 @@ class VirtualExecutable final : public PjRtLoadedExecutable {
 public:
   VirtualExecutable(std::unique_ptr<PjRtLoadedExecutable> physical,
                     std::shared_ptr<HloModule> logical, CompileOptions options,
-                    std::vector<int64_t> parameters)
+                    std::vector<int64_t> parameters, std::shared_ptr<MemoryBudget> memory)
       : physical_(std::move(physical)),
         metadata_(physical_.get(), logical, std::move(options), parameters),
         signature_(logical->entry_computation_layout().ComputeProgramShape()),
-        parameters_(std::move(parameters)) {}
+        parameters_(std::move(parameters)),
+        aliases_(logical->input_output_alias_config()), memory_(std::move(memory)) {}
   PjRtExecutable *GetExecutable() const override { return &metadata_; }
   PjRtClient *client() const override { return physical_->client(); }
   const DeviceAssignment &device_assignment() const override {
@@ -306,11 +317,19 @@ public:
         ABSL_ASSIGN_OR_RETURN(unwrapped[i], Unwrap(arguments[i]));
       }
     }
+    std::vector<std::vector<std::shared_ptr<MemoryAllocation>>> allocations;
+    for (size_t d = 0; d < arguments.size(); ++d) {
+      ABSL_ASSIGN_OR_RETURN(auto reserved, ReserveOutputs(
+          arguments[d], addressable_devices()[d]->id(), options));
+      allocations.push_back(std::move(reserved));
+    }
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
         physical_->Execute(unwrapped, PhysicalOptions(options), futures));
-    for (auto &device_outputs : outputs)
-      Wrap(device_outputs);
+    for (size_t d = 0; d < outputs.size(); ++d) {
+      Wrap(outputs[d], allocations[d]);
+      ReleaseDonations(arguments[d]);
+    }
     return outputs;
   }
   absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>>
@@ -318,11 +337,13 @@ public:
                  const ExecuteOptions &options, std::optional<Future<>> &future,
                  bool fill) const override {
     ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(arguments));
+    ABSL_ASSIGN_OR_RETURN(auto allocations, ReserveOutputs(arguments, device->id(), options));
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
         physical_->ExecuteSharded(args, device, PhysicalOptions(options),
                                   future, fill));
-    Wrap(outputs);
+    Wrap(outputs, allocations);
+    ReleaseDonations(arguments);
     return outputs;
   }
   absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>>
@@ -330,11 +351,13 @@ public:
                   const ExecuteOptions &options,
                   std::optional<Future<>> &future, bool fill) const override {
     ABSL_ASSIGN_OR_RETURN(auto args, Unwrap(arguments));
+    ABSL_ASSIGN_OR_RETURN(auto allocations, ReserveOutputs(arguments, device->id(), options));
     ABSL_ASSIGN_OR_RETURN(
         auto outputs,
         physical_->ExecutePortable(args, device, PhysicalOptions(options),
                                    future, fill));
-    Wrap(outputs);
+    Wrap(outputs, allocations);
+    ReleaseDonations(arguments);
     return outputs;
   }
 
@@ -371,19 +394,46 @@ private:
     }
     return result;
   }
-  void Wrap(std::vector<std::unique_ptr<PjRtBuffer>> &outputs) const {
+  absl::StatusOr<std::vector<std::shared_ptr<MemoryAllocation>>> ReserveOutputs(
+      absl::Span<PjRtBuffer* const> arguments, int64_t device,
+      const ExecuteOptions& options) const {
+    const int count = signature_.result().IsTuple()
+                          ? signature_.result().tuple_shapes_size() : 1;
+    std::vector<std::shared_ptr<MemoryAllocation>> result(count);
+    if (!memory_) return result;
+    for (int i = 0; i < count; ++i) {
+      const Shape& shape = signature_.result().IsTuple()
+                               ? signature_.result().tuple_shapes(i) : signature_.result();
+      const auto alias = aliases_.GetAliasedParameter(
+          signature_.result().IsTuple() ? ShapeIndex{i} : ShapeIndex{});
+      if (alias && !options.non_donatable_input_indices.contains(alias->parameter_number))
+        result[i] = VirtualAllocation(arguments[alias->parameter_number]);
+      else {
+        ABSL_ASSIGN_OR_RETURN(result[i], memory_->Allocate(device, ShapeUtil::ByteSizeOf(shape)));
+      }
+    }
+    return result;
+  }
+  void ReleaseDonations(absl::Span<PjRtBuffer* const> arguments) const {
+    for (auto* buffer : arguments)
+      static_cast<VirtualBuffer*>(buffer)->ReleaseDonation();
+  }
+  void Wrap(std::vector<std::unique_ptr<PjRtBuffer>> &outputs,
+            const std::vector<std::shared_ptr<MemoryAllocation>>& allocations) const {
     for (int i = 0; i < outputs.size(); ++i) {
       const Shape &shape = signature_.result().IsTuple()
                                ? signature_.result().tuple_shapes(i)
                                : signature_.result();
       outputs[i] =
-          std::make_unique<VirtualBuffer>(std::move(outputs[i]), shape);
+          std::make_unique<VirtualBuffer>(std::move(outputs[i]), shape, allocations[i]);
     }
   }
   std::unique_ptr<PjRtLoadedExecutable> physical_;
   mutable LogicalExecutable metadata_;
   ProgramShape signature_;
   std::vector<int64_t> parameters_;
+  HloInputOutputAliasConfig aliases_;
+  std::shared_ptr<MemoryBudget> memory_;
 };
 // Keep the public signature intact; only the CPU placeholder program drops
 // dead inputs. Aliases, donors and nondefault memory layouts retain their inputs.
@@ -454,7 +504,7 @@ absl::StatusOr<PjRtRawBufferRef> VirtualRawAlias(
   ABSL_ASSIGN_OR_RETURN(auto bytes, buffer->GetOnDeviceSizeInBytes());
   if (auto* virtual_buffer = dynamic_cast<VirtualBuffer*>(buffer))
     return MakeRawAlias(virtual_buffer->storage(), bytes, HasPlaceholder(shape),
-                        std::move(runtime), std::move(ready));
+                        std::move(runtime), std::move(ready), virtual_buffer->allocation());
   return MakeRawAlias(buffer, bytes, false, std::move(runtime), std::move(ready));
 }
 
@@ -522,7 +572,7 @@ absl::Status VirtualizeModule(HloModule &module) {
 
 absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>>
 CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,
-               CompileOptions options) {
+               CompileOptions options, std::shared_ptr<MemoryBudget> memory) {
   if (options.executable_build_options.num_replicas() != 1 ||
       options.parameter_is_tupled_arguments) {
     return absl::UnimplementedError(
@@ -582,46 +632,52 @@ CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,
                                             std::move(options)));
   return std::make_unique<VirtualExecutable>(
       std::move(physical), std::move(logical), std::move(logical_options),
-      std::move(parameters));
+      std::move(parameters), std::move(memory));
 }
 
-PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args) {
+PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args,
+                           std::shared_ptr<MemoryBudget> memory) {
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
       "PJRT_Client_BufferFromHostBuffer_Args",
       PJRT_Client_BufferFromHostBuffer_Args_STRUCT_SIZE, args->struct_size));
   PJRT_ASSIGN_OR_RETURN(Shape shape, pjrt::BuildXlaShapeFromC(
                                          args->type, args->dims, args->num_dims,
                                          args->device_layout));
+  PjRtMemorySpace *space;
+  if (args->memory) space = PjRtMemorySpace::FromC(args->memory);
+  else {
+    PJRT_ASSIGN_OR_RETURN(space, args->device->device->default_memory_space());
+  }
+  PJRT_ASSIGN_OR_RETURN(auto allocation, memory->Allocate(
+      space->devices().front()->id(), ShapeUtil::ByteSizeOf(shape)));
   if (!HasPlaceholder(shape)) {
     // Integer, boolean and single-value float control state lives on the host.
     // SGLang uses f32[1] for its distributed available-memory query.
     if (auto *error = pjrt::PJRT_Client_BufferFromHostBuffer(args))
       return error;
     args->buffer->buffer = std::make_unique<VirtualBuffer>(
-        std::move(args->buffer->buffer), std::move(shape));
+        std::move(args->buffer->buffer), std::move(shape), std::move(allocation));
     return nullptr;
   }
   // The source payload is intentionally never read. CPU copies the scalar
   // during this call, so neither the local zero nor the host source is
   // retained.
   uint64_t zero = 0;
-  PjRtMemorySpace *memory;
-  if (args->memory)
-    memory = PjRtMemorySpace::FromC(args->memory);
-  else {
-    PJRT_ASSIGN_OR_RETURN(memory, args->device->device->default_memory_space());
-  }
   PJRT_ASSIGN_OR_RETURN(
       auto storage,
       args->client->client->BufferFromHostBuffer(
           &zero, shape.element_type(), {}, std::nullopt,
           PjRtClient::HostBufferSemantics::kImmutableOnlyDuringCall, nullptr,
-          memory, nullptr));
+          space, nullptr));
   args->buffer = new PJRT_Buffer{
-      std::make_unique<VirtualBuffer>(std::move(storage), std::move(shape)),
+      std::make_unique<VirtualBuffer>(std::move(storage), std::move(shape), std::move(allocation)),
       args->client};
   args->done_with_host_buffer = new PJRT_Event{Future<>(absl::OkStatus())};
   return nullptr;
+}
+std::shared_ptr<MemoryAllocation> VirtualAllocation(PjRtBuffer* buffer) {
+  auto* virtual_buffer = dynamic_cast<VirtualBuffer*>(buffer);
+  return virtual_buffer ? virtual_buffer->allocation() : nullptr;
 }
 absl::Status CheckMaterialized(PjRtBuffer *buffer) {
   return dynamic_cast<VirtualBuffer *>(buffer) ? NoData() : absl::OkStatus();
