@@ -127,8 +127,6 @@ def main(argv=None):
                                  help="New directory for real TPU profile and timings.json")
             command.add_argument("--skip-first", type=int, default=1,
                                  help="Discard this many device samples per executable (default: 1)")
-            command.add_argument("--record-identities", action="store_true",
-                                 help="Opt into JAX compile hooks for exact replay and HLO capture")
             command.add_argument("command", nargs=argparse.REMAINDER)
             continue
         command.add_argument("--topology", help="Offline TPU topology (default: tpu7x:2x2x1)")
@@ -179,8 +177,7 @@ def main(argv=None):
         if args.action == "collect":
             if args.skip_first < 0:
                 raise ValueError("--skip-first must be nonnegative")
-            options = dict(output=args.output, command=command, skip_first=args.skip_first,
-                           record_identities=args.record_identities)
+            options = dict(output=args.output, command=command, skip_first=args.skip_first)
             command = [sys.executable, "-m", "sim_pjrt.workload", json.dumps(["collect", options])]
         elif args.action == "run":
             from sim_pjrt.prediction import ReplayPredictor, predictor

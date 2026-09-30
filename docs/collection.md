@@ -16,7 +16,8 @@ spjrt collect --output ./capture workload.py
 ```
 
 Use a new output directory. Results are `capture/timings.json`, the raw
-`capture/profile/` and hardware/compiler information in `capture/context.json`.
+`capture/profile/`, hardware/compiler information in `capture/context.json`,
+and compilation identities in `capture/executables.json` for replay matching.
 The database contains measured program and operation times, plus available
 shapes and dtypes. Run each compiled program repeatedly: the first invocation
 is excluded from statistics by default (`--skip-first 0` keeps it).
@@ -37,13 +38,7 @@ spjrt import-profile ./profile --hlo ./optimized-hlo --output enriched.json
 
 ## Replay measured timings
 
-On TPU, record the compilation identities needed for matching:
-
-```sh
-spjrt collect --record-identities --output ./capture workload.py
-```
-
-Copy `capture/` to the CPU host, then run the same workload:
+Copy the collected `capture/` directory to the CPU host, then run the same workload:
 
 ```sh
 spjrt run --predictor replay --database capture/timings.json \
@@ -61,7 +56,7 @@ missing costs. Host dispatch and synchronization overhead are separate.
 | --- | --- |
 | Output already exists | Choose a new output path |
 | No retained samples | Execute the compiled program more than once, or use `--skip-first 0` |
-| No exact replay identities | Collect with `--record-identities`; ordinary profile IDs are insufficient |
+| No exact replay identities | Recollect with `spjrt collect`, or import with the matching `--identities executables.json` |
 | Replay miss | Match shapes, compiler options and target, or collect that configuration |
 | Want LLO fallback on a miss | Add `--replay-miss llo` before the script; invalid measurements still fail |
 

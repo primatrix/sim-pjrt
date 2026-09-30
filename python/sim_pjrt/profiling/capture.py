@@ -1,6 +1,5 @@
 """Capture on real TPU, then pass the artifacts to the offline importer."""
 
-from contextlib import nullcontext
 import json
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from sim_pjrt.profiling.importer import import_profile
 from sim_pjrt.workload import run_python
 
 
-def collect(output, command, skip_first=1, record_identities=False):
+def collect(output, command, skip_first=1):
     import jax
     from sim_pjrt.profiling.identity import compilation_observer, hardware_context
 
@@ -24,16 +23,13 @@ def collect(output, command, skip_first=1, record_identities=False):
     context = hardware_context(jax._src.xla_bridge.get_backend("tpu"))
     (output / "context.json").write_text(json.dumps(context, indent=2) + "\n")
     records = {}
-    observer = compilation_observer(records) if record_identities else nullcontext()
-    with observer:
+    with compilation_observer(records):
         with jax.profiler.trace(str(output / "profile")):
             run_python(command)
             for array in jax.live_arrays():
                 array.block_until_ready()
             jax.effects_barrier()
-    identities = None
-    if record_identities:
-        identities = output / "executables.json"
-        identities.write_text(json.dumps(records, indent=2) + "\n")
+    identities = output / "executables.json"
+    identities.write_text(json.dumps(records, indent=2) + "\n")
     return import_profile(output / "profile", output / "timings.json",
                           identities=identities, context=context, skip_first=skip_first)

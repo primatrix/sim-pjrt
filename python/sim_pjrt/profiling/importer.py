@@ -403,7 +403,7 @@ def build_database(trace, records=None, *, skip_first=1, hlo_catalog=(), context
             "operation_groups": groups, "excluded": excluded,
             "unmatched_events": unmatched + binding_errors,
             "hlo_modules": {h["hlo_fingerprint"]: h for h in selected_hlo.values()},
-            "limitations": ["Program IDs are capture-local; exact replay requires optional compile identities",
+            "limitations": ["Program IDs are capture-local; exact replay requires compile identities",
                             "Per-device observations; multi-device invocation alignment is not inferred",
                             "Operation spans can overlap or nest; do not sum them into module latency",
                             "Async start/done spans are separate, not a measured end-to-end communication time",

@@ -74,7 +74,7 @@ simulated timing delays. Use an output path without spaces or quotes.
 On a real TPU, install `xprof==2.23.1` and record a workload:
 
 ```sh
-spjrt collect --record-identities --output ./capture workload.py
+spjrt collect --output ./capture workload.py
 ```
 
 Copy the capture to the CPU host, then replay its measured device timings:
