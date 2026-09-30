@@ -1,7 +1,7 @@
 # Run workloads and inspect profiles
 
 Install sim-pjrt in your workload's Python environment, then start with
-`spjrt doctor` and `spjrt run workload.py`. See [installation](../README.md#installation).
+`spjrt run workload.py`. See [installation](../README.md#installation).
 The launcher sets up the simulated backend; manual PJRT environment variables
 are unnecessary for normal use.
 
