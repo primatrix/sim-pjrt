@@ -21,12 +21,10 @@ then run in the checkout root using your workload's Python environment:
 
 ```sh
 python -m pip install .
-spjrt doctor
 ```
 
-`doctor` checks paths and configuration. See [Releases](https://github.com/primatrix/sim-pjrt/releases)
-for prebuilt wheels; the older `0.1.0.dev1` wheel lacks collection, replay and
-`--report`. See [package installation](docs/python-package.md#build-and-install)
+See [Releases](https://github.com/primatrix/sim-pjrt/releases) for prebuilt wheels,
+or [package installation](docs/python-package.md#build-and-install)
 to reuse an already-built plugin or build a wheel, and
 [dependency compatibility](docs/dependencies.md) for the runtime baseline.
 
@@ -118,7 +116,8 @@ configuration. Use `spjrt COMMAND --help` for all options.
 
 For details, see [bundle timing](docs/bundle-timing.md) and
 [support boundaries](docs/site/src/content/docs/reference/limitations.md).
-If a run fails, start with `spjrt doctor` and [troubleshooting](docs/plugin-guide.md#troubleshooting).
+For configuration issues, `spjrt doctor` shows package versions and resolved
+paths. See [troubleshooting](docs/plugin-guide.md#troubleshooting) for common errors.
 To [report an issue](https://github.com/primatrix/sim-pjrt/issues/new), include a
 minimal reproducer, package versions, target topology and relevant error logs.
 
