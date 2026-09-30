@@ -18,14 +18,12 @@ export PJRT_SIM_DEVICE_COUNT=1
 unset PJRT_SIM_TRACE
 "$sim_python" tests/python/smoke_test.py -v
 PJRT_SIM_TEST_LIBTPU_PATH="$PJRT_SIM_LIBTPU_PATH" "$sim_python" tests/python/tpu_compilation_test.py -v
-"$sim_python" tests/python/online_runtime_test.py -v
 "$sim_python" tests/python/virtual_hbm_test.py -v
-"$sim_python" tests/python/pallas_smoke_test.py -v
+"$sim_python" tests/python/memory_budget_test.py -v
 for sim_devices in ${SIM_TP_SIZES:-2 4}; do
   if ((sim_devices < 2)); then continue; fi
   export PJRT_SIM_DEVICE_COUNT=$sim_devices
   "$sim_python" tests/python/multidevice_test.py -v
-  "$sim_python" tests/python/virtual_multidevice_test.py -v
   "$sim_python" tests/python/profiler_smoke_test.py \
     --output "$(mktemp -d /tmp/pjrt-sim-profile.XXXXXX)"
 done

@@ -97,6 +97,11 @@ Future<> BufferReady(PJRT_Buffer* buffer) {
       {Producer(buffer).future, buffer->buffer->GetReadyFuture()});
 }
 
+void KeepAllocation(PJRT_Buffer* buffer, Future<> ready) {
+  if (auto allocation = VirtualAllocation(buffer->buffer.get()))
+    ready.OnReady([allocation = std::move(allocation)](absl::Status) {});
+}
+
 void TransferBuffer(PJRT_Buffer* buffer, int64_t source,
                     const Completion& input, const ProfileActivity& profile) {
   auto size = buffer->buffer->GetOnDeviceSizeInBytes();
@@ -107,6 +112,7 @@ void TransferBuffer(PJRT_Buffer* buffer, int64_t source,
   // Store the modeled future; callers join CPU readiness only when data is
   // observed. Functional execution can run ahead without changing the model.
   SetProducer(buffer, std::move(completion));
+  KeepAllocation(buffer, BufferReady(buffer));
 }
 
 void ProfileBuffer(const ProfileActivity& activity, PJRT_Buffer* buffer,
@@ -127,7 +133,7 @@ PJRT_Error* FromHost(PJRT_Client_BufferFromHostBuffer_Args* args) {
   PJRT_Error* error;
   {
     ProfileCall stage("PJRT H2D buffer preparation", {}, &profile.activity());
-    error = VirtualFromHost(args);
+    error = VirtualFromHost(args, ClientMemory(args->client));
   }
   if (!error) {
     Track(args->buffer);
@@ -152,6 +158,7 @@ PJRT_Error* Copy(PJRT_Buffer_CopyToMemory_Args* args) {
     Track(args->dst_buffer);
     TransferBuffer(args->dst_buffer, args->buffer->buffer->device()->id(),
                    Producer(args->buffer), profile.activity());
+    KeepAllocation(args->buffer, BufferReady(args->dst_buffer));
     ProfileBuffer(profile.activity(), args->dst_buffer, "Copy submit-to-ready");
     if (profile.activity())
       profile.activity().SetLinks({Track(args->buffer)},
@@ -187,6 +194,7 @@ PJRT_Error* CopyToDevice(PJRT_Buffer_CopyToDevice_Args* args) {
   if (!error) {
     TransferBuffer(args->dst_buffer, args->buffer->buffer->device()->id(),
                    Producer(args->buffer), profile.activity());
+    KeepAllocation(args->buffer, BufferReady(args->dst_buffer));
     ProfileBuffer(profile.activity(), args->dst_buffer, "Copy submit-to-ready");
     profile.activity().SetLinks({Track(args->buffer)},
                                 {Track(args->dst_buffer)});
@@ -233,6 +241,7 @@ PJRT_Error* ToHost(PJRT_Buffer_ToHostBuffer_Args* args) {
         device, -1, args->dst_size, Producer(args->src), profile.activity());
     enqueue.activity().Finish();
     args->event->future = JoinFutures({copy.future, args->event->future});
+    KeepAllocation(args->src, args->event->future);
     profile.activity().Ready(args->event->future, "D2H submit-to-ready",
                              args->src->buffer->device()->id(),
                              Track(args->src), args->dst_size);
@@ -254,6 +263,7 @@ PJRT_Error* RawToHost(PJRT_Buffer_CopyRawToHost_Args* args) {
         runtime->Transfer(device, -1, args->transfer_size,
                           Producer(args->buffer), profile.activity());
     args->event->future = JoinFutures({copy.future, args->event->future});
+    KeepAllocation(args->buffer, args->event->future);
     profile.activity().SetBuffer(Track(args->buffer), args->transfer_size,
                                  args->buffer->buffer->device()->id());
     profile.activity().Ready(args->event->future, "Raw D2H submit-to-ready",
@@ -303,21 +313,16 @@ PJRT_Error* MemoryStats(PJRT_Device_MemoryStats_Args* args) {
   PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
       "PJRT_Device_MemoryStats_Args", PJRT_Device_MemoryStats_Args_STRUCT_SIZE,
       args->struct_size));
-  args->bytes_in_use = 0;
-  args->bytes_limit = int64_t{96} << 30;
+  auto memory = ClientMemory(args->device->client);
+  const auto stats = memory->Stats(args->device->device->id());
+  args->bytes_in_use = stats.used;
+  args->bytes_limit = memory->capacity();
   args->bytes_limit_is_set = true;
-  std::lock_guard<std::mutex> lock(State().mutex);
-  for (const auto& [buffer, state] : State().buffers) {
-    if (buffer->buffer->device() == args->device->device &&
-        !buffer->buffer->IsDeleted()) {
-      PJRT_ASSIGN_OR_RETURN(size_t bytes,
-                            buffer->buffer->GetOnDeviceSizeInBytes());
-      args->bytes_in_use += bytes;
-    }
-  }
-  // These are logical live-buffer bytes, not the CPU allocator's physical peak.
-  args->peak_bytes_in_use_is_set = false;
-  args->num_allocs_is_set = false;
+  args->peak_bytes_in_use = stats.peak;
+  args->peak_bytes_in_use_is_set = true;
+  args->num_allocs = stats.allocations;
+  args->num_allocs_is_set = true;
+  // Logical allocation accounting, not the CPU allocator or TPU scratch space.
   args->largest_alloc_size_is_set = false;
   args->bytes_reserved_is_set = false;
   args->peak_bytes_reserved_is_set = false;
@@ -346,34 +351,8 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
   profile.activity().SetProgram(work.program_id, args->num_devices,
                                work.num_replicas);
   ProfileCall prepare("PJRT execute prepare", {}, &profile.activity());
-  if (!work.bundle_timing.branch_parameters.empty()) {
-    size_t selected_case = 0;
-    for (size_t d = 0; d < args->num_devices; ++d) {
-      size_t mask = 0;
-      for (size_t bit = 0; bit < work.bundle_timing.branch_parameters.size(); ++bit) {
-        const int64_t index = work.bundle_timing.branch_parameters[bit];
-        if (index >= args->num_args)
-          return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
-              "Branch predicate argument is missing"));
-        auto* buffer = args->argument_lists[d][index]->buffer.get();
-        const auto& shape = buffer->on_device_shape();
-        if (shape.element_type() != PRED || shape.dimensions_size() != 0)
-          return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
-              "Branch timing requires a scalar boolean input"));
-        // Boolean control storage retains real values. This reads CPU backing,
-        // not the simulated device-ready future or floating Virtual HBM.
-        PJRT_ASSIGN_OR_RETURN(auto literal, buffer->ToLiteralSync());
-        if (literal->GetFirstElement<bool>()) mask |= size_t{1} << bit;
-      }
-      if (d && mask != selected_case)
-        return pjrt::StatusToPjRtError(absl::UnimplementedError(
-            "Branch timing currently requires replicated predicates"));
-      selected_case = mask;
-    }
-    BundleTiming selected = *work.bundle_timing.branch_cases.at(selected_case);
-    work.bundle_timing = std::move(selected);
-  }
   std::vector<Completion> dependencies;
+  std::vector<std::shared_ptr<MemoryAllocation>> input_memory;
   dependencies.reserve(args->num_devices * args->num_args);
   Completion ready_dependencies;
   std::vector<uint64_t> inputs;
@@ -384,6 +363,8 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     for (size_t d = 0; d < args->num_devices; ++d) {
       for (size_t a = 0; a < args->num_args; ++a) {
         auto* buffer = args->argument_lists[d][a];
+        if (auto allocation = VirtualAllocation(buffer->buffer.get()))
+          input_memory.push_back(std::move(allocation));
         auto& tracked = BufferLocked(buffer);
         const auto& input = tracked.completion;
         // Successful futures are immutable. Check weights once, until their
@@ -439,13 +420,21 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     ProfileCall enqueue("PJRT execution enqueue", {}, &profile.activity());
     std::vector<Completion> completed = runtime->ExecuteTimed(
         work.bundle_timing.duration_ns, work.bundle_timing.cost_gaps != 0,
-        devices, dependencies, profile.activity(), name, work.bundle_timing.activities);
+        devices, dependencies, profile.activity(), name, work.bundle_timing.activities,
+        work.bundle_timing.analysis_source);
     enqueue.activity().Finish();
     ProfileCall outputs("PJRT output association", {}, &profile.activity());
 
-    for (size_t d = 0; d < args->num_devices; ++d)
+    std::vector<Future<>> memory_ready;
+    for (size_t d = 0; d < args->num_devices; ++d) {
       execute_args.device_complete_events[d]->future = JoinFutures(
           {completed[d].future, execute_args.device_complete_events[d]->future});
+      memory_ready.push_back(execute_args.device_complete_events[d]->future);
+      for (size_t output = 0; output < types.front().size(); ++output)
+        KeepAllocation(args->output_lists[d][output], memory_ready.back());
+    }
+    JoinFutures(memory_ready).OnReady(
+        [allocations = std::move(input_memory)](absl::Status) {});
     {
       std::lock_guard<std::mutex> lock(State().mutex);
       for (size_t d = 0; d < args->num_devices; ++d)
@@ -480,27 +469,24 @@ PJRT_Error* Execute(PJRT_LoadedExecutable_Execute_Args* args) {
     }
   }
   profile.activity().SetLinks(std::move(inputs), std::move(outputs));
-  const auto it = State().work.find(args->executable);
-  if (it != State().work.end()) {
-    const ExecutableWork& work = it->second;
-    profile.activity().SetProgram(work.program_id, args->num_devices,
-                                  work.num_replicas);
-  }
-  if (it != State().work.end() && State().trace.is_open()) {
-    const ExecutableWork& work = it->second;
+  if (State().trace.is_open()) {
     State().trace << std::setprecision(17)
                   << "{\"sequence\":" << State().sequence++ << ",\"name\":"
                   << std::quoted(std::string(args->executable->get()->name()))
                   << ",\"num_devices\":" << args->num_devices
                   << ",\"num_replicas\":" << work.num_replicas
                   << ",\"num_partitions\":" << work.num_partitions
-                  << ",\"analysis_source\":" << std::quoted(DumpOnly() ? "libtpu_compile" : "libtpu_bundles")
+                  << ",\"analysis_source\":" << std::quoted(DumpOnly() ? "libtpu_compile" : work.bundle_timing.analysis_source)
                   << ",\"program_id\":" << work.program_id
+                  << ",\"execution_key\":" << std::quoted(work.execution_key)
+                  << ",\"replay_miss\":" << (work.replay_miss ? "true" : "false")
                   << ",\"correlation_id\":"
                   << profile.activity().correlation_id()
                   << ",\"work_scope\":" << std::quoted("per_partition")
                   << ",\"substituted_ops\":" << work.substituted_ops;
-    if (!DumpOnly()) State().trace << ",\"bundle_duration_ns\":"
+    if (!DumpOnly()) State().trace << ",\"duration_ns\":"
+                  << work.bundle_timing.duration_ns
+                  << ",\"bundle_duration_ns\":"
                   << work.bundle_timing.duration_ns
                   << ",\"bundle_count\":" << work.bundle_timing.bundles
                   << ",\"bundle_cost_gaps\":" << work.bundle_timing.cost_gaps;
@@ -561,6 +547,10 @@ void RegisterWork(PJRT_LoadedExecutable* executable, ExecutableWork work,
 void RegisterRuntime(PJRT_Client* client, RuntimeConfig config) {
   std::lock_guard<std::mutex> lock(State().mutex);
   State().runtimes.emplace(client, std::make_shared<SimRuntime>(config));
+}
+
+std::shared_ptr<MemoryBudget> ClientMemory(PJRT_Client* client) {
+  return Runtime(client)->memory();
 }
 
 void AddInstrumentation(PJRT_Api& api) {

@@ -76,6 +76,61 @@ TEST(TpuCompilationTest, RequiresLibrary) {
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
+TEST(ReplayTimingTest, KeepsMeasuredDurationWithoutBundleActivities) {
+  const std::string report = R"({
+    "schema_version": 1, "predictor": "replay", "analysis_source": "tpu_replay",
+    "measurement": "tpu_xprof_module_duration", "sample_count": 9,
+    "execution_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "duration_ns": 12345, "activity_timeline": []
+  })";
+  ASSERT_OK_AND_ASSIGN(auto result, ReadReplayTiming(report));
+  EXPECT_EQ(result.timing.duration_ns, 12345);
+  EXPECT_EQ(result.timing.analysis_source, "tpu_replay");
+  EXPECT_EQ(result.timing.bundles, 0);
+  EXPECT_TRUE(result.timing.activities->empty());
+  EXPECT_EQ(result.report_json, report);
+  std::string negative = report;
+  negative.replace(negative.find("12345,"), 5, "-1");
+  EXPECT_EQ(ReadReplayTiming(negative).status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(ReadReplayTiming("{}").status().code(), absl::StatusCode::kInvalidArgument);
+}
+
+TEST(ReplayTimingTest, CompilationConsumesAttachedPrediction) {
+  const char* previous = std::getenv("PJRT_SIM_PREDICTOR");
+  const std::string saved = previous ? previous : "";
+  setenv("PJRT_SIM_PREDICTOR", "replay", 1);
+  // Restore the process environment even if an assertion returns early.
+  struct Restore {
+    bool existed;
+    std::string value;
+    ~Restore() {
+      if (existed) setenv("PJRT_SIM_PREDICTOR", value.c_str(), 1);
+      else unsetenv("PJRT_SIM_PREDICTOR");
+    }
+  } restore{previous != nullptr, saved};
+  ASSERT_OK_AND_ASSIGN(auto client, GetXlaPjrtCpuClient(CpuClientOptions{}));
+  CompilationInput missing{"mlir", kStableHlo, {}};
+  EXPECT_EQ(CompileProgram(missing, client.get(), false).status().code(),
+            absl::StatusCode::kFailedPrecondition);
+  const std::string json = R"({"schema_version":1,"predictor":"replay",
+    "analysis_source":"tpu_replay","measurement":"tpu_xprof_module_duration",
+    "sample_count":3,"duration_ns":12345,"activity_timeline":[],
+    "execution_key":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"})";
+  std::string escaped;
+  for (char c : json) {
+    if (c == '"') escaped += "\\22";
+    else if (c == '\n') escaped += "\\0A";
+    else escaped += c;
+  }
+  std::string code = kStableHlo;
+  code.insert(code.find(" {"), " attributes {sim_pjrt.timing = \"" + escaped + "\"}");
+  CompilationInput input{"mlir", code, {}};
+  ASSERT_OK_AND_ASSIGN(auto result, CompileProgram(input, client.get(), true));
+  EXPECT_EQ(result.work.bundle_timing.duration_ns, 12345);
+  EXPECT_EQ(result.work.bundle_timing.analysis_source, "tpu_replay");
+  EXPECT_EQ(result.program_json, json);
+}
+
 TEST(TpuCompilationTest, RequiresExplicitTopology) {
   CompilationInput input{"mlir", kStableHlo, {}};
   EXPECT_EQ(

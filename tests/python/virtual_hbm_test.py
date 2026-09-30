@@ -5,6 +5,7 @@ Run with the simulator plugin selected; exercises Virtual HBM.
 
 import os
 import resource
+import time
 import unittest
 
 os.environ["PJRT_SIM_DEVICE_COUNT"] = "2"
@@ -15,6 +16,7 @@ configure_runtime(launch_ns=100000000, transfer_ns=100000000)
 import jax
 import jax.numpy as jnp
 import numpy as np
+from jax.experimental import pallas as pl
 
 
 class VirtualHbmTest(unittest.TestCase):
@@ -95,7 +97,6 @@ class VirtualHbmTest(unittest.TestCase):
         y.delete()
 
     def test_virtual_pallas_attention_and_alias(self):
-        from jax.experimental import pallas as pl
         from jax.experimental.pallas.ops.tpu import flash_attention
 
         value = jax.jit(lambda: jnp.ones((1, 64, 2048, 128), jnp.bfloat16))()
@@ -146,6 +147,61 @@ class VirtualHbmTest(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "pointer export"):
             weight.addressable_shards[0].data.unsafe_buffer_pointer()
         np.testing.assert_array_equal(np.asarray(weight[:1, :4]), np.zeros((1, 4)))
+
+    def test_pending_transfer_keeps_its_allocation_after_delete(self):
+        device = jax.devices()[0]
+        initial = device.memory_stats()["bytes_in_use"]
+        x = jax.device_put(np.ones(1024, dtype=np.float32), device)
+        self.assertFalse(x.is_ready())
+        x.delete()
+        self.assertEqual(device.memory_stats()["bytes_in_use"], initial + 4096)
+        deadline = time.monotonic() + 3
+        while device.memory_stats()["bytes_in_use"] != initial and time.monotonic() < deadline:
+            time.sleep(.01)
+        self.assertEqual(device.memory_stats()["bytes_in_use"], initial)
+
+    def test_ready_control_buffer_still_requires_d2h(self):
+        x = jax.device_put(np.arange(8, dtype=np.int32))
+        x.block_until_ready()
+        start = time.monotonic()
+        np.testing.assert_array_equal(np.asarray(x), np.arange(8))
+        self.assertGreaterEqual(time.monotonic() - start, 0.09)
+
+    def test_execute_donation_and_host_read_cannot_bypass_model(self):
+        step = jax.jit(lambda x: x + 1, donate_argnums=(0,))
+        x = jax.device_put(np.arange(16, dtype=np.int32))
+        x = step(x)
+        x.block_until_ready()  # Warm compilation before timing.
+        start = time.monotonic()
+        y = step(x)
+        self.assertTrue(x.is_deleted())
+        self.assertFalse(y.is_ready())
+        z = step(y)
+        self.assertTrue(y.is_deleted())
+        np.testing.assert_array_equal(jax.device_get(z), np.arange(16) + 3)
+        self.assertGreaterEqual(time.monotonic() - start, 0.2)
+
+    def test_pallas_alias_and_placeholder_outputs(self):
+        def kernel(x_ref, y_ref):
+            y_ref[...] = x_ref[...] + 1
+
+        for aliased in (False, True):
+            with self.subTest(aliased=aliased):
+                call = pl.pallas_call(
+                    kernel,
+                    out_shape=jax.ShapeDtypeStruct((8, 128), jnp.float32),
+                    input_output_aliases={0: 0} if aliased else {},
+                )
+                value = jax.device_put(np.ones((8, 128), np.float32))
+                result = jax.jit(call, donate_argnums=(0,) if aliased else ())(value)
+                result.block_until_ready()
+                self.assertEqual(value.is_deleted(), aliased)
+                self.assertEqual(result.shape, (8, 128))
+                # Floating payloads are zero placeholders, including aliases.
+                np.testing.assert_array_equal(jax.device_get(result), 0)
+                result.delete()
+                if not aliased:
+                    value.delete()
 
 
 if __name__ == "__main__":

@@ -29,11 +29,29 @@ TEST(RuntimeConfigTest, RejectsInvalidParametersRatherThanIgnoringThem) {
         R"({"runtime":{"host_bytes_per_second":0}})",
         R"({"runtime":{"link_ns":"10"}})",
         R"({"runtime":{"communication_scale":true}})",
-        R"({"runtime":{"launch_nss":1}})"}) {
+        R"({"runtime":{"launch_nss":1}})",
+        R"({"runtime":{"hbm_capacity_bytes":0}})",
+        R"({"runtime":{"hbm_capacity_bytes":100,"hbm_reserved_bytes":101}})"}) {
     EXPECT_EQ(RuntimeConfig::FromProfile(json).status().code(),
               absl::StatusCode::kInvalidArgument)
         << json;
   }
+}
+
+TEST(MemoryTest, SharesAllocationAcrossAliasesAndRetainsPeakAfterRelease) {
+  auto memory = std::make_shared<MemoryBudget>(100, 10);
+  ASSERT_OK_AND_ASSIGN(auto allocation, memory->Allocate(0, 60));
+  auto alias = allocation;
+  EXPECT_EQ(memory->Stats(0).used, 70);
+  EXPECT_EQ(memory->Allocate(0, 31).status().code(), absl::StatusCode::kResourceExhausted);
+  ASSERT_OK_AND_ASSIGN(auto other, memory->Allocate(1, 90));
+  allocation.reset();
+  EXPECT_EQ(memory->Stats(0).used, 70);
+  alias.reset();
+  EXPECT_EQ(memory->Stats(0).used, 10);
+  EXPECT_EQ(memory->Stats(0).peak, 70);
+  EXPECT_EQ(memory->Stats(0).allocations, 1);
+  EXPECT_EQ(memory->Stats(1).used, 100);
 }
 
 TEST(RuntimeTest, CompletionIsDelayedWithoutProfilingAndDevicesCanOverlap) {

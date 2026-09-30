@@ -1,9 +1,10 @@
-"""Run TPU workloads or collect their JIT compilation artifacts on CPU."""
+"""Simulate TPU workloads on CPU, export compiler artifacts, or collect real TPU timings."""
 
 import argparse
 import importlib.util
 from importlib.metadata import PackageNotFoundError, distribution
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -44,6 +45,15 @@ def environment(args, inherited=None):
     env = dict(os.environ if inherited is None else inherited)
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         raise ValueError("sim-pjrt requires Linux x86-64")
+    if args.action == "collect":
+        # Collection must run the ordinary real TPU backend, even when invoked
+        # from a shell previously configured for simulation.
+        for key in list(env):
+            if key.startswith("PJRT_SIM_") or key in (
+                "PJRT_NAMES_AND_LIBRARY_PATHS", "SIM_PJRT_PLUGIN_PATH"):
+                env.pop(key)
+        env.update(JAX_PLATFORMS="tpu", JAX_ENABLE_COMPILATION_CACHE="false")
+        return env
     package = Path(__file__).resolve().parent
     plugin = existing_file(
         args.plugin or env.get("SIM_PJRT_PLUGIN_PATH")
@@ -87,6 +97,12 @@ def environment(args, inherited=None):
         PJRT_SIM_BUNDLE_PYTHON=sys.executable,
         TPU_SKIP_MDS_QUERY="1",
     )
+    for field in ("capacity", "reserved"):
+        value = getattr(args, f"hbm_{field}_gib", None)
+        if value is not None:
+            if not math.isfinite(value) or value < 0 or (field == "capacity" and value == 0):
+                raise ValueError(f"Invalid HBM {field}: {value}")
+            env[f"PJRT_SIM_HBM_{field.upper()}_BYTES"] = str(int(value * 1024**3))
     env.setdefault("TPU_WORKER_HOSTNAMES", "localhost")
     # Use the package environment for executable lookup and worker Python.
     env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", os.defpath)
@@ -96,15 +112,40 @@ def environment(args, inherited=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
-    for name in ("run", "compile", "doctor"):
+    offline = sub.add_parser("import-profile", help="Import an existing real TPU profile offline")
+    offline.add_argument("profile", help="XProf capture directory, .xplane.pb, or Trace Viewer JSON[.gz]")
+    offline.add_argument("--output", required=True, help="New output database JSON file")
+    offline.add_argument("--hlo", action="append", default=[],
+                         help="Optional optimized HLO text/proto file or directory; may repeat")
+    offline.add_argument("--identities", help="Optional compile identities for exact replay binding")
+    offline.add_argument("--context", help="Optional hardware/compiler context JSON")
+    offline.add_argument("--skip-first", type=int, default=1)
+    for name in ("run", "compile", "doctor", "collect"):
         command = sub.add_parser(name)
+        if name == "collect":
+            command.add_argument("--output", required=True, metavar="DIRECTORY",
+                                 help="New directory for real TPU profile and timings.json")
+            command.add_argument("--skip-first", type=int, default=1,
+                                 help="Discard this many device samples per executable (default: 1)")
+            command.add_argument("--record-identities", action="store_true",
+                                 help="Opt into JAX compile hooks for exact replay and HLO capture")
+            command.add_argument("command", nargs=argparse.REMAINDER)
+            continue
         command.add_argument("--topology", help="Offline TPU topology (default: tpu7x:2x2x1)")
         command.add_argument("--devices", type=int, help="Simulated devices (default: 8)")
+        command.add_argument("--hbm-capacity-gib", type=float, help="Logical HBM capacity per device")
+        command.add_argument("--hbm-reserved-gib", type=float, help="Capacity reserved outside application buffers")
         if name == "compile":
             command.add_argument("--output", required=True, metavar="DIRECTORY",
                                  help="Directory for TPU compilation artifacts (no timing analysis)")
         else:
             command.add_argument("--timing-profile", help="JSON path, 'tpu7x' (default), or 'example'")
+        if name == "run":
+            command.add_argument("--predictor", choices=("llo", "replay"), default="llo")
+            command.add_argument("--database", help="Collected timings.json; supplies compiler flags for both predictors")
+            command.add_argument("--replay-miss", choices=("error", "llo"), default="error",
+                                 help="Replay miss policy (default: fail)")
+            command.add_argument("--report", help="New directory for execution traces and prediction coverage")
         command.add_argument("--plugin", help="Override the bundled PJRT shared library")
         command.add_argument("--libtpu", help="Override the installed libtpu shared library")
         if name != "doctor":
@@ -112,6 +153,11 @@ def main(argv=None):
                                  help="Python script or command; following arguments are passed through")
     args = parser.parse_args(argv)
     try:
+        if args.action == "import-profile":
+            from sim_pjrt.profiling.importer import import_profile
+            import_profile(args.profile, args.output, hlo=args.hlo, identities=args.identities,
+                           context=args.context, skip_first=args.skip_first)
+            return 0
         env = environment(args)
         if args.action == "doctor":
             from importlib.metadata import PackageNotFoundError, version
@@ -130,6 +176,36 @@ def main(argv=None):
             command = command[1:]
         if not command:
             raise ValueError("Provide a command or script, e.g. workload.py")
+        if args.action == "collect":
+            if args.skip_first < 0:
+                raise ValueError("--skip-first must be nonnegative")
+            options = dict(output=args.output, command=command, skip_first=args.skip_first,
+                           record_identities=args.record_identities)
+            command = [sys.executable, "-m", "sim_pjrt.workload", json.dumps(["collect", options])]
+        elif args.action == "run":
+            from sim_pjrt.prediction import ReplayPredictor, predictor
+            selected = predictor(args.predictor, args.database if args.predictor == "replay" else None)
+            reference = selected or (ReplayPredictor(args.database) if args.database else None)
+            if reference is not None:
+                for key, value in reference.compiler_environment().items():
+                    env.setdefault(key, value)
+            if selected is not None:
+                env["PJRT_SIM_PREDICTOR"] = "replay"
+                env["PJRT_SIM_REPLAY_MISS"] = args.replay_miss
+            else:
+                if args.replay_miss != "error":
+                    raise ValueError("--replay-miss requires --predictor replay")
+                env.pop("PJRT_SIM_PREDICTOR", None)
+                env.pop("PJRT_SIM_REPLAY_MISS", None)
+            if selected is not None or args.report:
+                options = dict(command=command, predictor=args.predictor, replay_miss=args.replay_miss,
+                               database=selected.path if selected else None)
+                if args.report:
+                    directory = Path(args.report).expanduser().resolve()
+                    directory.mkdir(parents=True, exist_ok=False)
+                    env["PJRT_SIM_TRACE"] = str(directory / "execution")
+                    options["report"] = str(directory)
+                command = [sys.executable, "-m", "sim_pjrt.workload", json.dumps(["run", options])]
         if command[0].endswith(".py"):
             command.insert(0, sys.executable)
         elif command[0] in ("python", "python3"):

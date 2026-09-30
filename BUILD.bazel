@@ -91,10 +91,21 @@ xla_cc_binary(
 )
 
 cc_library(
+    name = "memory",
+    srcs = ["src/memory.cc"],
+    hdrs = ["src/memory.h"],
+    deps = [
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
     name = "runtime",
     srcs = ["src/runtime.cc"],
     hdrs = ["src/runtime.h"],
     deps = [
+        ":memory",
         ":bundle_timing",
         "@com_google_protobuf//:protobuf",
         ":profiler",
@@ -124,6 +135,7 @@ cc_library(
     srcs = ["src/virtual_hbm.cc"],
     hdrs = ["src/virtual_hbm.h"],
     deps = [
+        ":memory",
         "@com_google_absl//absl/synchronization",
         "@xla//xla/pjrt:common_pjrt_client",
         "@xla//xla/pjrt:host_callback",

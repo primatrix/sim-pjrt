@@ -9,6 +9,7 @@ namespace xla::sim {
 // Retains physical storage, but exposes logical size and placeholder semantics.
 absl::StatusOr<PjRtRawBufferRef> MakeRawAlias(
     PjRtBuffer* storage, int64_t bytes, bool placeholder,
-    std::shared_ptr<SimRuntime> runtime, Completion ready);
+    std::shared_ptr<SimRuntime> runtime, Completion ready,
+    std::shared_ptr<void> allocation = {});
 }  // namespace xla::sim
 #endif

@@ -3,7 +3,9 @@ title: 环境变量
 description: 后端选择、设备数、Virtual HBM与在线性能参数。
 ---
 
-这些变量应在 **JAX 初始化后端之前**设置。修改后请启动新的 Python 进程。程序时间由 bundle profile 决定，显式 PJRT 传输使用 runtime 参数。
+通常直接使用 `spjrt run`，无需手动设置这些变量。启动器默认选择 `tpu7x:2x2x1`、8 个设备和 `tpu7x` 计时配置。
+
+下表用于直接加载插件时的配置，原生插件默认值与启动器不同。变量应在 **JAX 初始化后端之前**设置；修改后请启动新的 Python 进程。
 
 ## 后端与存储
 
@@ -25,6 +27,8 @@ description: 后端选择、设备数、Virtual HBM与在线性能参数。
 ## 时间与速率
 
 所有计时参数放在 `PJRT_SIM_BUNDLE_PROFILE` 指向的 JSON。程序内部估算使用顶层 bundle 参数，显式 PJRT 操作使用 `runtime` 对象：
+
+内置配置设有 `assume_peers_ready=true`：编译器标记的跨设备就绪轮询只检查一次，额外等待按 0 计，指令和 DMA 仍计时。估时 JSON 会注明此假设；普通计算循环不受影响。
 
 ```json
 {

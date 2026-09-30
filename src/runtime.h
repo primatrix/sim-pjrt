@@ -13,6 +13,7 @@
 
 #include "absl/status/statusor.h"
 #include "src/bundle_timing.h"
+#include "src/memory.h"
 #include "src/profiler.h"
 #include "xla/future.h"
 
@@ -26,6 +27,8 @@ struct RuntimeConfig {
   int64_t transfer_ns = 2000;
   int64_t link_ns = 1000;
   double communication_scale = 1;
+  int64_t hbm_capacity_bytes = int64_t{96} << 30;
+  int64_t hbm_reserved_bytes = 0;
   static absl::StatusOr<RuntimeConfig> FromProfile(absl::string_view json);
   static absl::StatusOr<RuntimeConfig> FromEnvironment();
 };
@@ -48,9 +51,11 @@ class SimRuntime {
       int64_t duration_ns, bool partial, const std::vector<int64_t>& devices,
       const std::vector<Completion>& inputs, const ProfileActivity& profile,
       const std::string& name,
-      std::shared_ptr<const std::vector<BundleActivity>> activities = {});
+      std::shared_ptr<const std::vector<BundleActivity>> activities = {},
+      const std::string& analysis_source = "libtpu_bundles");
   Completion Transfer(int64_t source, int64_t destination, int64_t bytes,
                       const Completion& input, const ProfileActivity& profile);
+  const std::shared_ptr<MemoryBudget>& memory() const { return memory_; }
 
  private:
   struct Timer {
@@ -69,6 +74,7 @@ class SimRuntime {
   int64_t Epoch(int64_t steady_ns) const { return steady_ns + epoch_offset_; }
 
   const RuntimeConfig config_;
+  const std::shared_ptr<MemoryBudget> memory_;
   const int64_t epoch_offset_;
   std::mutex mutex_;
   std::condition_variable changed_;

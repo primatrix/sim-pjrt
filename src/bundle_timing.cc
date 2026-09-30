@@ -87,6 +87,42 @@ bool DumpOnly() {
   return directory && *directory;
 }
 
+absl::StatusOr<BundleCompilation> ReadReplayTiming(const std::string& json) {
+  google::protobuf::Struct report;
+  ABSL_RETURN_IF_ERROR(google::protobuf::util::JsonStringToMessage(json, &report));
+  const auto& fields = report.fields();
+  auto string_is = [&](const char* name, const char* expected) {
+    const auto it = fields.find(name);
+    return it != fields.end() && it->second.has_string_value() &&
+           it->second.string_value() == expected;
+  };
+  const auto schema = fields.find("schema_version");
+  const auto duration = fields.find("duration_ns");
+  const auto count = fields.find("sample_count");
+  const auto key = fields.find("execution_key");
+  const auto timeline = fields.find("activity_timeline");
+  if (!string_is("predictor", "replay") || !string_is("analysis_source", "tpu_replay") ||
+      !string_is("measurement", "tpu_xprof_module_duration") ||
+      schema == fields.end() || !schema->second.has_number_value() ||
+      schema->second.number_value() != 1 || duration == fields.end() ||
+      !duration->second.has_number_value() || count == fields.end() ||
+      !count->second.has_number_value() || key == fields.end() ||
+      !key->second.has_string_value() || key->second.string_value().size() != 64 ||
+      timeline == fields.end() || !timeline->second.has_list_value() ||
+      timeline->second.list_value().values_size() != 0)
+    return absl::InvalidArgumentError("Invalid replay prediction metadata");
+  const double ns = duration->second.number_value();
+  const double samples = count->second.number_value();
+  if (!std::isfinite(ns) || ns <= 0 || ns > 1e18 || std::floor(ns) != ns ||
+      !std::isfinite(samples) || samples < 1 || std::floor(samples) != samples)
+    return absl::InvalidArgumentError("Invalid replay duration/sample count");
+  BundleCompilation result;
+  result.timing.analysis_source = "tpu_replay";
+  result.timing.duration_ns = static_cast<int64_t>(ns);
+  result.report_json = json;
+  return result;
+}
+
 const absl::StatusOr<std::string>& BundleDumpDirectory() {
   static const auto directory = []() -> absl::StatusOr<std::string> {
     std::string path = "/tmp/pjrt-sim-bundles-XXXXXX";
@@ -161,9 +197,9 @@ absl::StatusOr<BundleCompilation> FinalizeBundles(
         absl::StrCat("Waiting for bundle estimator: ", strerror(errno)));
   }
   if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-    return absl::FailedPreconditionError(
-        "Bundle estimator failed; check stderr and make bundle_timing "
-        "importable via PYTHONPATH");
+    return absl::FailedPreconditionError(absl::StrCat(
+        "Bundle estimator failed; see stderr for the cause. Inputs: ",
+        manifest_path));
   std::ifstream file(report_path);
   if (!file)
     return absl::DataLossError("Bundle estimator did not write a report");
@@ -198,50 +234,6 @@ absl::StatusOr<BundleCompilation> FinalizeBundles(
     return absl::DataLossError("Missing Final LLO activity timeline");
   ABSL_ASSIGN_OR_RETURN(result.timing.activities,
                         ReadActivities(timeline->second, result.timing.duration_ns));
-  const auto parameters = fields.find("branch_parameters");
-  const auto cases = fields.find("branch_cases");
-  if (parameters != fields.end() || cases != fields.end()) {
-    if (parameters == fields.end() || cases == fields.end() ||
-        !parameters->second.has_list_value() || !cases->second.has_list_value())
-      return absl::DataLossError("Incomplete branch timing cases");
-    for (const auto& value : parameters->second.list_value().values()) {
-      const double index = value.number_value();
-      if (!value.has_number_value() || !std::isfinite(index) || index < 0 ||
-          index > 1000000 || std::floor(index) != index ||
-          (!result.timing.branch_parameters.empty() &&
-           index <= result.timing.branch_parameters.back()))
-        return absl::DataLossError("Invalid branch parameter index");
-      result.timing.branch_parameters.push_back(static_cast<int64_t>(index));
-    }
-    const size_t count = result.timing.branch_parameters.size();
-    if (count == 0 || count > 4 ||
-        cases->second.list_value().values_size() != (1 << count))
-      return absl::DataLossError("Invalid branch timing case count");
-    for (const auto& value : cases->second.list_value().values()) {
-      if (!value.has_struct_value())
-        return absl::DataLossError("Invalid branch timing case");
-      const auto& c = value.struct_value().fields();
-      auto variant = std::make_shared<BundleTiming>();
-      variant->bundles = result.timing.bundles;
-      for (auto [key, target] : {std::pair{"duration_ns", &variant->duration_ns},
-                                 {"cost_gaps", &variant->cost_gaps}}) {
-        const auto field = c.find(key);
-        if (field == c.end() || !field->second.has_number_value())
-          return absl::DataLossError("Missing branch timing value");
-        const double number = field->second.number_value();
-        if (!std::isfinite(number) || number < 0 || number > 1e18 ||
-            std::floor(number) != number)
-          return absl::DataLossError("Invalid branch timing value");
-        *target = static_cast<int64_t>(number);
-      }
-      const auto events = c.find("activity_timeline");
-      if (events == c.end())
-        return absl::DataLossError("Missing branch timing activities");
-      ABSL_ASSIGN_OR_RETURN(variant->activities,
-                            ReadActivities(events->second, variant->duration_ns));
-      result.timing.branch_cases.push_back(std::move(variant));
-    }
-  }
   const auto settings = fields.find("profile");
   bool allow_partial = false;
   if (settings != fields.end() && settings->second.has_struct_value()) {

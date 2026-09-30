@@ -35,9 +35,11 @@ Python >=3.12,<3.14 and `jax[tpu]==0.11.1`. JAX's TPU extra requires
 jaxlib 0.11.1 and libtpu 0.0.46.*. The package uses this extra directly rather
 than maintaining a separate libtpu version pin. Upstream leaves Flax unpinned.
 
-This dependency alignment has not yet been validated with a full simulator
-integration run. Previous integration results and checked-in LLO fixtures used
-libtpu 0.0.48; their provenance remains unchanged. `requirements/constraints.txt`
+On 2026-09-29, a clean wheel installation with libtpu 0.0.46.1 passed dependency
+checks, five single-device runtime smoke tests, and 28 collection/HLO import
+tests. Full SGLang integration on this dependency set remains unvalidated.
+Earlier integration results and checked-in LLO fixtures used libtpu 0.0.48.
+`requirements/constraints.txt`
 is a historical environment snapshot, not a lockfile for current upstream
 SGLang-Jax. Revalidate integration before replacing that snapshot.
 

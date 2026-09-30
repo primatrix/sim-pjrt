@@ -7,6 +7,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/raw_buffer.h"
+#include "src/memory.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/pjrt/c/pjrt_c_api.h"
 #include "xla/pjrt/pjrt_client.h"
@@ -18,8 +19,10 @@ namespace xla::sim {
 absl::Status VirtualizeModule(HloModule &module);
 absl::StatusOr<std::unique_ptr<PjRtLoadedExecutable>>
 CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,
-               CompileOptions options);
-PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args);
+               CompileOptions options, std::shared_ptr<MemoryBudget> memory = {});
+PJRT_Error *VirtualFromHost(PJRT_Client_BufferFromHostBuffer_Args *args,
+                           std::shared_ptr<MemoryBudget> memory);
+std::shared_ptr<MemoryAllocation> VirtualAllocation(PjRtBuffer* buffer);
 absl::StatusOr<PjRtRawBufferRef> VirtualRawAlias(
     PjRtBuffer* buffer, std::shared_ptr<SimRuntime> runtime, Completion ready);
 // Reject pointer export that would expose scalar backing as logical storage.

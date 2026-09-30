@@ -9,6 +9,8 @@ namespace xla::sim {
 // Immutable executable metadata retained after compilation and snapshot export.
 struct ExecutableWork {
   BundleTiming bundle_timing;
+  std::string execution_key;
+  bool replay_miss = false;
   int64_t substituted_ops = 0;
   uint64_t program_id = 0;
   int64_t num_replicas = 1;
