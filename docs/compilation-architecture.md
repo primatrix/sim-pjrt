@@ -22,8 +22,10 @@ compilation must happen before the application starts. Serving workloads can
 compile new programs while running.
 
 Each compilation collects `*-final_bundles.txt`, `assembly-pre-overlay` and the
-compiler's `deduplication-map` into a manifest in `/tmp/pjrt-sim-bundles-*`.
+compiler's `deduplication-map`, along with the target topology, into a manifest
+in `/tmp/pjrt-sim-bundles-*`.
 Assembly supplies the actual per-instruction branch delays after compaction.
+For v5e, the target supplies the four fixed slots omitted from assembly.
 Starting at TLP,
 the estimator resolves shared kernels and expands each call site. It does not
 sum every dump once: one kernel may be called many times, and unused kernels

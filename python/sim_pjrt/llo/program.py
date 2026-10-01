@@ -100,12 +100,14 @@ def iter_final_bundles(modules, aliases=None, root="TLP", limit=None):
     yield from visit(root, "", ())
 
 
-def annotate_branch_delays(modules, aliases, assembly):
+def annotate_branch_delays(modules, aliases, assembly, topology=""):
     """Match static Final LLO to emitted assembly before expanding loop visits.
 
-    Branch compaction removes delay-slot nops. Only assembly records the actual
-    delay; the target's nominal maximum is insufficient for path reconstruction.
+    Explicit assembly delays account for compaction. On v5e, the operand is
+    omitted: libtpu's Ghostlite TensorCore target has four fixed delay slots
+    and does not support flexible delay slots.
     """
+    implicit_delay = 4 if topology.partition(':')[0] == 'v5e' else None
     headers = list(_HEADER.finditer(assembly))
     originals = {name: {b['address']: b for b in bundles}
                  for name, bundles in modules.items()}
@@ -141,8 +143,8 @@ def annotate_branch_delays(modules, aliases, assembly):
                 predicate = ('!' if guard[1].startswith('!') else '') + register[0]
             if ins['opcode'] != match[1] or predicate != match[2]:
                 raise ValueError(f'Final LLO/assembly branch predicate mismatch at {address}')
-            if match[3] is not None:
-                delay = int(match[3])
+            delay = int(match[3]) if match[3] is not None else implicit_delay
+            if delay is not None:
                 if ins.get('branch_delay_slots', delay) != delay:
                     raise ValueError(f'inconsistent branch delay across calls at {address}')
                 ins['branch_delay_slots'] = delay
@@ -188,7 +190,9 @@ def annotate_loop_bounds(program, bounds):
 
 def load_final_modules(path):
     """Load and align one compilation, before selecting runtime paths."""
-    files = json.loads(path.read_text())["files"]
+    manifest = json.loads(path.read_text())
+    files = manifest["files"]
+    topology = manifest.get("topology", "")
     modules, sources, aliases, mapping_files = {}, {}, {}, []
     metadata_files, sparsecore_files, assembly_files = [], [], []
     for filename in files:
@@ -219,13 +223,14 @@ def load_final_modules(path):
     if len(assembly_files) > 1:
         raise ValueError('expected at most one assembly dump per compile')
     if assembly_files:
-        annotate_branch_delays(modules, aliases, Path(assembly_files[0]).read_text())
+        annotate_branch_delays(modules, aliases, Path(assembly_files[0]).read_text(), topology)
     bounds = {}
     for filename in metadata_files:
         bounds.update(hlo_loop_bounds(Path(filename).read_text()))
     annotate_loop_bounds(modules['TLP'], bounds)
     return modules, aliases, {
         "bundle_stage": "final_bundles",
+        "topology": topology,
         "entry_file": sources["TLP"],
         "final_bundle_files": list(sources.values()),
         "deduplication_map_files": mapping_files,
