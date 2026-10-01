@@ -1,12 +1,18 @@
 """Behavior regressions for llo program; no TPU required."""
 
 import copy
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from sim_pjrt.llo.control_flow import resolve_scalar_operands
 from sim_pjrt.llo.cost import estimate_bundles
 from sim_pjrt.llo.parser import parse_bundles, parse_deduplication_map
-from sim_pjrt.llo.program import annotate_branch_delays, annotate_loop_bounds, compose_final_bundles, estimate_final_program
+from sim_pjrt.llo.program import (
+    annotate_branch_delays, annotate_loop_bounds, compose_final_bundles,
+    estimate_final_program, load_final_modules,
+)
 
 PROFILE = {"frequency_hz": 1e9, "bundle_issue_cycles": 1}
 
@@ -76,12 +82,47 @@ class LloProgramTest(unittest.TestCase):
                 assembly = '\n'.join(
                     f'{i}: {{' + (f'(pc) = sbr.rel @p0 $+8, ${delay} (=0x9)' if i == 1 else '') + '}'
                     for i in range(10))
-                annotate_branch_delays(modules, {}, assembly)
+                annotate_branch_delays(modules, {}, assembly, topology='v5e:2x2')
                 # Assembly takes precedence over a nominal target setting.
                 resolved = resolve_scalar_operands(modules['TLP'], branch_delay_slots=6)
                 self.assertEqual([b['source_address'] for b in resolved],
                                  [f'0:{i:#x}' for i in range(2 + delay)] + ['0:0x9'])
                 self.assertEqual(estimate_bundles(resolved, PROFILE)['dma_bytes'], 0)
+
+    def test_v5e_manifest_supplies_fixed_branch_delay(self):
+        # The fourth delay slot sets the DMA size. The taken branch skips the
+        # following overwrite, so a wrong delay changes the modeled transfer.
+        llo = '''0: { sbr.rel target = $region1 }
+1: {}
+2: {}
+3: {}
+4: { %s_units = smov 32 }
+5: { %s_units = smov 64 }
+6: { dma.hbm_to_vmem %hbm, %s_units, %vmem, [#allocation0] } /* Start region 1 */
+'''
+        assembly = '\n'.join(f'{i}: {{' + (
+            '(pc) = sbr.rel $+6 (=0x6)' if i == 0 else '') + '}' for i in range(7))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = []
+            for name, text in (
+                ('1-TLP-00-final_bundles.txt', llo),
+                ('1-TLP-01-assembly-pre-overlay.txt', assembly),
+                ('1-TLP-02-deduplication-map.txt', 'key:TLP\nordinal:0\nequivalent_hlos[size=0]:\n'),
+            ):
+                path = root / name
+                path.write_text(text)
+                files.append(str(path))
+            manifest = root / 'manifest.json'
+            manifest.write_text(json.dumps({'files': files, 'topology': 'v5e:2x2'}))
+            modules, aliases, provenance = load_final_modules(manifest)
+        self.assertEqual(provenance['topology'], 'v5e:2x2')
+        resolved = resolve_scalar_operands(modules['TLP'])
+        self.assertEqual([b['source_address'] for b in resolved],
+                         [f'0:{i:#x}' for i in (0, 1, 2, 3, 4, 6)])
+        report = estimate_final_program(modules, dict(PROFILE, dma_granule_bytes=1,
+            dma={'hbm_to_vmem': {'bytes_per_second': 1e9}}), aliases)
+        self.assertEqual(report['dma_bytes'], 32)
 
     def test_assembly_alignment_validates_calls_predicates_targets_and_length(self):
         modules = {

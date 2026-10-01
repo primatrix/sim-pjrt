@@ -37,9 +37,6 @@ class TpuCompilationTest(unittest.TestCase):
                 (root / "configs/bundle_timing_example.json").read_text()
             )
             profile["bundle_issue_cycles"] = 100000
-            # This target's assembly uses an implicit branch delay. Supply an
-            # explicit six-slot assumption in this uncalibrated smoke profile.
-            profile["branch_delay_slots"] = 6
             profile_path = Path(directory) / "profile.json"
             profile_path.write_text(json.dumps(profile))
             env = dict(os.environ)

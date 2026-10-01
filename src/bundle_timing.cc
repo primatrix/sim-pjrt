@@ -149,6 +149,8 @@ absl::StatusOr<BundleCompilation> FinalizeBundles(
   if (files.empty()) return absl::InvalidArgumentError("No Final LLO bundles");
   const std::string manifest_path = files.front() + ".manifest.json";
   google::protobuf::Struct manifest;
+  if (const char* topology = std::getenv("PJRT_SIM_TPU_TOPOLOGY"))
+    (*manifest.mutable_fields())["topology"].set_string_value(topology);
   if (DumpOnly())
     (*manifest.mutable_fields())["status"].set_string_value("compiled");
   auto* paths = (*manifest.mutable_fields())["files"].mutable_list_value();

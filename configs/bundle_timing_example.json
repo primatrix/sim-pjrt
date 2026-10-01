@@ -1,5 +1,5 @@
 {
-  "description": "Uncalibrated example for simulator smoke tests, not a TPU latency prediction. Partial timing costs are allowed; unresolved runtime conditions use conservative segment bounds with DMA drained at joins. Branch delays require assembly metadata or an explicit profile value.",
+  "description": "Uncalibrated example for simulator smoke tests, not a TPU latency prediction. Partial timing costs are allowed; unresolved runtime conditions use conservative segment bounds with DMA drained at joins. Branch delays require assembly/target metadata or an explicit profile value.",
   "allow_partial": true,
   "assume_peers_ready": true,
   "frequency_hz": 1000000000,

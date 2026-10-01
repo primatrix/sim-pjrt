@@ -28,9 +28,10 @@ rounded traffic. Address alignment, stride behavior, DMA startup, bundle issue
 and runtime parameters are not independently calibrated.
 
 Branch delay slots come from each instruction's `assembly-pre-overlay` output;
-compiler compaction can shorten them. Older captures without explicit delays
-need a `branch_delay_slots` profile assumption. An omitted delay operand is
-not interpreted as zero. Assembly values take precedence over the profile.
+compiler compaction can shorten them. For v5e, the manifest's topology supplies
+the four fixed slots omitted from assembly. Other captures without explicit
+delays need a `branch_delay_slots` profile assumption. Assembly and target values
+take precedence over the profile.
 
 ## Model
 
