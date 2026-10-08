@@ -110,6 +110,13 @@ absl::StatusOr<CompiledProgram> CompileProgram(const CompilationInput &input,
                                               std::getenv("PJRT_SIM_TPU_TOPOLOGY")));
   result.work.num_replicas = build.num_replicas();
   result.work.num_partitions = build.num_partitions();
+  if (replay && !timing.timing.activities->empty()) {
+    int64_t modules = 0;
+    for (const auto& activity : *timing.timing.activities)
+      modules += activity.track == "XLA Modules";
+    if (modules != build.num_replicas() * build.num_partitions())
+      return absl::InvalidArgumentError("Replay timeline device count differs from executable");
+  }
   if (capture_snapshot)
     result.program_json = std::move(timing.report_json);
   result.work.bundle_timing = timing.timing;

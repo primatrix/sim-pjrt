@@ -95,6 +95,36 @@ TEST(ReplayTimingTest, KeepsMeasuredDurationWithoutBundleActivities) {
   EXPECT_EQ(ReadReplayTiming("{}").status().code(), absl::StatusCode::kInvalidArgument);
 }
 
+TEST(ReplayTimingTest, RetainsMeasuredActivitiesAndRejectsWrongDevices) {
+  const std::string report = R"({
+    "schema_version": 1, "predictor": "replay", "analysis_source": "tpu_replay",
+    "measurement": "tpu_xprof_module_duration", "sample_count": 3,
+    "execution_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "duration_ns": 12345, "num_devices": 1, "activity_timeline": [
+      {"name":"model", "track":"XLA Modules", "detail":"tpu_replay", "cost_gap":"",
+       "start_ns":0, "end_ns":12345, "bytes":-1, "device_index":0},
+      {"name":"dot", "track":"XLA Ops", "detail":"tpu_replay", "cost_gap":"",
+       "start_ns":100, "end_ns":1000, "bytes":-1, "device_index":0,
+       "tf_op":"layer/dot:MatMul", "source":"model.py:42"}
+    ]
+  })";
+  ASSERT_OK_AND_ASSIGN(auto result, ReadReplayTiming(report));
+  ASSERT_EQ(result.timing.activities->size(), 2);
+  const auto& op = result.timing.activities->at(1);
+  EXPECT_EQ(op.device_index, 0);
+  EXPECT_EQ(op.start_ns, 100);
+  EXPECT_EQ(op.end_ns, 1000);
+  EXPECT_EQ(op.tf_op, "layer/dot:MatMul");
+  EXPECT_EQ(op.source, "model.py:42");
+  EXPECT_EQ(op.source_status, "unverified");
+  std::string invalid = report;
+  invalid.replace(invalid.find("\"device_index\":0"), 16, "\"device_index\":1");
+  EXPECT_FALSE(ReadReplayTiming(invalid).ok());
+  invalid = report;
+  invalid.replace(invalid.find("\"num_devices\": 1"), 16, "\"num_devices\": 2");
+  EXPECT_FALSE(ReadReplayTiming(invalid).ok());
+}
+
 TEST(ReplayTimingTest, CompilationConsumesAttachedPrediction) {
   const char* previous = std::getenv("PJRT_SIM_PREDICTOR");
   const std::string saved = previous ? previous : "";

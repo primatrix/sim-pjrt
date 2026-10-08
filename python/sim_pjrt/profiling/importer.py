@@ -15,6 +15,7 @@ import statistics
 
 from sim_pjrt.profiling.hlo import expression_metadata, fingerprint, parse_hlo, read_hlo, shape_size
 from sim_pjrt.prediction import SCHEMA_VERSION
+from sim_pjrt.profiling.timeline import TRACKS, attach_timelines, read_xplane
 
 
 def load_profile(path):
@@ -30,14 +31,10 @@ def load_profile(path):
     if len(paths) != 1 or not paths[0].is_file():
         raise ValueError("Select one capture containing one process .xplane.pb file")
     try:
-        from xprof.convert.raw_to_tool_data import xspace_to_tool_data
+        trace = read_xplane(paths[0])
     except ImportError as error:
         raise ValueError("XPlane conversion requires sim-pjrt[collect]") from error
-    data, content_type = xspace_to_tool_data(
-        [str(paths[0])], "trace_viewer", {"use_saved_result": False})
-    if content_type != "application/json" or data is None:
-        raise ValueError("XProf did not return Trace Viewer JSON")
-    return json.loads(data), paths[0]
+    return trace, paths[0]
 
 
 def event_program(event):
@@ -61,7 +58,7 @@ def real_events(trace):
         device = processes.get(event.get("pid"), "")
         track = tracks.get((event.get("pid"), event.get("tid")))
         if (event.get("ph") != "X" or "TPU" not in device or "Sparse" in device
-                or track not in ("XLA Modules", "XLA Ops")
+                or track not in TRACKS
                 or event.get("args", {}).get("clock_domain") in ("simulated", "cpu_wall")):
             continue
         if any(type(event.get(k)) not in (int, float) or not math.isfinite(event[k])
@@ -257,7 +254,7 @@ def attribute_operations(events, programs, lanes):
         lane_index[pid] = ([span[0] for span in intervals], ends)
     attributed = []
     for event, device, track in events:
-        if track != "XLA Ops":
+        if track == "XLA Modules":
             continue
         intervals = lanes[event["pid"]]
         starts, ends = lane_index.get(event["pid"], ([], []))
@@ -281,7 +278,7 @@ def attribute_operations(events, programs, lanes):
                               "reason": "No unique containing executable invocation"})
             continue
         key, invocation = candidates[0]
-        attributed.append((event, device, key, invocation))
+        attributed.append((event, device, key, invocation, track))
     return attributed, unmatched
 
 
@@ -290,7 +287,9 @@ def match_hlo(programs, attributed, hlo_catalog):
     catalog, expressions, selected = defaultdict(dict), defaultdict(set), {}
     for hlo in hlo_catalog:
         catalog[hlo["name"]][hlo["hlo_fingerprint"]] = hlo
-    for event, _, key, _ in attributed:
+    for event, _, key, _, track in attributed:
+        if track != "XLA Ops":
+            continue
         text = event.get("args", {}).get("long_name")
         if text:
             expressions[key].add(text)
@@ -328,7 +327,7 @@ def build_database(trace, records=None, *, skip_first=1, hlo_catalog=(), context
     records = records or {}
     events = real_events(trace)
     # Capture-local IDs are never presented as stable cross-run replay keys.
-    capture_key = fingerprint(trace)
+    capture_key = trace.get("capture_key") or fingerprint(trace)
     programs, lanes = {}, defaultdict(list)
     for event, device, track in sorted(events, key=lambda item: item[0]["ts"]):
         if track != "XLA Modules":
@@ -343,6 +342,7 @@ def build_database(trace, records=None, *, skip_first=1, hlo_catalog=(), context
         invocation = len(program["observations"])
         observation = {"device": device, "pid": event["pid"], "timestamp_us": event["ts"],
                        "duration_ns": math.ceil(event["dur"] * 1000), "invocation": invocation,
+                       "program_key": key,
                        "runtime": {k: v for k, v in event.get("args", {}).items()
                                    if k in ("run_id", "queue_id", "replica_id", "program_id")}}
         program["observations"].append(observation)
@@ -358,7 +358,9 @@ def build_database(trace, records=None, *, skip_first=1, hlo_catalog=(), context
                 [s["duration_ns"] for s in observations if s["retained"]])
     attributed, unmatched = attribute_operations(events, programs, lanes)
     selected_hlo = match_hlo(programs, attributed, hlo_catalog)
-    for event, device, key, invocation in attributed:
+    for event, device, key, invocation, track in attributed:
+        if track != "XLA Ops":
+            continue
         begin = event["ts"]
         program = programs[key]
         metadata = operation_metadata(event, selected_hlo.get(key))
@@ -396,15 +398,17 @@ def build_database(trace, records=None, *, skip_first=1, hlo_catalog=(), context
                             "start_operation_key": start_key, "done_operation_key": op_key,
                             "source": "hlo_operand", "invocation_pairing": "not_inferred"})
     executables, excluded, binding_errors = bind_identities(programs, records)
+    attach_timelines(executables, attributed)
     groups = aggregate_operations(programs, capture_key)
     return {"schema_version": SCHEMA_VERSION, "measurement": "tpu_xprof_module_duration",
             "operation_measurement": "tpu_xprof_operation_duration",
             "capture_key": capture_key, "programs": programs, "executables": executables,
+            "capture_warnings": trace.get("capture_warnings", []),
             "operation_groups": groups, "excluded": excluded,
             "unmatched_events": unmatched + binding_errors,
             "hlo_modules": {h["hlo_fingerprint"]: h for h in selected_hlo.values()},
             "limitations": ["Program IDs are capture-local; exact replay requires compile identities",
-                            "Per-device observations; multi-device invocation alignment is not inferred",
+                            "Multi-device replay requires uniquely overlapping device intervals in one process capture",
                             "Operation spans can overlap or nest; do not sum them into module latency",
                             "Async start/done spans are separate, not a measured end-to-end communication time",
                             "Missing shapes, communication parameters, and computation bodies remain unknown",
@@ -441,17 +445,56 @@ def bind_identities(programs, records):
     executables, excluded = {}, {}
     for key, record in records.items():
         samples = sorted(observations[key], key=lambda s: s["timestamp_us"])
-        if (record.get("num_replicas", 1) * record.get("num_partitions", 1) != 1
-                or len({s["device"] for s in samples}) > 1):
-            excluded[key] = "Multi-device execution requires invocation alignment (not supported yet)"
+        devices = record.get("num_replicas", 1) * record.get("num_partitions", 1)
+        if devices == 1 and len({s["device"] for s in samples}) > 1:
+            excluded[key] = "Multi-device observations disagree with the executable device count"
             continue
-        retained = [s["duration_ns"] for s in samples if s["retained"]]
+        invocations = [dict(s, observations=[[s["program_key"], s["invocation"]]]) for s in samples]
+        if devices > 1:
+            if any("queue_id" not in s["runtime"] for s in samples):
+                excluded[key] = "Multi-device alignment requires queue_id"
+                continue
+            queues = defaultdict(list)
+            for sample in samples:
+                queues[sample["runtime"]["queue_id"]].append(sample)
+            # TPU run_id counters are device-local. Only accept isolated groups
+            # with one interval per device and a common overlap on the capture clock.
+            groups = []
+            for queue_samples in queues.values():
+                group, end = [], -math.inf
+                for sample in queue_samples:
+                    if sample["timestamp_us"] >= end:
+                        if group:
+                            groups.append(group)
+                        group, end = [], -math.inf
+                    group.append(sample)
+                    end = max(end, sample["timestamp_us"] + sample["duration_ns"] / 1000)
+                if group:
+                    groups.append(group)
+            invocations = []
+            for group in groups:
+                if len(group) != devices or len({s["device"] for s in group}) != devices:
+                    continue
+                if max(s["timestamp_us"] for s in group) >= min(
+                        s["timestamp_us"] + s["duration_ns"] / 1000 for s in group):
+                    continue
+                begin = min(s["timestamp_us"] for s in group)
+                end = max(s["timestamp_us"] + s["duration_ns"] / 1000 for s in group)
+                invocations.append({"queue_id": group[0]["runtime"]["queue_id"],
+                                    "observations": [[s["program_key"], s["invocation"]] for s in group],
+                                    "timestamp_us": begin, "duration_ns": math.ceil((end - begin) * 1000),
+                                    "retained": all(s["retained"] for s in group)})
+        retained = [s["duration_ns"] for s in invocations if s["retained"]]
         if not retained:
             excluded[key] = "No device samples after warmup exclusion"
             continue
-        executables[key] = dict(record, observations=samples, program_keys=sources[key],
-                               skipped_samples=sum(not s["retained"] for s in samples),
+        executables[key] = dict(record, observations=samples, invocations=invocations, program_keys=sources[key],
+                               skipped_samples=sum(not s["retained"] for s in invocations),
                                **statistics_ns(retained))
+        if devices > 1:
+            executables[key].update(invocations=invocations,
+                                   invocation_alignment="unique_interval_overlap",
+                                   incomplete_invocations=len(groups) - len(invocations))
     return executables, excluded, errors
 
 

@@ -47,8 +47,16 @@ spjrt run --predictor replay --database capture/timings.json \
 
 Match the capture's TPU topology/device count and JAX/jaxlib/libtpu versions.
 Add `--topology` and `--devices` before the script if the defaults differ.
-Replay uses median device timings; inspect `replay/summary.json` for hits and
+Replay selects a complete measured invocation nearest the median. Its XProf trace
+preserves per-device operation intervals, async operations, TraceMe events, and
+available framework/source labels. Inspect `replay/summary.json` for hits and
 missing costs. Host dispatch and synchronization overhead are separate.
+
+Collection also records source file hashes and Git revisions when available.
+Replay enables source links only when the files still match; changed, missing,
+or unverified files appear as **Captured source**, with their original locations.
+This does not invalidate measured timings. Importing an old profile cannot
+reconstruct its missing source hashes.
 
 ## Common issues
 
@@ -61,6 +69,10 @@ missing costs. Host dispatch and synchronization overhead are separate.
 | Want LLO fallback on a miss | Add `--replay-miss llo` before the script; invalid measurements still fail |
 
 Collection supports one process and keeps each device's samples separate.
-Exact replay currently requires each executable to use one device. New-shape
-prediction, cross-host alignment and SparseCore import are not implemented.
+For multi-device replay, uniquely overlapping intervals on the same queue measure
+the time from the first device's start to the last device's finish. Incomplete or
+ambiguous groups are excluded; device-local `run_id` values are not used to align
+devices. Older databases containing only module durations still replay those
+durations; reimport their raw profile to recover the internal timeline.
+New-shape prediction, cross-host alignment and SparseCore import are not implemented.
 Use `spjrt collect --help` or `spjrt import-profile --help` for additional options.

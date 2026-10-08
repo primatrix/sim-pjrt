@@ -6,6 +6,8 @@ import math
 from pathlib import Path
 import statistics
 
+from sim_pjrt.profiling.source import replay_sources
+
 
 SCHEMA_VERSION = 1
 TIMING_ATTRIBUTE = "sim_pjrt.timing"
@@ -60,17 +62,19 @@ class ReplayPredictor:
                 or any(type(s) not in (int, float) or not math.isfinite(s)
                                or s <= 0 or s > 1e18 for s in samples)):
             raise ValueError(f"No valid device-duration samples for executable {key}")
+        timeline = record.get("replay_timeline")
         return {
             "schema_version": SCHEMA_VERSION,
             "predictor": self.name,
             "analysis_source": "tpu_replay",
             "execution_key": key,
-            "duration_ns": math.ceil(statistics.median(samples)),
+            "duration_ns": timeline["duration_ns"] if timeline else math.ceil(statistics.median(samples)),
             "sample_count": len(samples),
             "num_devices": record.get("num_replicas", 1) * record.get("num_partitions", 1),
             "database": self.path,
             "measurement": self.database["measurement"],
-            "activity_timeline": [],
+            "activity_timeline": replay_sources(timeline["activity_timeline"],
+                                                record.get("source_files", {})) if timeline else [],
         }
 
     def compiler_environment(self):

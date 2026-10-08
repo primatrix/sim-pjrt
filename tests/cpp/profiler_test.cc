@@ -1,11 +1,13 @@
 #include "src/profiler.h"
 
 #include <chrono>
+#include <map>
 #include <set>
 #include <thread>
 
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
+#include "src/runtime.h"
 #include "tsl/platform/status_matchers.h"
 #include "tsl/profiler/protobuf/xplane.pb.h"
 
@@ -232,6 +234,105 @@ TEST(ProfilerTest, ActivityDetailAndCorrelationSurviveExport) {
     }
   }
   EXPECT_EQ(transfers, 1);
+}
+
+TEST(ProfilerTest, ReplayKeepsDeviceAssignmentAndFrameworkMetadata) {
+  ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
+  ProfileCall call("submit", "model");
+  auto activities = std::make_shared<std::vector<BundleActivity>>(2);
+  for (int i = 0; i < 2; ++i) {
+    auto& op = activities->at(i);
+    op.name = "all-reduce";
+    op.track = "Async XLA Ops";
+    op.start_ns = 100 * i;
+    op.end_ns = 500;
+    op.device_index = i;
+    op.detail = "tpu_replay";
+    op.tf_op = "layer/sum:Sum";
+    op.source = "model.py:42";
+    op.source_stack = "model.py:42:7";
+  }
+  SimRuntime runtime(RuntimeConfig{});
+  for (const auto& done : runtime.ExecuteTimed(1000, false, {7, 6}, {},
+           call.activity(), "model", activities, "tpu_replay"))
+    ASSERT_OK(done.future.Await());
+  StopProfile(session);
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session->Serialize()));
+  int count = 0;
+  for (const auto& plane : space.planes()) {
+    if (plane.name() == "/host:CPU") continue;
+    const int index = plane.name() == "/device:TPU:6" ? 0 : 1;
+    for (const auto& line : plane.lines()) {
+      if (line.name() != "Async XLA Ops") continue;
+      EXPECT_EQ(line.id(), 4);
+      EXPECT_EQ(line.events_size(), 1);
+      for (const auto& event : line.events()) {
+        ++count;
+        EXPECT_EQ(event.duration_ps(), (500 - 100 * index) * 1000);
+        std::map<std::string, std::string> strings;
+        for (const auto& stat : event.stats())
+          if (stat.has_ref_value() || stat.has_str_value())
+            strings[plane.stat_metadata().at(stat.metadata_id()).name()] =
+                stat.has_ref_value() ? plane.stat_metadata().at(stat.ref_value()).name()
+                                     : stat.str_value();
+        EXPECT_EQ(strings["tf_op"], "layer/sum:Sum");
+        EXPECT_EQ(strings["source"], "model.py:42");
+        EXPECT_EQ(strings["source_stack"], "model.py:42:7");
+        EXPECT_EQ(strings["cost_status"], "replayed");
+      }
+    }
+  }
+  EXPECT_EQ(count, 2);
+}
+
+TEST(ProfilerTest, ChangedSourceKeepsCapturedLocationWithoutLiveLinks) {
+  ASSERT_OK_AND_ASSIGN(auto session, StartProfile());
+  ProfileCall call("submit", "model");
+  auto activities = std::make_shared<std::vector<BundleActivity>>(3);
+  for (int i = 0; i < 3; ++i) {
+    auto& op = activities->at(i);
+    op.name = "add";
+    op.track = "XLA Ops";
+    op.start_ns = 100 * i;
+    op.end_ns = 100 * (i + 1);
+    op.source = "model.py:42";
+    op.source_stack = "model.py:42:7";
+    op.source_status = i == 1 ? "changed" : "verified";
+    op.source_stack_status = i ? "changed" : "verified";
+    op.source_revision = "git_commit=abc123 sha256=example";
+  }
+  SimRuntime runtime(RuntimeConfig{});
+  ASSERT_OK(runtime.ExecuteTimed(1000, false, {0}, {}, call.activity(),
+                                "model", activities, "tpu_replay")[0].future.Await());
+  StopProfile(session);
+  XSpace space;
+  ASSERT_TRUE(space.ParseFromString(session->Serialize()));
+  int captured = 0, checked = 0;
+  for (const auto& plane : space.planes()) {
+    for (const auto& line : plane.lines()) {
+      if (line.name() != "XLA Ops" && line.name() != "Captured source") continue;
+      for (const auto& event : line.events()) {
+        std::map<std::string, std::string> stats;
+        for (const auto& stat : event.stats())
+          if (stat.has_ref_value() || stat.has_str_value())
+            stats[plane.stat_metadata().at(stat.metadata_id()).name()] =
+                stat.has_ref_value() ? plane.stat_metadata().at(stat.ref_value()).name()
+                                     : stat.str_value();
+        const bool verified = stats["source_status"] == "verified";
+        const bool stack_verified = stats["source_stack_status"] == "verified";
+        EXPECT_EQ(stats.count("source"), verified);
+        EXPECT_EQ(stats.count("source_stack"), stack_verified);
+        EXPECT_EQ(stats.count("captured_source"), !verified);
+        EXPECT_EQ(stats.count("captured_source_stack"), !stack_verified);
+        EXPECT_EQ(stats["source_revision"], "git_commit=abc123 sha256=example");
+        ++checked;
+        captured += line.name() == "Captured source";
+      }
+    }
+  }
+  EXPECT_EQ(checked, 4);
+  EXPECT_EQ(captured, 1);
 }
 
 TEST(ProfilerTest, StopClipsRuntimeReservationsAndOmitsFutureWork) {

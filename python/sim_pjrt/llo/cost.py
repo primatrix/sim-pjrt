@@ -7,6 +7,7 @@ import math
 import re
 
 from .parser import dma_operands, expand_path, _number
+from .mxu import matmul_throughput
 
 _SYNC_FLAG = r"(\[#allocation\d+(?:\s*\+\s*\$0x[\da-fA-F]+)?\])"
 
@@ -79,10 +80,10 @@ class ActivityTimeline:
                 self.communication.add(key)
                 self.add("XLA TraceMe", op, start, start, bundle, "; ".join(gaps))
 
-    def finish(self, clock, finish, tail):
+    def finish(self, clock, finish, tail, pending_name="Outstanding DMA"):
         retired = finish - tail
         if retired > clock:
-            self.add("XLA TraceMe", "Outstanding DMA", clock, retired)
+            self.add("XLA TraceMe", pending_name, clock, retired)
         if tail:
             self.add("XLA TraceMe", "Completion tail", retired, finish)
         for item in self.items:
@@ -102,6 +103,9 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
     Unknown branch paths, waits, DMA operands and delay semantics remain gaps.
     """
     scenario = scenario or {}
+    mxu_model = profile.get("mxu_model")
+    if mxu_model not in (None, "gf"):
+        raise ValueError(f"unsupported mxu_model: {mxu_model}")
     hz = _positive(profile["frequency_hz"], "frequency_hz")
     transaction = _positive(profile.get("dma_transaction_bytes", 1), "dma_transaction_bytes")
     if not float(transaction).is_integer():
@@ -124,6 +128,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
     unused_inactive = set(inactive)
     clock = stalls = extra = transferred = bus_transferred = 0
     resources, flags, histogram, gaps, events = {}, {}, Counter(), [], []
+    mxu_ready, mxu_stalls = {}, 0
     seen_gaps = {}
     visit_gaps = []
     visits = 0
@@ -155,21 +160,25 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
             seen_gaps[key]['count'] += 1
 
     def drain():
-        nonlocal clock, stalls
-        finish = max([clock, *resources.values()])
+        nonlocal clock, stalls, mxu_stalls
+        dma_finish = max([clock, *resources.values()])
+        finish = max([dma_finish, *mxu_ready.values()])
+        mxu_stalls += finish - dma_finish
         if finish > clock:
-            timeline.add('XLA TraceMe', 'Segment DMA drain', clock, finish)
+            name = 'Segment resource drain' if finish > dma_finish else 'Segment DMA drain'
+            timeline.add('XLA TraceMe', name, clock, finish)
             stalls += finish - clock
             clock = finish
         for flag in flags:
             flag_state(flag, clock)
         resources.clear()
+        mxu_ready.clear()
         # Do not mutate a preceding segment's last activity after snapshotting.
         timeline.previous.clear()
         timeline.run += 1
 
     def costs():
-        return clock, stalls, extra, transferred, bus_transferred, visits, scheduled, histogram.copy()
+        return clock, stalls, extra, transferred, bus_transferred, visits, scheduled, histogram.copy(), mxu_stalls
 
     def finish_arm(frame):
         drain()
@@ -207,6 +216,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                 bus_transferred = base[4] + (bus_transferred - base[4]) * count
                 visits = base[5] + (visits - base[5]) * count
                 histogram = base[7] + Counter({k: (v - base[7][k]) * count for k, v in histogram.items()})
+                mxu_stalls = base[8] + (mxu_stalls - base[8]) * count
                 flags.clear()
                 timeline.previous.clear()
                 timeline.run += 1
@@ -220,7 +230,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                 frame = frames[-1]
                 finish_arm(frame)
                 if boundary == 'next':
-                    clock, stalls, extra, transferred, bus_transferred, visits, scheduled, histogram = frame['base']
+                    clock, stalls, extra, transferred, bus_transferred, visits, scheduled, histogram, mxu_stalls = frame['base']
                     histogram = histogram.copy()
                     flags = deepcopy(frame['flags'])
                 else:
@@ -228,7 +238,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                     arms = frame['arms']
                     selected = max(range(len(arms)), key=lambda i: arms[i]['costs'][0])
                     chosen = arms[selected]
-                    clock, stalls, extra, transferred, bus_transferred, visits, scheduled, histogram = chosen['costs']
+                    clock, stalls, extra, transferred, bus_transferred, visits, scheduled, histogram, mxu_stalls = chosen['costs']
                     events.extend(chosen['events'])
                     timeline.items.extend(chosen['timeline'])
                     # Drained flags have no pending completions. A guaranteed
@@ -249,9 +259,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
         delay_cycles = 0
         if "/" in address:
             gap(address.rsplit("/", 1)[0], "cross-call operand bindings are unresolved")
-        start = clock
-        end = start + issue
-        bundle_extra = 0
+        active, reservations = [], {}
         for index, instruction in enumerate(bundle["instructions"]):
             if f"{visit}:{index}" in inactive:
                 unused_inactive.discard(f'{visit}:{index}')
@@ -270,6 +278,28 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                     raise ValueError("predicate decisions must be booleans")
                 elif not decision:
                     continue
+            active.append((index, instruction))
+            if mxu_model and op.startswith('vmatmul'):
+                reservation = matmul_throughput(rhs.strip().split()[0])
+                if reservation is None:
+                    gap(address, f"unmodeled GF MXU throughput: {op}")
+                else:
+                    resource, hold = reservation
+                    if resource in reservations:
+                        gap(address, f"co-issued operations share {resource}")
+                    reservations[resource] = reservations.get(resource, 0) + hold
+        # Already-issued independent work, explicit delays and DMA waits can
+        # hide these holds. Charge only the remaining interval before issue.
+        start = max([clock, *(mxu_ready.get(r, 0) for r in reservations)])
+        mxu_wait = start - clock
+        stalls += mxu_wait
+        mxu_stalls += mxu_wait
+        for resource, hold in reservations.items():
+            mxu_ready[resource] = start + hold
+        end = start + issue
+        bundle_extra = 0
+        for index, instruction in active:
+            op, text = instruction['opcode'], instruction['text']
             histogram[op] += 1
             opcodes.add(op)
             known_special = op.startswith(
@@ -341,13 +371,12 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                 direction = instruction.get('dma_direction', op.removeprefix("dma."))
                 # final_bundles carries granules and destination sync flag inline.
                 operands = dma_operands(text)
-                known = (len(operands) >= 4 and re.fullmatch(r'\d+', operands[1])
-                         and re.fullmatch(_SYNC_FLAG, operands[3]))
+                known = len(operands) >= 4 and re.fullmatch(r'\d+', operands[1])
                 config = profile.get("dma", {}).get(direction)
                 if not known or not config:
                     gap(
                         address,
-                        f"unmodeled DMA {direction}: need size, sync flag and profile",
+                        f"unmodeled DMA {direction}: need size, direction and profile",
                     )
                     continue
                 units = int(operands[1])
@@ -363,13 +392,24 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                     gap(address, "DMA transaction rounding assumes aligned contiguous transfer; address/stride unverified")
                 if op == 'dma.general':
                     gap(address, 'general DMA uses payload bandwidth; descriptor stride/padding and source completion are not modeled')
-                duration = latency + math.ceil(bus_size * hz / bandwidth)
+                bandwidth_cycles = bus_size * hz / bandwidth
+                # A transfer must cross both memory interfaces. Rates are per
+                # modeled core, not full-chip aggregate bandwidth.
+                if 'vmem_bytes_per_second' in config and 'vmem' in direction:
+                    vmem_bandwidth = _positive(config['vmem_bytes_per_second'], 'VMEM DMA bandwidth')
+                    bandwidth_cycles = max(bandwidth_cycles, size * hz / vmem_bandwidth)
+                duration = latency + math.ceil(bandwidth_cycles)
                 resource = config.get("resource", direction)
                 begin = max(start, resources.get(resource, 0))
                 finish = begin + duration
                 resources[resource] = finish
                 flag = operands[3]
-                heapq.heappush(flag_state(flag, start)[1], (finish, units))
+                if re.fullmatch(_SYNC_FLAG, flag):
+                    heapq.heappush(flag_state(flag, start)[1], (finish, units))
+                else:
+                    # Encoded/unknown flags do not make the transfer disappear.
+                    # Do not alias numeric flags to allocation-relative names.
+                    gap(address, 'DMA destination completion flag is unresolved')
                 transferred += size
                 bus_transferred += bus_size
                 if retain_events:
@@ -380,9 +420,17 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                         "resource": resource,
                         "bytes": size,
                         "bus_bytes": bus_size,
+                        "latency_cycles": latency,
+                        "bandwidth_cycles": math.ceil(bandwidth_cycles),
+                        "destination_flag": flag,
                         "start_cycle": begin,
                         "end_cycle": finish,
                     })
+                    if op == 'dma.general' and len(operands) == 8:
+                        events[-1].update(source_flag=operands[4],
+                                          stride_descriptor=operands[5],
+                                          overrides=operands[6],
+                                          second_destination_flag=operands[7])
             elif op == "dma.done.wait":
                 wait_ops.add(op)
                 match = re.search(_SYNC_FLAG + r",\s*(\d+)", text)
@@ -439,7 +487,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
         stalls += max(0, end - (start + issue + bundle_extra))
         extra += bundle_extra
         clock = max(end, start + issue + bundle_extra)
-        timeline.visit(bundle, position, start, clock, opcodes, visit_gaps)
+        timeline.visit(bundle, position, start - mxu_wait, clock, opcodes, visit_gaps)
         if retain_events:
             events.append({
                 "kind": "bundle",
@@ -450,6 +498,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                 "issue_end_cycle": start + issue + bundle_extra,
                 "issue_cycles": issue,
                 "delay_cycles": delay_cycles,
+                "mxu_stall_cycles": mxu_wait,
                 "opcodes": sorted(opcodes),
                 "wait_ops": sorted(wait_ops),
                 "cost_gaps": visit_gaps,
@@ -458,8 +507,10 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
         raise ValueError('path must contain existing bundle addresses')
     if unused_inactive:
         raise ValueError('inactive refers to nonexistent instruction visits')
-    # Outstanding DMA must retire, but do not add already-overlapped transfers again.
-    finish = max([clock, *resources.values()]) + tail
+    # Drain outstanding resources without charging already-overlapped work again.
+    dma_finish = max([clock, *resources.values()])
+    resource_finish = max([dma_finish, *mxu_ready.values()])
+    finish = resource_finish + tail
     return {
         "profile": deepcopy(profile),
         "scenario": deepcopy(scenario),
@@ -471,6 +522,8 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
                         else "linear_scan"),
         "issue_cycles": visits * issue,
         "wait_stall_cycles": stalls,
+        "mxu_stall_cycles": mxu_stalls,
+        "mxu_completion_cycles": resource_finish - dma_finish,
         "extra_instruction_cycles": extra,
         "completion_cycles": finish - clock,
         "modeled_cycles": finish,
@@ -483,7 +536,8 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
         "runtime_segments": segments,
         "gaps": gaps,
         "events": events,
-        "activity_timeline": timeline.finish(clock, finish, tail),
+        "activity_timeline": timeline.finish(clock, finish, tail,
+            "Outstanding resources" if resource_finish > dma_finish else "Outstanding DMA"),
         "assumptions": [
             "Profile supplies issue rate and instruction timing; dump addresses are not cycles.",
             "Scheduled bundles cover internal instruction dependencies; profile supplies completion tail.",
@@ -491,5 +545,7 @@ def estimate_bundles(program, profile, scenario=None, *, retain_events=True):
             "Final LLO manifests expand reachable kernel calls per invocation.",
             "Static scenario estimate, not calibrated hardware execution time.",
         ] + (["Peers are assumed ready: marked readiness polls run once with zero external wait; DMA costs remain modeled."]
-             if profile.get('assume_peers_ready') else []),
+             if profile.get('assume_peers_ready') else [])
+          + (["GF matmul throughput is tracked per MXU; result latency and other MXU hazards rely on the compiler schedule, not a full MXU simulation."]
+             if mxu_model else []),
     }

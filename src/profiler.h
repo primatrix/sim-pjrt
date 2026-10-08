@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <limits>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -25,6 +26,10 @@ struct ProfileEvent {
   std::string hlo_text;
   std::string tf_op;
   std::string source;
+  std::string source_stack;
+  std::string source_status;
+  std::string source_stack_status;
+  std::string source_revision;
   std::vector<uint64_t> input_buffers;
   std::vector<uint64_t> output_buffers;
   int64_t start_ns = 0;
@@ -38,6 +43,7 @@ struct ProfileEvent {
   int64_t num_replicas = 1;
   int64_t bytes = -1;
   int64_t sparse_core = -1;
+  int64_t device_index = -1;
   bool pending = false;
   bool incomplete = false;
   std::string error;
@@ -50,7 +56,7 @@ struct ProfileEvent {
 // the C API profiler handle. A stopped session never accepts late events.
 class ProfileSession {
  public:
-  explicit ProfileSession(size_t max_events = 1000000);
+  explicit ProfileSession(size_t max_events = std::numeric_limits<size_t>::max());
   size_t Begin(ProfileEvent event, size_t parent = static_cast<size_t>(-1));
   void Finish(size_t index, const absl::Status& status);
   void SetBuffer(size_t index, uint64_t id, int64_t bytes, int64_t device);
@@ -99,7 +105,8 @@ class ProfileActivity {
                 const std::string& source = {}, int64_t sparse_core = -1) const;
   void Activities(const std::string& name, int64_t start, int64_t device,
                   bool partial,
-                  std::shared_ptr<const std::vector<BundleActivity>> activities) const;
+                  std::shared_ptr<const std::vector<BundleActivity>> activities,
+                  int64_t device_index = -1) const;
   uint64_t correlation_id() const { return event_.correlation_id; }
 
  private:

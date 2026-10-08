@@ -59,7 +59,8 @@ scalar memory knowledge. Cross-call scalar argument bindings remain a gap.
 Unknown runtime conditions use **conservative segment bounds**:
 
 - Analyze both arms up to their first common continuation.
-- Drain modeled DMA at branch entry and each arm's end; charge the longer arm.
+- Drain modeled DMA and MXU reservations at branch entry and each arm's end;
+  charge the longer arm.
 - Merge only scalar/spill facts and completion credits shared by every normally
   completing arm, then analyze the common suffix once.
 - Exclude proven error-halt arms. Keep gaps from all analyzed arms, including
@@ -74,7 +75,7 @@ form one feasible input. Known predicates continue to follow their known outcome
 No complete path combinations are enumerated. `max_scalar_visits` defaults to
 1,000,000 interpreted bundles per kernel analysis, including alternative arms.
 Large loops with a proven constant trip count use an arbitrary iteration's
-segment bound multiplied by the count, draining DMA between iterations. The
+segment bound multiplied by the count, draining modeled resources between iterations. The
 report records `runtime_loops`; the timeline shows one bounded iteration and an
 aggregate for the rest. Loop-varying DMA operands remain explicit gaps.
 The optimized HLO also proves the upper bound for `i = input; while i < input + N:
@@ -99,6 +100,25 @@ covers internal instruction dependencies. `bundle_issue_cycles`,
 Parallel instruction extras use the maximum and overlap with waits.
 `vdelay_semantics` must explicitly select `additional_cycles` or `total_cycles`.
 
+The TPU7x profile also tracks **matmul throughput per MXU** (`mxu_model=gf`).
+Ordinary F32, BF16 and native FP8 matmuls reserve their unit's throughput port
+for 4, 8 and 8 cycles respectively. Independent MXUs overlap; existing bundle
+spacing, delays and DMA waits hide reservations. Only the remaining wait is
+added before the next conflicting bundle, including its co-issued DMA.
+Branch/loop bounds drain these reservations along with DMA. Reports expose
+`mxu_stall_cycles` (included in `wait_stall_cycles`) and
+`mxu_completion_cycles` (included in `completion_cycles`).
+
+These are throughput constraints, **not** per-instruction result latencies.
+The [GF reservation analysis](https://gh.evko.io/crucible-notes/libtpu/cost/mxu-latency-gf.html)
+describes libtpu 0.0.40. We checked its constants against libtpu 0.0.46.1:
+`MatmulDataFormat` 1 is F32 and 2 is BF16, unlike the page's labels.
+The model does not add 211/204 cycles to each matmul. Result dependencies still
+rely on compiler scheduling. Full MXU sub-resource conflicts, staging/latch
+sequences and MRB result availability remain future work. Unsupported formats,
+modifiers or missing unit IDs remain gaps; other targets keep their existing
+profile behavior. These compiler-derived constants are not hardware calibration.
+
 For `dma.hbm_to_vmem` and `dma.vmem_to_hbm`, resolved granule counts and completion
 flags determine transfers. Each configured DMA resource serializes its work,
 while bundle execution can overlap transfers. Startup is charged per transfer;
@@ -106,12 +126,19 @@ transaction rounding changes traffic, not completion credits. `dma.done.wait`
 waits for enough credits, including primed flags and partial completions.
 Transfers sharing a resource contend; distinct resource names model independent
 engines. Outstanding DMA completes before the program ends. Unresolved flag
-updates or waits remain gaps.
+updates or waits remain gaps, but a known transfer still consumes bandwidth
+and contends for its resource even when its completion flag is unresolved.
+An optional per-direction `vmem_bytes_per_second` limits the VMEM side;
+transfer time uses the slower interface. All rates are per modeled core.
 
 For `dma.general`, typed addresses identify memory spaces. A known payload size
-and destination flag use the same directional bandwidth model. Descriptor
+uses the same directional bandwidth model. Detailed DMA events retain source
+and destination flags, descriptor address and overrides for diagnosis. Descriptor
 stride/padding and source completion remain gaps; contiguous transfer semantics
 are not assumed for the whole descriptor.
+The reference's [window-cost model](https://gh.evko.io/crucible-notes/libtpu/cost/memory-bandwidth-latency-model.html)
+motivates the two-interface limit. Its HLO-level fragmentation multipliers and
+startup amortization are not applied to individual Final LLO instructions.
 
 ### Reports
 

@@ -1,12 +1,17 @@
 """JAX compile identities recorded during collection and matched during replay."""
 
 from contextlib import contextmanager
+import base64
+from functools import cache
+import hashlib
 from importlib.metadata import version
 import json
 import os
+import re
 import threading
 
 from sim_pjrt.prediction import KEY_ATTRIBUTE, MISS_ATTRIBUTE, TIMING_ATTRIBUTE, execution_key
+from sim_pjrt.profiling.source import capture_sources
 
 
 def hardware_context(backend):
@@ -30,10 +35,44 @@ def identity_options(options):
     from jaxlib import xla_client
 
     copy = xla_client.CompileOptions.ParseFromString(options.SerializeAsString())
-    # JAX fills this with a machine-local CUDA installation path (or "None").
-    # It has no meaning for TPU code generation and differs on CPU-only hosts.
-    copy.executable_build_options.debug_options.xla_gpu_cuda_data_dir = ""
+    # Machine-local GPU paths have no meaning for TPU code generation. JAX
+    # also omits the cache paths when the simulator disables persistent caching.
+    for field in ("xla_gpu_cuda_data_dir", "xla_gpu_kernel_cache_file",
+                  "xla_gpu_per_fusion_autotune_cache_dir"):
+        setattr(copy.executable_build_options.debug_options, field, "")
     return copy.SerializeAsString()
+
+
+def identity_text(text):
+    """Exclude debug locations inside serialized Mosaic bodies too.
+
+    This representation is only hashed; the compiler still receives its original
+    module. All non-location code and every other backend option remain keyed.
+    """
+    @cache
+    def canonical_config(encoded):
+        decoded = re.sub(r'\\([0-9a-fA-F]{2})', lambda m: chr(int(m[1], 16)), encoded)
+        try:
+            config = json.loads(decoded)
+        except json.JSONDecodeError:
+            return '"' + encoded + '"'
+        call = config.get('custom_call_config') if isinstance(config, dict) else None
+        if not isinstance(call, dict) or not isinstance(call.get('body'), str):
+            return '"' + encoded + '"'
+        from jax._src.interpreters import mlir
+        from jaxlib.mlir import ir
+        from jaxlib.mosaic.python import tpu
+
+        with mlir.make_ir_context() as context:
+            tpu.register_dialect(context)
+            context.allow_unregistered_dialects = True
+            body = ir.Module.parse(base64.b64decode(call['body'], validate=True))
+            code = body.operation.get_asm(enable_debug_info=False)
+            call['body'] = 'sha256:' + hashlib.sha256(code.encode()).hexdigest()
+            return str(ir.StringAttr.get(json.dumps(config, sort_keys=True)))
+
+    return re.sub(r'backend_config = "([^"\n]*)"',
+                  lambda m: 'backend_config = ' + canonical_config(m[1]), text)
 
 
 def hlo_module_id(data):
@@ -87,7 +126,7 @@ def compilation_observer(records, timing_predictor=None):
             return original(backend, module, executable_devices, options, host_callbacks)
         if host_callbacks:
             raise ValueError("Collection/replay does not support host callbacks")
-        text = module.operation.get_asm(enable_debug_info=False)
+        text = identity_text(module.operation.get_asm(enable_debug_info=False))
         context = hardware_context(backend)
         key = execution_key(text, identity_options(options), context)
         name = ir.StringAttr(module.operation.attributes["sym_name"]).value
@@ -96,6 +135,7 @@ def compilation_observer(records, timing_predictor=None):
         # HloModuleProto.id. Carry our identity in the module label so repeated
         # function names across shapes remain unambiguous in the device trace.
         if timing_predictor is None:
+            sources = capture_sources(module.operation.get_asm(enable_debug_info=True))
             with module.context:
                 module.operation.attributes["sym_name"] = ir.StringAttr.get(
                     name + "__spjrt_" + key)
@@ -119,7 +159,7 @@ def compilation_observer(records, timing_predictor=None):
                     if attr in module.operation.attributes:
                         del module.operation.attributes[attr]
         if timing_predictor is None:
-            record = {"name": name, "context": context, "modules": [],
+            record = {"name": name, "context": context, "modules": [], "source_files": sources,
                       "identity": {"stablehlo": text,
                                    "compile_options_hex": options.SerializeAsString().hex()},
                       "num_replicas": options.num_replicas,
@@ -130,6 +170,10 @@ def compilation_observer(records, timing_predictor=None):
             with lock:
                 if key in records:
                     records[key]["modules"].extend(record["modules"])
+                    previous = records[key]["source_files"]
+                    for path, source in sources.items():
+                        # The same graph can be compiled from several source versions.
+                        previous[path] = source if previous.get(path, source) == source else {}
                 else:
                     records[key] = record
         return executable

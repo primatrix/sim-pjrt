@@ -52,6 +52,31 @@ For SGLang capture, use its scheduler profiler; the configured
 [integration runner](../tests/README.md#native-integration) supports
 `SIM_PROFILE=1 bash tests/run_libtpu_tests.sh`. For real TPU measurements, use
 [collection](collection.md).
+For SGLang collection/replay, the compilation observer must also run in its
+scheduler process; the CLI currently instruments its own Python process only.
+
+## Qwen3-32B example
+
+The captures below use the full 64-layer Qwen3-32B model with dummy BF16 weights,
+TP=8 on a v7x-8 topology, native attention, and page size 16. Each request has
+1,024 input tokens and 16 output tokens, with batch size 1; tracing starts after
+two warmup requests. The screenshots focus on selected devices.
+
+**Real TPU:** measured prefill and decode execution.
+
+![Qwen3-32B measured TPU execution in XProf](site/public/images/qwen3-32b-real-xprof.png)
+
+**LLO:** estimated module and operation intervals. Missing costs remain visible;
+these estimates have not been calibrated to the real capture.
+
+![Qwen3-32B LLO timing prediction in XProf](site/public/images/qwen3-32b-llo-xprof.png)
+
+**Replay:** a complete measured invocation near the median, including per-device
+XLA Ops, async operations, TraceMe, framework scopes, and source locations.
+Host dispatch gaps come from the current CPU run. Unmeasured startup programs use
+`--replay-miss llo`; the forward and sampler programs shown use measured timelines.
+
+![Qwen3-32B measured-duration replay in XProf](site/public/images/qwen3-32b-replay-xprof.png)
 
 ## Troubleshooting
 

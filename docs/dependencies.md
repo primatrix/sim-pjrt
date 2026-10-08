@@ -37,7 +37,11 @@ than maintaining a separate libtpu version pin. Upstream leaves Flax unpinned.
 
 On 2026-09-29, a clean wheel installation with libtpu 0.0.46.1 passed dependency
 checks, five single-device runtime smoke tests, and 28 collection/HLO import
-tests. Full SGLang integration on this dependency set remains unvalidated.
+tests. The [Qwen3-32B profile example](plugin-guide.md#qwen3-32b-example) uses
+this dependency set with Flax 0.12.9: full-size dummy BF16 weights, TP=8,
+native attention and page size 16, with overlap and radix caching disabled.
+It covers real TPU capture, LLO prediction and measured replay; it does not
+replace the full SGLang serving matrix.
 Earlier integration results and checked-in LLO fixtures used libtpu 0.0.48.
 `requirements/constraints.txt`
 is a historical environment snapshot, not a lockfile for current upstream

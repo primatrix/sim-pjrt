@@ -205,12 +205,20 @@ std::vector<Completion> SimRuntime::ExecuteTimed(
   // per device (large models have thousands of parameter buffers).
   const auto inputs_ready = JoinFutures(predecessors);
   std::vector<Completion> result;
-  for (int64_t device : devices) {
+  // PJRT's executable device order can follow a permuted mesh assignment.
+  // Captured activities are indexed by ascending device ID, not mesh order.
+  auto device_order = devices;
+  std::sort(device_order.begin(), device_order.end());
+  for (size_t index = 0; index < devices.size(); ++index) {
+    const int64_t device = devices[index];
     profile.Interval("device launch", Epoch(release),
                      Epoch(release + config_.launch_ns), device, "XLA TraceMe");
-    profile.Interval(name, Epoch(start), Epoch(end), device, "XLA Modules",
-                     partial ? "partial bundle cost coverage" : "", -1, analysis_source);
-    profile.Activities(name, Epoch(start), device, partial, activities);
+    if (analysis_source != "tpu_replay" || !activities || activities->empty())
+      profile.Interval(name, Epoch(start), Epoch(end), device, "XLA Modules",
+                       partial ? "partial bundle cost coverage" : "", -1, analysis_source);
+    const int64_t ordinal = std::lower_bound(device_order.begin(), device_order.end(), device)
+                            - device_order.begin();
+    profile.Activities(name, Epoch(start), device, partial, activities, ordinal);
     Completion completion = CompleteAt(end);
     completion.future = JoinFutures({inputs_ready, completion.future});
     execution_tail_[device] = completion;
