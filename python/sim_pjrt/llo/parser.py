@@ -11,12 +11,40 @@ _HEADER = re.compile(
 _COMMENT = re.compile(r"/\*.*?\*/", re.S)
 
 
+def _flatten_nested_comments(text):
+    """Keep outer diagnostics while removing annotations nested inside them."""
+    pieces, depth, previous = [], 0, 0
+    for marker in re.finditer(r'/\*|\*/', text):
+        if depth <= 1:
+            pieces.append(text[previous:marker.start()])
+        if marker[0] == '/*':
+            if depth == 0:
+                pieces.append('/*')
+            elif depth == 1:
+                pieces.append(' ')
+            depth += 1
+        else:
+            if depth == 0:
+                raise ValueError('unterminated or unmatched diagnostic comment')
+            depth -= 1
+            if depth == 0:
+                pieces.append('*/')
+        previous = marker.end()
+    if depth:
+        raise ValueError('unterminated or unmatched diagnostic comment')
+    pieces.append(text[previous:])
+    return ''.join(pieces)
+
+
 def parse_bundles(text):
     """Return immutable-by-convention dictionaries, stripping diagnostic comments.
 
     Accept multiline final_bundles and single-line assembly-pre-overlay. Reject
     malformed/truncated records and duplicate addresses instead of dropping work.
     """
+    # DMA diagnostics can print scalar expressions with their own /*operand=*/
+    # annotations. Preserve the outer comment for call/region metadata below.
+    text = _flatten_nested_comments(text)
     # SSA address types identify the direction of descriptor-based DMA too.
     spaces = dict(re.findall(
         r'(%s\w+)\s*=\s*(?:inlined_call_operand|scalar_lea|int_to_ptr)\.(hbm|vmem|smem)\b', text))

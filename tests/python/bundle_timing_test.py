@@ -15,6 +15,32 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "bundles"
 
 
 class BundleTimingTest(unittest.TestCase):
+    def test_nested_dma_diagnostic_comments(self):
+        program = parse_bundles('''
+0: { dma.hbm_to_vmem /*hbm=*/%s0, /*size_in_granules=*/4,
+     /*vmem=*/%s1, /*dst_syncflagno=*/[#allocation2] /*
+dynamic_base_bounds: (%s3 = scalar_select /*predicate=*/%p0,
+                     /*on_true=*/0, /*on_false=*/16, 1)
+window_bounds: (16, 1)
+*/ } /* Start region 7 */
+1: { inlined_call /* kernel = custom_call(/*nested=*/%s0) */ }
+2: { vwait.all /* global-barrier-wait */ }
+''')
+        self.assertEqual(len(program), 3)
+        self.assertEqual(program[0]['regions'], ['7'])
+        instruction = program[0]['instructions'][0]
+        self.assertEqual(instruction['opcode'], 'dma.hbm_to_vmem')
+        self.assertNotIn('dynamic_base_bounds', instruction['text'])
+        self.assertIn('[#allocation2]', instruction['text'])
+        self.assertEqual(program[1]['instructions'][0]['callee'], 'kernel')
+        self.assertTrue(program[2]['instructions'][0]['peer_wait'])
+
+    def test_unbalanced_nested_diagnostics_are_rejected(self):
+        for text in ('0: { vmov 0 /* outer /* inner */ }',
+                     '0: { vmov 0 /* outer */ */ }'):
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'diagnostic comment'):
+                parse_bundles(text)
+
     def test_mxu_throughput_overlaps_units_and_scheduled_work(self):
         profile = dict(PROFILE, mxu_model='gf', vdelay_semantics='total_cycles')
         program = parse_bundles('''
