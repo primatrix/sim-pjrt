@@ -68,7 +68,7 @@ bool IsFusedMoeCollective(const HloInstruction& instruction) {
   if (instruction.custom_call_target() != "tpu_custom_call" ||
       position == std::string::npos || (position && name[position - 1] != '/') ||
       !instruction.output_operand_aliasing().empty() ||
-      !instruction.shape().IsArray() || instruction.shape().rank() != 2 ||
+      !instruction.shape().IsArray() || instruction.shape().dimensions_size() != 2 ||
       !instruction.shape().is_static() ||
       !primitive_util::IsFloatingPointType(instruction.shape().element_type()) ||
       (instruction.operand_count() != 9 && instruction.operand_count() != 12)) {
@@ -80,7 +80,7 @@ bool IsFusedMoeCollective(const HloInstruction& instruction) {
     const Shape& shape = instruction.operand(i)->shape();
     const auto expected = i == 5 || i >= 9 ? S32 : (i == 4 ? F32 : dtype);
     if (!shape.IsArray() || !shape.is_static() ||
-        shape.rank() != ranks[i] || shape.element_type() != expected) return false;
+        shape.dimensions_size() != ranks[i] || shape.element_type() != expected) return false;
   }
   return true;
 }
