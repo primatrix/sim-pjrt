@@ -18,6 +18,39 @@ PROFILE = {"frequency_hz": 1e9, "bundle_issue_cycles": 1}
 
 
 class LloProgramTest(unittest.TestCase):
+    def test_scalar_arguments_are_bound_per_call_including_deduplicated_kernels(self):
+        modules = {'TLP': parse_bundles('''
+0: { %s_arg = smov 0 }
+1: { inlined_call %s_arg /* kernel */ }
+2: { %s_arg = smov 1 }
+3: { inlined_call %s_arg /* alias */ }
+'''), 'kernel': parse_bundles('''
+0: { %s0 = inlined_call_operand.<no memory space> [shape: s32[], index: 0, kind: input, shape index: {}] }
+1: { %p0 = scmp.eq.s32.totalorder %s0, 0 }
+2: { sbr.rel (%p0) target = $region1 }
+3: { vdelay 100 }
+4: {} /* Start region 1 */
+''')}
+        report = estimate_final_program(modules, dict(PROFILE, branch_delay_slots=0,
+            vdelay_semantics='total_cycles'), {'alias': 'kernel'})
+        self.assertEqual(report['modeled_cycles'], 110)
+
+    def test_assembly_recovers_missing_exit_region_for_every_invocation(self):
+        modules = {
+            'TLP': parse_bundles('0: { inlined_call /* kernel */ }\n1: { inlined_call /* kernel */ }'),
+            'kernel': parse_bundles('0: { sbr.rel (%p0) target = $region7 }\n1: {}'),
+        }
+        assembly = '''0: {(pc) = sbr.rel @p0 $+1, $0 (=0x1)}
+1: {}
+2: {(pc) = sbr.rel @p0 $+1, $0 (=0x3)}
+3: {}'''
+        with self.assertRaisesRegex(ValueError, 'does not target the kernel exit'):
+            annotate_branch_delays(copy.deepcopy(modules), {}, assembly.replace('(=0x3)', '(=0x2)'))
+        annotate_branch_delays(modules, {}, assembly)
+        self.assertEqual(modules['kernel'][-1]['regions'], ['7'])
+        report = estimate_final_program(modules, PROFILE)
+        self.assertEqual(report['modeled_cycles'], 4)
+
     def test_hlo_bound_matches_a_unique_unconditional_loop_call(self):
         modules = {'TLP': parse_bundles('''
 0: {}

@@ -68,6 +68,23 @@ class LauncherTest(unittest.TestCase):
         self.assertEqual(Path(environment(args, inherited)["PJRT_SIM_BUNDLE_PROFILE"]).name,
                          "tpu7x.json")
 
+    def test_report_does_not_initialize_an_unused_parent_backend(self):
+        try:
+            import jax
+        except ImportError:
+            self.skipTest('jax is required for the report runner')
+        report = self.file.parent / 'report'
+        self.options += ['--report', str(report)]
+        script = self.file.parent / 'workload.py'
+        script.write_text('pass\n')
+        result = self.launch([str(script)])
+        # The empty plugin is deliberately unloadable: any backend
+        # initialization would fail even though the workload needs none.
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads((report / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'complete')
+        self.assertIsNone(summary['device_memory'])
+
     def test_compile_script_forwards_arguments_without_timing(self):
         output = str(self.file.parent / "dumps")
         self.options = self.options[:-2] + ["--output", output]

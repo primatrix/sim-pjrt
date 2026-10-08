@@ -9,6 +9,12 @@ _ASSIGN = re.compile(r'^(%[sp][\w]+)\s*=\s*([\w.]+)\s*(.*)$')
 
 
 _FLAG = re.compile(r'\[#allocation\d+(?:\s*\+\s*\$0x[\da-fA-F]+)?\]')
+_SMEM = re.compile(r'\[smem:\[(#allocation\d+(?:_spill)?)(?:\s*\+\s*\$0x([\da-fA-F]+))?\]\]')
+
+
+def _smem_slot(text):
+    match = _SMEM.search(text)
+    return (match[1], int(match[2] or '0', 16)) if match else None
 
 
 def _address(value):
@@ -50,8 +56,51 @@ def _evaluate(opcode, args, read, memory):
         cond = read(select[1])
         if cond is not None:
             value = read(select[3] if cond else select[2])
+        else:
+            choices = [read(select[2]), read(select[3])]
+            if all(isinstance(v, (int, range)) for v in choices):
+                lo = min(v if isinstance(v, int) else v.start for v in choices)
+                hi = max(v if isinstance(v, int) else v.stop - 1 for v in choices)
+                value = lo if lo == hi else range(lo, hi + 1)
     else:
         operands = [read(x) for x in args.split(',')]
+        if (len(operands) == 2 and any(isinstance(v, range) for v in operands)
+                and all(isinstance(v, (int, range)) for v in operands)
+                and base in ('sadd', 'ssub', 'sshll', 'sshrl', 'sshra', 'scmp')):
+            bounds = [(v, v) if isinstance(v, int) else (v.start, v.stop - 1)
+                      for v in operands]
+            signed = '.s32' in opcode and base != 'sshrl'
+            if signed:
+                if any(lo < 0x80000000 <= hi for lo, hi in bounds):
+                    return None
+                bounds = [(lo - (0x100000000 if lo >= 0x80000000 else 0),
+                           hi - (0x100000000 if hi >= 0x80000000 else 0))
+                          for lo, hi in bounds]
+            (lo, hi), (blo, bhi) = bounds
+            if base == 'scmp':
+                relation = opcode.split('.')[1]
+                if relation in ('eq', 'ne'):
+                    equal = True if lo == hi == blo == bhi else False if hi < blo or bhi < lo else None
+                    return equal if relation == 'eq' or equal is None else not equal
+                certain, impossible = {'lt': (hi < blo, lo >= bhi), 'le': (hi <= blo, lo > bhi),
+                                       'gt': (lo > bhi, hi <= blo), 'ge': (lo >= bhi, hi < blo)}[relation]
+                return True if certain else False if impossible else None
+            if base == 'sadd':
+                lo, hi = lo + blo, hi + bhi
+            elif base == 'ssub':
+                lo, hi = lo - bhi, hi - blo
+            elif blo == bhi and 0 <= blo < 32:
+                if base == 'sshll':
+                    lo, hi = lo << blo, hi << blo
+                else:
+                    lo, hi = lo >> blo, hi >> blo
+            else:
+                return None
+            minimum, maximum = (-2**31, 2**31 - 1) if signed else (0, 2**32 - 1)
+            if not minimum <= lo <= hi <= maximum or lo < 0 <= hi:
+                return None  # A wrapping/disjoint range is not represented.
+            lo, hi = lo & 0xffffffff, hi & 0xffffffff
+            return lo if lo == hi else range(lo, hi + 1)
         if opcode in ('smin.u32', 'sand.u32', 'sshrl.u32') and len(operands) == 2:
             # A clamped runtime index can still prove a constant after a shift.
             # Ranges remain unknown to other operations; never pick an endpoint.
@@ -87,9 +136,9 @@ def _evaluate(opcode, args, read, memory):
         elif base in ('pneg', 'pnot') and len(operands) == 1 and operands[0] is not None:
             value = int(not operands[0])
         elif base == 'sld':
-            slot = re.fullmatch(r'\[smem:(\[#allocation\d+_spill\])\]', args)
+            slot = _smem_slot(args)
             if slot:
-                value = memory.get(slot[1])
+                value = memory.get(slot)
         elif base == 'scalar_select' and len(operands) == 3 and isinstance(operands[0], int):
             value = operands[1] if operands[0] else operands[2]
         elif base == 'scalar_lea' and opcode.endswith('.sflag') and len(operands) == 2:
@@ -110,8 +159,9 @@ def _evaluate(opcode, args, read, memory):
                           'pnand': lambda: int(not (a and b))}
             if base in operations:
                 value = operations[base]() & 0xffffffff
-            elif base in ('sshll', 'sshrl') and 0 <= b < 32:
-                value = ((a << b) if base == 'sshll' else ((a & 0xffffffff) >> b)) & 0xffffffff
+            elif base in ('sshll', 'sshrl', 'sshra') and 0 <= b < 32:
+                value = ((a << b) if base == 'sshll' else
+                         (a >> b) if base == 'sshra' else ((a & 0xffffffff) >> b)) & 0xffffffff
             elif base == 'scmp':
                 relation = opcode.split('.')[1]
                 value = {'eq': a==b, 'ne': a!=b, 'lt': a<b,

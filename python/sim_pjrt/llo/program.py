@@ -1,6 +1,7 @@
 """Load compiler artifacts, expand kernel calls and estimate a complete program."""
 
 from itertools import zip_longest
+from functools import cache
 import json
 from pathlib import Path
 import re
@@ -15,12 +16,12 @@ def compose_final_bundles(modules, aliases=None, root="TLP", limit=None):
     return tuple(iter_final_bundles(modules, aliases, root, limit))
 
 
-def iter_final_bundles(modules, aliases=None, root="TLP", limit=None):
+def iter_final_bundles(modules, aliases=None, root="TLP", limit=None, *, resolve=None):
     """Stream invocations without copying the whole model's expanded loops."""
     allocations = {}
     count = 0
 
-    def visit(name, prefix, stack):
+    def visit(name, prefix, stack, scalar_inputs=()):
         nonlocal count
         label = name
         name = (aliases or {}).get(name, name)
@@ -29,7 +30,8 @@ def iter_final_bundles(modules, aliases=None, root="TLP", limit=None):
         if name in stack:
             raise ValueError(f"recursive Final LLO call: {stack + (name,)}")
         renamed = {}
-        yield from body(modules[name], name, label, prefix, stack, renamed)
+        program = resolve(name, scalar_inputs) if resolve else modules[name]
+        yield from body(program, name, label, prefix, stack, renamed)
 
     def body(program, name, label, prefix, stack, renamed):
         nonlocal count
@@ -68,7 +70,8 @@ def iter_final_bundles(modules, aliases=None, root="TLP", limit=None):
                     )
                 if "callee" not in calls[0]:
                     raise ValueError(f"missing Final LLO call target at {address}")
-                yield from visit(calls[0]["callee"], address + "/", stack + (name,))
+                yield from visit(calls[0]["callee"], address + "/", stack + (name,),
+                                 calls[0].get('scalar_inputs', ()))
                 continue
             item = dict(bundle, instructions=[dict(ins) for ins in bundle['instructions']])
             item.update(
@@ -115,7 +118,8 @@ def annotate_branch_delays(modules, aliases, assembly, topology=""):
                     for region in b.get('regions', [])}
               for name, bundles in modules.items()}
     label_addresses = {name: set(regions.values()) for name, regions in labels.items()}
-    positions, targets = {}, []
+    exits = {name: bundles[-1] for name, bundles in modules.items()}
+    positions, targets, missing_exits = {}, [], []
     branch_pattern = re.compile(
         r'\(pc\)\s*=\s*(sbr\.\w+)\s+(?:@(!?p\d+)\s+)?'
         r'\$[+-]?\d+(?:,\s*\$(\d+))?\s*\(=(0x[\da-fA-F]+)\)')
@@ -126,7 +130,8 @@ def annotate_branch_delays(modules, aliases, assembly, topology=""):
         end = headers[index + 1].start() if index + 1 < len(headers) else len(assembly)
         body = assembly[header.end():end]
         address = f'{header[1] or "0"}:{_number(header[2]):#x}'
-        if bundle['source_address'] in label_addresses[bundle['module']]:
+        if (bundle['source_address'] in label_addresses[bundle['module']]
+                or bundle['source_address'] == exits[bundle['module']]['address']):
             positions[bundle['address']] = address
         original = originals[bundle['module']][bundle['source_address']]
         branches = [ins for ins in original['instructions'] if ins['opcode'].startswith('sbr')]
@@ -156,10 +161,23 @@ def annotate_branch_delays(modules, aliases, assembly, topology=""):
                 prefix = bundle['callsite'] + '/' if bundle['callsite'] else ''
                 targets.append((prefix + labels[bundle['module']][target[1]],
                                 f'{header[1] or "0"}:{int(match[4], 16):#x}'))
+            elif bundle['callsite'] and target:
+                # Empty exit regions can lose their diagnostic region label.
+                # Recover only when assembly proves the jump lands at this
+                # invocation's final bundle, including every repeated call.
+                missing_exits.append((bundle['module'], target[1],
+                                      bundle['callsite'] + '/' + exits[bundle['module']]['address'],
+                                      f'{header[1] or "0"}:{int(match[4], 16):#x}'))
     for source, target in targets:
         # A target at an inlined call has no standalone bundle after expansion.
         if source in positions and positions[source] != target:
             raise ValueError(f'Final LLO/assembly branch target mismatch at {source}')
+    for name, region, source, target in missing_exits:
+        if positions.get(source) != target:
+            raise ValueError(f'missing Final LLO region {region} does not target the kernel exit')
+        regions = exits[name].setdefault('regions', [])
+        if region not in regions:
+            regions.append(region)
 
 
 def annotate_loop_bounds(program, bounds):
@@ -242,24 +260,17 @@ def load_final_modules(path):
 
 def estimate_final_program(modules, profile, aliases=None, *, retain_events=True,
                            finalize_report=None):
-    """Compose local branch bounds, draining modeled DMA at branch boundaries.
+    """Compose local branch bounds, draining modeled resources at boundaries.
 
     Scalar facts are intersected at joins. No complete path combinations are
     built; independent branch choices can deliberately overestimate a real path.
     """
-    resolved = {}
-
-    def resolve(name, stack=()):
-        name = (aliases or {}).get(name, name)
-        if name in stack:
-            raise ValueError(f'recursive Final LLO call: {stack + (name,)}')
-        if name in resolved:
-            return
-        if name not in modules:
-            raise ValueError(f'missing Final LLO callee: {name}')
+    @cache
+    def resolve(name, scalar_inputs):
         try:
-            program = resolve_scalar_operands(
+            return resolve_scalar_operands(
                 modules[name],
+                scalar_inputs=scalar_inputs,
                 branch_delay_slots=profile.get('branch_delay_slots'),
                 assume_peers_ready=profile.get('assume_peers_ready', False),
                 max_visits=profile.get('max_scalar_visits', 1_000_000))
@@ -267,29 +278,16 @@ def estimate_final_program(modules, profile, aliases=None, *, retain_events=True
             raise ValueError(f'no normally completing path in {name}') from None
         except ValueError as error:
             raise ValueError(f'{name}: {error}') from error
-        def callees(items):
-            for bundle in items:
-                yield from callees(bundle.get('body', []))
-                for arm in bundle.get('alternatives', []):
-                    yield from callees(arm)
-                for ins in bundle.get('instructions', []):
-                    if ins['opcode'] == 'inlined_call':
-                        yield ins['callee']
-        for callee in callees(program):
-            resolve(callee, stack + (name,))
-        resolved[name] = program
-
-    resolve('TLP')
-    report = estimate_bundles(iter_final_bundles(resolved, aliases), profile,
+    report = estimate_bundles(iter_final_bundles(modules, aliases, resolve=resolve), profile,
                               retain_events=retain_events)
     report['runtime_branch_policy'] = 'segment_bound'
     report['timing_semantics'] = 'conservative_modeled_cost'
     report['path_source'] = 'segment_bound'
     report['assumptions'].extend([
         'Each unknown branch uses its largest modeled segment cost; choices need not form a feasible input path.',
-        'Modeled DMA is drained before and after unknown branches; cross-segment overlap is deliberately lost.',
+        'Modeled DMA and MXU reservations are drained before and after unknown branches; cross-segment overlap is deliberately lost.',
         'Only scalar facts common to all normally completing arms survive a join; error-halt arms are excluded.',
-        'Large counted loops multiply an arbitrary iteration bound and serialize DMA between iterations.',
+        'Large counted loops multiply an arbitrary iteration bound and drain modeled resources between iterations.',
         'The bound covers modeled costs only; missing costs remain gaps, not a certified hardware upper bound.',
     ])
     if finalize_report is not None:

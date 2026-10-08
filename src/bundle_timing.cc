@@ -25,14 +25,15 @@ extern char** environ;
 namespace xla::sim {
 namespace {
 absl::StatusOr<std::shared_ptr<const std::vector<BundleActivity>>> ReadActivities(
-    const google::protobuf::Value& timeline, int64_t duration_ns) {
+    const google::protobuf::Value& timeline, int64_t duration_ns,
+    bool replay = false) {
   if (!timeline.has_list_value())
-    return absl::DataLossError("Missing Final LLO activity timeline");
+    return absl::DataLossError("Missing activity timeline");
   std::vector<BundleActivity> activities;
   activities.reserve(timeline.list_value().values_size());
   for (const auto& value : timeline.list_value().values()) {
     if (!value.has_struct_value())
-      return absl::DataLossError("Invalid Final LLO activity");
+      return absl::DataLossError("Invalid executable activity");
     const auto& activity = value.struct_value().fields();
     BundleActivity event;
     for (auto [key, target] : {std::pair{"name", &event.name},
@@ -41,26 +42,35 @@ absl::StatusOr<std::shared_ptr<const std::vector<BundleActivity>>> ReadActivitie
                                {"cost_gap", &event.cost_gap}}) {
       const auto field = activity.find(key);
       if (field == activity.end() || !field->second.has_string_value())
-        return absl::DataLossError("Invalid Final LLO activity label");
+        return absl::DataLossError("Invalid executable activity label");
       *target = field->second.string_value();
     }
     for (auto [key, target] : {std::pair{"hlo_text", &event.hlo_text},
                                {"tf_op", &event.tf_op},
-                               {"source", &event.source}}) {
+                               {"source", &event.source},
+                               {"source_stack", &event.source_stack},
+                               {"source_status", &event.source_status},
+                               {"source_stack_status", &event.source_stack_status},
+                               {"source_revision", &event.source_revision}}) {
       const auto field = activity.find(key);
       if (field != activity.end() && field->second.has_string_value())
         *target = field->second.string_value();
     }
+    if (replay && event.source_status.empty() &&
+        (!event.source.empty() || !event.source_stack.empty()))
+      event.source_status = "unverified";
+    if (replay && event.source_stack_status.empty() && !event.source_stack.empty())
+      event.source_stack_status = "unverified";
     for (auto [key, target] : {std::pair{"start_ns", &event.start_ns},
                                {"end_ns", &event.end_ns},
                                {"bytes", &event.bytes}}) {
       const auto field = activity.find(key);
       if (field == activity.end() || !field->second.has_number_value())
-        return absl::DataLossError("Invalid Final LLO activity offset/size");
+        return absl::DataLossError("Invalid executable activity offset/size");
       const double number = field->second.number_value();
       if (!std::isfinite(number) || std::floor(number) != number ||
           number < (target == &event.bytes ? -1 : 0) || number > 1e18)
-        return absl::DataLossError("Invalid Final LLO activity offset/size");
+        return absl::DataLossError("Invalid executable activity offset/size");
       *target = static_cast<int64_t>(number);
     }
     const auto core = activity.find("sparse_core");
@@ -71,11 +81,19 @@ absl::StatusOr<std::shared_ptr<const std::vector<BundleActivity>>> ReadActivitie
         return absl::DataLossError("Invalid SparseCore ID");
       event.sparse_core = static_cast<int64_t>(value);
     }
+    const auto device = activity.find("device_index");
+    if (device != activity.end()) {
+      const double value = device->second.number_value();
+      if (!device->second.has_number_value() || !std::isfinite(value) ||
+          std::floor(value) != value || value < 0 || value > 1e6)
+        return absl::DataLossError("Invalid replay device index");
+      event.device_index = static_cast<int64_t>(value);
+    }
     if (event.name.empty() || event.track.empty() ||
         event.start_ns > event.end_ns ||
         event.end_ns > duration_ns)
       return absl::DataLossError(
-          "Final LLO activity outside executable interval");
+          "Activity outside executable interval");
     activities.push_back(std::move(event));
   }
   return std::make_shared<const std::vector<BundleActivity>>(std::move(activities));
@@ -108,8 +126,7 @@ absl::StatusOr<BundleCompilation> ReadReplayTiming(const std::string& json) {
       !duration->second.has_number_value() || count == fields.end() ||
       !count->second.has_number_value() || key == fields.end() ||
       !key->second.has_string_value() || key->second.string_value().size() != 64 ||
-      timeline == fields.end() || !timeline->second.has_list_value() ||
-      timeline->second.list_value().values_size() != 0)
+      timeline == fields.end() || !timeline->second.has_list_value())
     return absl::InvalidArgumentError("Invalid replay prediction metadata");
   const double ns = duration->second.number_value();
   const double samples = count->second.number_value();
@@ -119,6 +136,24 @@ absl::StatusOr<BundleCompilation> ReadReplayTiming(const std::string& json) {
   BundleCompilation result;
   result.timing.analysis_source = "tpu_replay";
   result.timing.duration_ns = static_cast<int64_t>(ns);
+  ABSL_ASSIGN_OR_RETURN(result.timing.activities,
+                       ReadActivities(timeline->second, result.timing.duration_ns, true));
+  if (!result.timing.activities->empty()) {
+    const auto devices = fields.find("num_devices");
+    if (devices == fields.end() || !devices->second.has_number_value() ||
+        devices->second.number_value() < 1 || devices->second.number_value() > 1e6 ||
+        std::floor(devices->second.number_value()) != devices->second.number_value())
+      return absl::InvalidArgumentError("Invalid replay device count");
+    std::vector<int> modules(static_cast<size_t>(devices->second.number_value()));
+    for (const auto& event : *result.timing.activities) {
+      if (event.device_index < 0 || event.device_index >= modules.size())
+        return absl::InvalidArgumentError("Replay activity has no matching device");
+      if (event.track == "XLA Modules") ++modules[event.device_index];
+    }
+    for (int count : modules)
+      if (count != 1)
+        return absl::InvalidArgumentError("Replay requires one module interval per device");
+  }
   result.report_json = json;
   return result;
 }
@@ -233,7 +268,7 @@ absl::StatusOr<BundleCompilation> FinalizeBundles(
   result.timing.cost_gaps = gaps->second.list_value().values_size();
   const auto timeline = fields.find("activity_timeline");
   if (timeline == fields.end())
-    return absl::DataLossError("Missing Final LLO activity timeline");
+    return absl::DataLossError("Missing activity timeline");
   ABSL_ASSIGN_OR_RETURN(result.timing.activities,
                         ReadActivities(timeline->second, result.timing.duration_ns));
   const auto settings = fields.find("profile");

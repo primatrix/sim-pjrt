@@ -15,6 +15,93 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "bundles"
 
 
 class BundleTimingTest(unittest.TestCase):
+    def test_mxu_throughput_overlaps_units_and_scheduled_work(self):
+        profile = dict(PROFILE, mxu_model='gf', vdelay_semantics='total_cycles')
+        program = parse_bundles('''
+0: { vmatmul.mubr.bf16.gmra.mrb[0].mxu0 %v0 ;; vmatmul.mubr.bf16.gmra.mrb[0].mxu1 %v1 }
+1: { vdelay 3 }
+2: { vmatmul.mubr.f32.gmra.mrb[4].mxu0 %v0 }
+3: { vmatmul.mubr.f32.gmra.mrb[4].mxu1 %v1 }
+''')
+        report = estimate_bundles(program, profile)
+        self.assertEqual(report['modeled_cycles'], 13)
+        self.assertEqual(report['mxu_stall_cycles'], 4)
+        self.assertEqual(report['mxu_completion_cycles'], 3)
+        self.assertEqual(report['wait_stall_cycles'], 4)
+        self.assertEqual([e['start_cycle'] for e in report['events']], [0, 1, 8, 9])
+        # Keep waits inside the kernel scope, without one extra trace per stall.
+        self.assertEqual(len(report['activity_timeline']), 2)
+        self.assertEqual(report['activity_timeline'][0]['end_ns'], 10)
+        # Existing schedule spacing covers the hold; no latency added per op.
+        spaced = parse_bundles('''
+0: { vmatmul.mubr.bf16.gmra.mrb[0].mxu0 %v0 }
+1: { vdelay 20 }
+2: { vmatmul.mubr.bf16.gmra.mrb[4].mxu0 %v0 }
+3: { vdelay 20 }
+''')
+        self.assertEqual(estimate_bundles(spaced, profile)['modeled_cycles'], 42)
+        self.assertEqual(estimate_bundles(program, PROFILE)['mxu_stall_cycles'], 0)
+        for dtype, cycles in [('f32', 4), ('bf16', 8), ('f8e5m2', 8), ('f8e4m3fn', 8)]:
+            single = parse_bundles(f'0: {{ vmatmul.mubr.{dtype}.gmra.mrb[0].mxu0 %v0 }}')
+            self.assertEqual(estimate_bundles(single, profile)['modeled_cycles'], cycles)
+
+    def test_mxu_delays_coissued_dma_and_honors_predicates(self):
+        profile = dict(PROFILE, mxu_model='gf', dma_granule_bytes=1,
+                       dma={'hbm_to_vmem': {'bytes_per_second': 1e9}})
+        program = parse_bundles('''
+0: { vmatmul.mubr.bf16.gmra.mrb[0].mxu0 %v0 }
+1: { vmatmul.mubr.f32.gmra.mrb[4].mxu0 %v0 ;; dma.hbm_to_vmem %hbm, 20, %vmem, [#allocation0] }
+2: { dma.done.wait [#allocation0], 20 }
+''')
+        report = estimate_bundles(program, profile)
+        dma = next(e for e in report['events'] if e['kind'] == 'dma')
+        self.assertEqual((dma['start_cycle'], dma['end_cycle']), (8, 28))
+        self.assertEqual(report['modeled_cycles'], 28)
+        self.assertEqual(report['mxu_stall_cycles'], 7)
+        program[0]['instructions'][0]['resolved_predicate'] = False
+        skipped = estimate_bundles(program, profile)
+        self.assertEqual(skipped['modeled_cycles'], 21)
+        self.assertEqual(skipped['mxu_stall_cycles'], 0)
+
+    def test_mxu_branch_bound_includes_occupancy_and_compact_report(self):
+        modules = {'TLP': parse_bundles('''
+0: { sbr.rel (%p0) target = $region1 }
+1: { vmatmul.mubr.bf16.gmra.mrb[0].mxu0 %v0 }
+2: { sbr.rel target = $region2 }
+3: { vmatmul.mubr.f32.gmra.mrb[0].mxu1 %v1 } /* Start region 1 */
+4: {} /* Start region 2 */
+''')}
+        profile = dict(PROFILE, mxu_model='gf', branch_delay_slots=0)
+        report = estimate_final_program(modules, profile)
+        self.assertEqual(report['modeled_cycles'], 10)
+        self.assertEqual(report['runtime_segments'][0]['alternative_cycles'], [9, 5])
+        compact = estimate_final_program(modules, profile, retain_events=False)
+        for key in ('modeled_cycles', 'mxu_stall_cycles', 'activity_timeline'):
+            self.assertEqual(report[key], compact[key], key)
+        loop = parse_bundles('''
+0: { %s_seed = smov 0 }
+1 LB: { %s_i = sphi %s_seed, %s_next } /* Start region 1 */
+2: { vmatmul.mubr.bf16.gmra.mrb[0].mxu0 %v0 }
+3: { %s_next = sadd.u32 %s_i, 1 }
+4: { %p_more = scmp.lt.u32.totalorder %s_next, 1000000 }
+5: { sbr.rel (%p_more) target = $region1 }
+6: {}
+''')
+        bounded = estimate_final_program({'TLP': loop}, profile)
+        self.assertEqual(bounded['modeled_cycles'], 9_000_002)
+        self.assertEqual(bounded['mxu_stall_cycles'], 4_000_000)
+
+    def test_mxu_unknown_format_or_modifiers_remain_gaps(self):
+        for mnemonic in ('vmatmul.mubr.s8.mrb[0].mxu0',
+                         'vmatmul.mubr.bf16.mrb[0]',
+                         'vmatmul.lmr.bf16.mrb[0].mxu0'):
+            report = estimate_bundles(parse_bundles(f'0: {{ {mnemonic} }}'),
+                                      dict(PROFILE, mxu_model='gf'))
+            self.assertEqual(report['status'], 'partial')
+            self.assertTrue(any('unmodeled GF MXU throughput' in g['reason'] for g in report['gaps']))
+        with self.assertRaisesRegex(ValueError, 'unsupported mxu_model'):
+            estimate_bundles(parse_bundles('0: {}'), dict(PROFILE, mxu_model='unknown'))
+
     def test_runtime_condition_takes_slower_dma_path_not_more_instructions(self):
         program = parse_bundles('''
 0: { sbr.rel (%p_runtime) target = $region1 }
@@ -127,6 +214,37 @@ class BundleTimingTest(unittest.TestCase):
         self.assertEqual(report['modeled_cycles'], 130)
         self.assertFalse(any('completion credits' in g['reason'] for g in report['gaps']))
         self.assertTrue(any('descriptor stride/padding' in g['reason'] for g in report['gaps']))
+
+    def test_dma_unknown_flags_still_charge_traffic_and_contention(self):
+        profile = dict(PROFILE, dma_granule_bytes=32,
+                       dma={'vmem_to_hbm': {'bytes_per_second': 1e9}})
+        program = parse_bundles('''
+0: { %s_src = inlined_call_operand.vmem [index: 0] ;; %s_dst = inlined_call_operand.hbm [index: 1] }
+1: { dma.general %s_src, 16, %s_dst, 16430, [#allocation15], [#allocation16], 16793600, 0 }
+2: { dma.vmem_to_hbm %s_src, 4, %s_dst, %s_unknown }
+3: { dma.done.wait [#allocation15], 16 }
+''')
+        report = estimate_bundles(program, profile)
+        self.assertEqual(report['dma_bytes'], 640)
+        self.assertEqual(report['modeled_cycles'], 641)
+        events = [e for e in report['events'] if e['kind'] == 'dma']
+        self.assertEqual(events[1]['start_cycle'], events[0]['end_cycle'])
+        self.assertEqual(events[0]['stride_descriptor'], '[#allocation16]')
+        self.assertTrue(any('partial completion credits' in g['reason'] for g in report['gaps']))
+
+    def test_dma_uses_slower_memory_interface(self):
+        program = parse_bundles('''
+0: { dma.hbm_to_vmem %hbm, 4, %vmem, [#allocation0] }
+1: { dma.done.wait [#allocation0], 4 }
+''')
+        for vmem_rate, expected in ((0.5e9, 263), (2e9, 135)):
+            profile = dict(PROFILE, dma_granule_bytes=32,
+                dma={'hbm_to_vmem': {'bytes_per_second': 1e9,
+                    'vmem_bytes_per_second': vmem_rate, 'latency_cycles': 7}})
+            report = estimate_bundles(program, profile)
+            self.assertEqual(report['modeled_cycles'], expected)
+            self.assertEqual(report['dma_bytes'], 128)
+            self.assertFalse(report['gaps'])
 
     def test_dma_wait_accepts_primed_and_partial_completion_credits(self):
         profile = dict(PROFILE, dma_granule_bytes=1,

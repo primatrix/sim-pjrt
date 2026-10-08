@@ -13,7 +13,7 @@ license = "Apache-2.0"
 dependencies = ["jax[tpu]==0.11.1"]
 
 [project.optional-dependencies]
-collect = ["xprof==2.23.1"]
+collect = ["xprof==2.23.1", "protobuf>=6.32.1"]
 
 [project.scripts]
 sim-pjrt = "sim_pjrt.cli:main"

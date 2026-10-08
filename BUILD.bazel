@@ -26,6 +26,7 @@ xla_cc_test(
     srcs = ["tests/cpp/profiler_test.cc"],
     deps = [
         ":profiler",
+        ":runtime",
         "@xla//xla:future",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest_main",

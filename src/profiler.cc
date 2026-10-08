@@ -116,6 +116,8 @@ std::string ProfileSession::Serialize() const {
   };
   for (const auto& batch : deferred_) {
     for (const auto& activity : *batch.activities) {
+      if (activity.device_index >= 0 && activity.device_index != batch.event.device_index)
+        continue;
       ProfileEvent event = batch.event;
       event.name = activity.name;
       event.track = activity.track;
@@ -125,10 +127,23 @@ std::string ProfileSession::Serialize() const {
       event.hlo_text = activity.hlo_text;
       event.tf_op = activity.tf_op;
       event.source = activity.source;
+      event.source_stack = activity.source_stack;
+      event.source_status = activity.source_status;
+      event.source_stack_status = activity.source_stack_status;
+      event.source_revision = activity.source_revision;
       event.sparse_core = activity.sparse_core;
       event.bytes = activity.bytes;
       if (!activity.cost_gap.empty()) event.cost_gap = activity.cost_gap;
       append(event);
+      if (!event.source_status.empty() && event.source_status != "verified" &&
+          !event.source.empty() && activity.track == "XLA Ops") {
+        ProfileEvent source = event;
+        source.name = absl::StrCat(event.source, " [", event.source_status, "]");
+        source.track = "Captured source";
+        source.hlo_text.clear();
+        source.tf_op.clear();
+        append(std::move(source));
+      }
       if (activity.track == "Sparse Core Ops") {
         event.name = batch.event.name;
         event.track = "Sparse Core Modules";
@@ -136,6 +151,7 @@ std::string ProfileSession::Serialize() const {
         event.hlo_text.clear();
         event.tf_op.clear();
         event.source.clear();
+        event.source_stack.clear();
         append(std::move(event));
       }
     }
@@ -158,7 +174,11 @@ std::string ProfileSession::Serialize() const {
                      return a->end_ns > b->end_ns;
                    });
   using Track = std::pair<int64_t, std::string>;
-  std::map<Track, std::vector<std::pair<int64_t, int64_t>>> lanes;
+  struct Lane {
+    int64_t id;
+    std::vector<int64_t> ends;
+  };
+  std::map<Track, std::vector<Lane>> lanes;
   std::map<int64_t, int64_t> next_line;
   std::map<int64_t, std::unique_ptr<tsl::profiler::XPlaneBuilder>> builders;
   std::map<std::pair<int64_t, int64_t>, int64_t> sparse_planes;
@@ -199,8 +219,12 @@ std::string ProfileSession::Serialize() const {
     auto& available = lanes[{plane_id, track}];
     size_t lane = 0;
     if (asynchronous) {
-      while (lane < available.size() && available[lane].second > event.start_ns)
+      while (lane < available.size()) {
+        auto& ends = available[lane].ends;
+        while (!ends.empty() && ends.back() <= event.start_ns) ends.pop_back();
+        if (ends.empty() || event.end_ns <= ends.back()) break;
         ++lane;
+      }
     }
     if (lane == available.size()) {
       // Match TPU's native line IDs. Extra overlapping lanes use a separate range.
@@ -209,15 +233,16 @@ std::string ProfileSession::Serialize() const {
       if (device && lane == 0) {
         if (track == "XLA Modules") id = 2;
         if (track == "XLA Ops") id = 3;
+        if (track == "Async XLA Ops") id = 4;
         if (track == "XLA TraceMe") id = 7;
         if (track == "Sparse Core Modules") id = 66;
         if (track == "Sparse Core Ops") id = 67;
         if (track == "SparseCore Offload Type") id = 145;
       }
-      available.push_back({id, 0});
+      available.push_back({id, {}});
     }
-    available[lane].second = event.end_ns;
-    auto line = builder.GetOrCreateLine(available[lane].first);
+    available[lane].ends.push_back(event.end_ns);
+    auto line = builder.GetOrCreateLine(available[lane].id);
     line.SetTimestampNs(start_ns_);
     if (!device && !asynchronous) {
       if (!event.thread_name.empty()) line.SetName(event.thread_name);
@@ -225,18 +250,33 @@ std::string ProfileSession::Serialize() const {
       line.SetName(lane ? absl::StrCat(track, " [", lane + 1, "]") : track);
     }
     auto* metadata = builder.GetOrCreateEventMetadata(
-        device ? absl::StrCat(event.program_id, ":", track, ":", event.name)
+        device ? absl::StrCat(event.program_id, ":", track, ":",
+                              event.hlo_text.empty() ? event.name : event.hlo_text)
                : event.name);
     metadata->set_name(event.hlo_text.empty() ? event.name : event.hlo_text);
     metadata->set_display_name(event.name);
     auto out = line.AddEvent(*metadata);
     if (!event.tf_op.empty())
-      out.AddStatValue(*builder.GetOrCreateStatMetadata("tf_op"), event.tf_op);
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("tf_op"),
+                       *builder.GetOrCreateStatMetadata(event.tf_op));
+    const bool source_verified = event.source_status.empty() || event.source_status == "verified";
+    const bool stack_verified = event.source_stack_status.empty() || event.source_stack_status == "verified";
     if (!event.source.empty())
-      out.AddStatValue(*builder.GetOrCreateStatMetadata("source"), event.source);
+      out.AddStatValue(*builder.GetOrCreateStatMetadata(source_verified ? "source" : "captured_source"),
+                       *builder.GetOrCreateStatMetadata(event.source));
+    if (!event.source_stack.empty())
+      out.AddStatValue(*builder.GetOrCreateStatMetadata(stack_verified ? "source_stack" : "captured_source_stack"),
+                       *builder.GetOrCreateStatMetadata(event.source_stack));
+    if (!event.source_status.empty())
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("source_status"), event.source_status);
+    if (!event.source_stack_status.empty())
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("source_stack_status"), event.source_stack_status);
+    if (!event.source_revision.empty())
+      out.AddStatValue(*builder.GetOrCreateStatMetadata("source_revision"),
+                       *builder.GetOrCreateStatMetadata(event.source_revision));
     if (device && (track == "XLA Modules" || track == "Sparse Core Modules"))
       out.AddStatValue(*builder.GetOrCreateStatMetadata("hlo_module"), event.name);
-    if (device && (track == "XLA Ops" || track == "Sparse Core Ops"))
+    if (device && (track == "XLA Ops" || track == "Async XLA Ops" || track == "Sparse Core Ops"))
       out.AddStatValue(*builder.GetOrCreateStatMetadata("hlo_op"), event.name);
     out.SetTimestampNs(event.start_ns);
     out.SetDurationNs(std::max<int64_t>(0, event.end_ns - event.start_ns));
@@ -254,6 +294,7 @@ std::string ProfileSession::Serialize() const {
                          event.cost_gap);
       out.AddStatValue(*builder.GetOrCreateStatMetadata("cost_status"),
                        !event.simulated          ? "observed"
+                       : event.detail == "tpu_replay" ? "replayed"
                        : !event.cost_gap.empty() ? "partial"
                        : event.track == "Launch" ? "structural"
                                                  : "estimated");
@@ -393,12 +434,14 @@ void ProfileActivity::Ready(const Future<>& future, const char* name,
 
 void ProfileActivity::Activities(
     const std::string& name, int64_t start, int64_t device, bool partial,
-    std::shared_ptr<const std::vector<BundleActivity>> activities) const {
+    std::shared_ptr<const std::vector<BundleActivity>> activities,
+    int64_t device_index) const {
   if (!session_) return;
   ProfileEvent event = event_;
   event.name = name;
   event.start_ns = start;
   event.device_id = device;
+  event.device_index = device_index;
   event.simulated = true;
   if (partial) event.cost_gap = "partial bundle cost coverage";
   session_->DeferActivities(std::move(event), index_, std::move(activities));

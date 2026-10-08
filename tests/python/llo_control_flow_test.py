@@ -11,6 +11,51 @@ PROFILE = {"frequency_hz": 1e9, "bundle_issue_cycles": 1}
 
 
 class LloControlFlowTest(unittest.TestCase):
+    def test_clamped_runtime_index_keeps_copy_loop_bounded(self):
+        program = parse_bundles('''
+0: { %s_index = smin.u32 132944, %runtime }
+1: { %s_page = sshrl.u32 %s_index, 10 }
+2: { %s_offset = sadd.s32 %s_page, 16 }
+3: { %s_remaining = ssub.s32 149, %s_offset }
+4: { %p_short = scmp.lt.s32.totalorder %s_remaining, 16 }
+5: { %s_size = smov (!%p_short, %s_remaining), 16 }
+6: { %s_bytes = sshll.u32 %s_size, 2 }
+7: { %s_vectors = sshrl.u32 %s_bytes, 3 }
+8: { %s_groups = sshrl.u32 %s_vectors, 6 ;; %s_seed = smov 0 }
+9 LB: { %s_i = sphi %s_seed, %s_next } /* Start region 1 */
+10: { %s_next = sadd.u32 %s_i, 1 }
+11: { %p_more = scmp.lt.u32.totalorder %s_next, %s_groups }
+12: { sbr.rel (%p_more) target = $region1 }
+13: {}
+''')
+        report = estimate_final_program({'TLP': program}, dict(PROFILE, branch_delay_slots=0))
+        self.assertEqual(report['modeled_cycles'], 14)
+        from sim_pjrt.llo.scalar import _evaluate
+        registers = {'%r': range(0, 8)}
+        read = lambda token: registers[token.strip()] if token.strip().startswith('%') else int(token)
+        self.assertIsNone(_evaluate('sadd.u32', '%r, 4294967295', read, {}))
+        self.assertIsNone(_evaluate('ssub.s32', '%r, 3', read, {}))
+
+    def test_local_smem_constants_survive_other_dma_but_not_aliasing_writes(self):
+        resolved = resolve_scalar_operands(parse_bundles('''
+0: { %s0 = smov 16 ;; %s_negative = smov 4294967288 }
+1: { sst [smem:[#allocation1 + $0x0]] %s0 ;; sst [smem:[#allocation2 + $0x3]] %s0 }
+2: { %s_shifted = sshra.s32 %s_negative, 1 }
+3: { %p_signed = scmp.eq.s32.totalorder %s_shifted, 4294967292 }
+4: { dma.hbm_to_smem %hbm, 16, [#allocation2], [#allocation5] }
+5: { %s_kept = sld [smem:[#allocation1]] ;; %s_lost = sld [smem:[#allocation2 + $0x3]] }
+6: { %s_count = sshra.s32 %s_kept, 3 }
+7: { dma.hbm_to_vmem (%p_signed), %hbm, %s_count, %vmem, [#allocation0] }
+8: { dma.hbm_to_vmem %hbm, %s_lost, %vmem, [#allocation0] }
+9: { dma.hbm_to_smem %hbm, 16, %unknown, [#allocation5] }
+10: { %s_unknown = sld [smem:[#allocation1]] }
+11: { dma.hbm_to_vmem %hbm, %s_unknown, %vmem, [#allocation0] }
+'''))
+        self.assertIn(', 2,', resolved[7]['instructions'][0]['text'])
+        self.assertTrue(resolved[7]['instructions'][0]['resolved_predicate'])
+        self.assertIn('%s_lost', resolved[8]['instructions'][0]['text'])
+        self.assertIn('%s_unknown', resolved[11]['instructions'][0]['text'])
+
     def test_predicated_setup_keeps_a_relative_pointer_loop_bounded(self):
         program = parse_bundles('''
 0: { %s_input = inlined_call_operand.vmem [shape: f32[32], index: 0] }
@@ -123,14 +168,36 @@ class LloControlFlowTest(unittest.TestCase):
 1 LB: { %s_i = sphi %s_seed, %s_next } /* Start region 1 */
 2: { dma.hbm_to_vmem %hbm, %s_i, %vmem, [#allocation0] }
 3: { %s_next = sadd.u32 %s_i, 1 }
-4: { %p_more = scmp.lt.u32.totalorder %s_next, 10000 }
+4: { %p_more = scmp.lt.u32.totalorder %s_next, 1000000 }
 5: { sbr.rel (%p_more) target = $region1 }
 6: {}
 ''')
         report = estimate_final_program({'TLP': program}, dict(PROFILE, branch_delay_slots=0))
-        self.assertEqual(report['runtime_loops'][0]['iterations'], 10000)
+        self.assertEqual(report['runtime_loops'][0]['iterations'], 1000000)
         self.assertTrue(any('unmodeled DMA' in g['reason'] for g in report['gaps']))
         self.assertIsNone(report['estimated_seconds'])
+
+    def test_large_body_keeps_small_outer_loop_counter_for_inner_bound(self):
+        program = parse_bundles('''
+0: { %s_seed = smov 0 }
+1 LB: { %s_i = sphi %s_seed, %s_next } /* Start region 1 */
+2: { %s_bound = sadd.u32 %s_i, 1 }
+3: { %s_inner_seed = smov 0 }
+4 LB: { %s_j = sphi %s_inner_seed, %s_inner_next } /* Start region 2 */
+5: { %s_inner_next = sadd.u32 %s_j, 1 }
+6: { %p_inner = scmp.lt.u32.totalorder %s_inner_next, %s_bound }
+7: { sbr.rel (%p_inner) target = $region2 }
+8: { %s_next = sadd.u32 %s_i, 1 }
+9: { %p_outer = scmp.lt.u32.totalorder %s_next, 3 }
+10: { sbr.rel (%p_outer) target = $region1 }
+11: {}
+''')
+        padding = tuple(dict(address=f'padding:{i}', instructions=[]) for i in range(4000))
+        program = program[:8] + padding + program[8:]
+        report = estimate_final_program({'TLP': program}, dict(PROFILE, branch_delay_slots=0))
+        self.assertEqual(report['modeled_cycles'], 12044)
+        self.assertFalse(report['runtime_loops'])
+        self.assertFalse(report['gaps'])
 
     def test_counter_overflow_cannot_prove_a_loop_bound(self):
         program = parse_bundles('''
@@ -260,17 +327,23 @@ class LloControlFlowTest(unittest.TestCase):
         self.assertIn(', 4,', resolved[3]['instructions'][0]['text'])
 
     def test_scalar_spills_preserve_loop_control_values(self):
-        resolved = resolve_scalar_operands(parse_bundles('''
+        program = parse_bundles('''
 0: { %s0 = smov 32 }
 1: { %store = sst [smem:[#allocation7_spill]] %s0 ;; sst [smem:[#allocation8 + $0x3]] %s0 }
 2: { %s1 = sld [smem:[#allocation7_spill]] }
 3: { %dma = dma.hbm_to_vmem %hbm, %s1, %vmem, [#allocation0] }
-4: { %unknown = sst [smem:%s_pointer] %s0 }
-5: { %s2 = sld [smem:[#allocation7_spill]] }
-6: { %dma2 = dma.hbm_to_vmem %hbm, %s2, %vmem, [#allocation1] }
-'''))
+4: { inlined_call /* kernel */ }
+5: { %unknown = sst [smem:%s_pointer] %s0 }
+6: { %s2 = sld [smem:[#allocation7_spill]] }
+7: { %dma2 = dma.hbm_to_vmem %hbm, %s2, %vmem, [#allocation1] }
+''')
+        resolved = resolve_scalar_operands(program)
         self.assertIn(', 32,', resolved[3]['instructions'][0]['text'])
-        self.assertIn('%s2,', resolved[6]['instructions'][0]['text'])
+        self.assertIn(', 32,', resolved[7]['instructions'][0]['text'])
+        program[0]['instructions'].append({
+            'opcode': 'smov', 'text': '%s_escape = smov [#allocation7_spill]'})
+        resolved = resolve_scalar_operands(program)
+        self.assertIn('%s2,', resolved[7]['instructions'][0]['text'])
 
     def test_scalar_coissue_unknown_writes_and_predicates(self):
         resolved = resolve_scalar_operands(parse_bundles('''

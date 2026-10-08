@@ -2,7 +2,8 @@
 
 import re
 
-from .scalar import _REGISTER, _ASSIGN, _FLAG, _phi_values, _evaluate
+from .scalar import _REGISTER, _ASSIGN, _FLAG, _phi_values, _evaluate, _smem_slot, _address
+from .parser import dma_operands
 
 class HaltedPath(Exception):
     """An error-halt path is not a normally completing execution."""
@@ -133,7 +134,7 @@ def _counted_loops(program, labels, default_delay):
 
 
 def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots=None,
-                            assume_peers_ready=False):
+                            assume_peers_ready=False, scalar_inputs=()):
     """Return a copy with proven DMA constants, preserving unresolved operands."""
     labels = {}
     for index, bundle in enumerate(program):
@@ -147,6 +148,19 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
         raise ValueError('max_scalar_visits must be a positive integer')
     joins = None
     visits, work = {}, 0
+    # Non-escaping compiler spill slots cannot alias runtime buffer pointers or
+    # callee-local storage. Keep their values across calls and indirect stores.
+    private_spills, escaped_spills = set(), set()
+    for bundle in program:
+        for ins in bundle['instructions']:
+            spills = set(re.findall(r'#allocation\d+_spill', ins['text']))
+            slot = _smem_slot(ins['text'])
+            if ins['opcode'] in ('sld', 'sst') and slot:
+                private_spills.add(slot[0])
+                spills.discard(slot[0])
+            escaped_spills.update(spills)
+    private_spills = {name for name in private_spills
+                      if name.endswith('_spill')} - escaped_spills
     loops, backedges = _counted_loops(program, labels, branch_delay_slots)
     loop_ranges = [(header, latch + next(i.get('branch_delay_slots', branch_delay_slots or 0)
                                          for i in program[latch]['instructions'] if i['opcode'] == 'sbr.rel'))
@@ -201,9 +215,11 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                 if isinstance(start, int) and 0 <= start < bound < modulus:
                     distance = bound - start + (relation == 'le')
                     count = (distance + step - 1) // step
+                    # Keep exact counters while unrolling fits the budget: an
+                    # inner loop may derive its bound from the outer counter.
                     if (start + count * step < modulus
                             and (relation != 'ne' or (bound - start) % step == 0)
-                            and count * (end - pc) > 10000):
+                            and count * (end - pc) > max(10000, max_visits - work)):
                         summary = (latch, end, count, written, 'llo_counter')
             if summary is not None:
                 latch, end, count, written, source = summary
@@ -238,6 +254,7 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
             branch = None
             writes, stores = {}, {}
             unknown_store = False
+            dma_destinations = set()
             # Resolve decisions before processing any co-issued instruction, so all
             # slots observe the same predicate even when a branch shares its bundle.
             guard = None
@@ -320,6 +337,10 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                     ins['resolved_predicate'] = bool(predicate)
                 if op.startswith('shalt') and predicate == 1:
                     raise HaltedPath()
+                if op == 'inlined_call':
+                    arguments = _REGISTER.findall(re.sub(r'\(!?%p\w+\)', '', text.split('inlined_call', 1)[1]))
+                    ins['scalar_inputs'] = tuple(read(arg) if type(read(arg)) is int else None
+                                                 for arg in arguments)
                 if op.startswith(('sbr', 'sloop', 'scall', 'sret')):
                     if pending_branch is not None:
                         raise ValueError('branch inside a pending branch delay window')
@@ -340,13 +361,23 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                             loop_states.add(state)
                         branch = (delay, labels[target[1]])
                 if op == 'sst':
-                    store = re.search(r'\[smem:(\[#allocation\d+_spill\])\]\s*(%s\w+)', text)
-                    if store:
+                    slot = _smem_slot(text)
+                    store = re.search(r'\]\]\s*(%s\w+)\s*$',
+                                      re.sub(r'\(!?%p\w+\)\s*,?', '', text))
+                    if slot and store:
                         if predicate != 0:
-                            stores[store[1]] = read(store[2]) if predicate is not None else None
-                    elif not re.search(r'\[smem:\[#allocation\d+(?:\s*\+\s*\$0x[\da-fA-F]+)?\]\]', text):
+                            stores[slot] = read(store[1]) if predicate is not None else None
+                    else:
                         # An unresolved store may alias an existing spill slot.
                         unknown_store |= predicate != 0
+                direction = ins.get('dma_direction', op.removeprefix('dma.'))
+                if op.startswith('dma.') and direction.endswith('_to_smem') and predicate != 0:
+                    operands = dma_operands(text)
+                    destination = _address(read(operands[2])) if len(operands) >= 3 else None
+                    if destination and destination[0].startswith('#allocation'):
+                        dma_destinations.add(destination[0])
+                    else:
+                        unknown_store = True
                 if op.startswith('dma.') or op == 'vsyncadd':
                     # Do not replace destinations or unknown pointers/registers.
                     lhs, sep, rhs = text.partition('=')
@@ -371,6 +402,10 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                 if guard:
                     args = re.sub(r'\((!?%p\w+)\)\s*,?', '', args).strip()
                 value = _evaluate(opcode, args, read, memory)
+                if opcode == 'inlined_call_operand.':
+                    index = re.search(r'\bindex: (\d+), kind: input\b', args)
+                    if index and int(index[1]) < len(scalar_inputs):
+                        value = scalar_inputs[int(index[1])]
                 if value is None and opcode in ('scalar_lea.vmem', 'int_to_ptr.vmem', 'inlined_call_operand.vmem'):
                     # Even an unknown VMEM base can retain a known displacement
                     # in later pointer increments and relative comparisons.
@@ -379,14 +414,13 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                 writes[dest] = values.get(dest) if predicate == 0 else (value if predicate is not None else None)
             # Co-issued scalar instructions read the prior bundle's register state.
             values.update(writes)
-            if any(i['opcode'] == 'inlined_call' for i in bundle['instructions']):
-                # SSA caller values retain their identity across an inlined call.
-                # Unbound memory arguments may alias stored values, however.
-                memory.clear()
-            if unknown_store:
-                memory.clear()
-            else:
-                memory.update(stores)
+            memory.update(stores)
+            if unknown_store or any(i['opcode'] == 'inlined_call' for i in bundle['instructions']):
+                memory = {slot: value for slot, value in memory.items()
+                          if slot[0] in private_spills}
+            elif dma_destinations:
+                memory = {slot: value for slot, value in memory.items()
+                          if slot[0] not in dma_destinations}
             count = visits.get(original['address'], 0)
             visits[original['address']] = count + 1
             bundle['source_address'] = original['address']

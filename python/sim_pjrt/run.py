@@ -17,10 +17,14 @@ def run(command, predictor="llo", database=None, replay_miss="error", report=Non
         with compilation_observer({}, selected):
             run_python(command)
             import jax
-            for array in jax.live_arrays():
-                array.block_until_ready()
-            jax.effects_barrier()
-            memory = {str(device.id): device.memory_stats() for device in jax.devices()}
+            from jax._src import xla_bridge
+            # A launcher may delegate all JAX work to child processes. Reporting
+            # must not initialize another backend in that otherwise idle parent.
+            if xla_bridge.backends_are_initialized():
+                for array in jax.live_arrays():
+                    array.block_until_ready()
+                jax.effects_barrier()
+                memory = {str(device.id): device.memory_stats() for device in jax.devices()}
         status = "complete"
     finally:
         if report:
