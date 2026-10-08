@@ -74,6 +74,38 @@ TEST(OutputSimulationTest, RejectsUnknownCustomCall) {
             absl::StatusCode::kUnimplemented);
 }
 
+TEST(OutputSimulationTest, SupportsUninitializedScratchAllocation) {
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
+    HloModule scratch
+    ENTRY main {
+      scratch = s32[4] custom-call(), custom_call_target="AllocateBuffer"
+      input = s32[4] parameter(0)
+      ROOT sum = s32[4] add(input, scratch)
+    }
+  )"));
+  ASSERT_OK_AND_ASSIGN(auto substituted_ops,
+                       SubstituteSimulationOutputs(*module));
+  EXPECT_EQ(substituted_ops, 1);
+  auto* root = module->entry_computation()->root_instruction();
+  EXPECT_EQ(root->opcode(), HloOpcode::kAdd);
+  EXPECT_EQ(root->operand(0)->opcode(), HloOpcode::kParameter);
+  EXPECT_EQ(root->operand(1)->opcode(), HloOpcode::kBroadcast);
+  EXPECT_EQ(root->operand(1)->operand(0)->literal().GetFirstElement<int32_t>(),
+            0);
+}
+
+TEST(OutputSimulationTest, RejectsAllocationWithOperands) {
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
+    HloModule invalid_allocation
+    ENTRY main {
+      input = s32[4] parameter(0)
+      ROOT scratch = s32[4] custom-call(input), custom_call_target="AllocateBuffer"
+    }
+  )"));
+  EXPECT_EQ(SubstituteSimulationOutputs(*module).status().code(),
+            absl::StatusCode::kUnimplemented);
+}
+
 TEST(OutputSimulationTest, RejectsExternalSideEffects) {
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(R"(
     HloModule effect

@@ -72,7 +72,16 @@ absl::StatusOr<int64_t> SubstituteSimulationOutputs(HloModule& module) {
         const auto& target = instruction->custom_call_target();
         // Sharding annotations have no executable numerical semantics.
         if (IsShardingAnnotation(*instruction)) continue;
-        if (target != "tpu_custom_call" && target != "sim_pallas") {
+        const bool allocation = target == "AllocateBuffer";
+        if (allocation &&
+            (instruction->operand_count() != 0 ||
+             !instruction->shape().IsArray() ||
+             !instruction->output_operand_aliasing().empty())) {
+          return absl::UnimplementedError(
+              "AllocateBuffer requires an unaliased array with no operands");
+        }
+        if (target != "tpu_custom_call" && target != "sim_pallas" &&
+            !allocation) {
           return absl::UnimplementedError(absl::StrCat(
               "TPU simulator has no adapter for custom call: ", target));
         }
@@ -80,6 +89,8 @@ absl::StatusOr<int64_t> SubstituteSimulationOutputs(HloModule& module) {
           return absl::UnimplementedError(
               "TPU kernel side effects require an explicit adapter");
         }
+        // Uninitialized scratch storage may contain any value. Zero-filled
+        // virtual storage gives it deterministic contents without a TPU call.
         substitute = true;
       }
       if (!substitute) continue;
