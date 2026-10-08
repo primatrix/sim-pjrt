@@ -121,3 +121,14 @@ total duration and shared immutable activity metadata for profiling.
 | `src/virtual_hbm.cc` | Logical buffers, CPU shadow state and D2H |
 | `src/runtime.cc` | Resource reservations and modeled completion |
 | `src/profiler.cc` | Native XPlane collection |
+
+### Fused MoE output simulation
+
+The unquantized SGL-JAX fused_ep_moe v1 kernel has an explicit output adapter
+for its 9-operand ABI and 12-operand variant with all-reduce metadata. The
+`fused-moe-k_` operation scope, static array ranks/types, fresh array output,
+and absence of output aliases identify this adapter. Its side effects are
+internal scratch writes, device DMA and barriers; output simulation replaces
+the collective result with a zero array and does not execute those effects.
+This validates request plumbing only, not numerical or synchronization
+correctness. Other effectful kernels remain unsupported.
