@@ -164,6 +164,10 @@ An explicit scenario overrides automatic scalar path resolution. `path` lists
 bundle addresses, optionally with nested `{"repeat": N, "body": [...]}` blocks.
 Zero repetitions are allowed; expansion is limited to one million visits.
 A supplied path is an assumption whose feasibility the estimator does not prove.
+Explicit scenarios do not reconstruct branch delays from assembly; that alignment
+is required only for automatic path resolution. Reports record whether assembly
+branch resolution was requested. Missing path decisions still produce gaps and
+prevent a complete timing estimate.
 
 | Input | Meaning |
 | --- | --- |

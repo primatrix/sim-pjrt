@@ -21,7 +21,7 @@ def main():
     args = parser.parse_args()
     profile = json.loads(args.profile.read_text())
     if args.dump.suffix == ".json":
-        modules, aliases, provenance = load_final_modules(args.dump)
+        modules, aliases, provenance = load_final_modules(args.dump, resolve_branches=not bool(args.scenario))
     else:
         modules, aliases = {'TLP': parse_bundles(args.dump.read_text())}, {}
         provenance = {

@@ -206,8 +206,8 @@ def annotate_loop_bounds(program, bounds):
                 program[header]['loop_latch'] = latch
 
 
-def load_final_modules(path):
-    """Load and align one compilation, before selecting runtime paths."""
+def load_final_modules(path, *, resolve_branches=True):
+    """Load one compilation; align assembly when reconstructing runtime paths."""
     manifest = json.loads(path.read_text())
     files = manifest["files"]
     topology = manifest.get("topology", "")
@@ -240,7 +240,7 @@ def load_final_modules(path):
         raise ValueError("expected one libtpu deduplication map per compile")
     if len(assembly_files) > 1:
         raise ValueError('expected at most one assembly dump per compile')
-    if assembly_files:
+    if assembly_files and resolve_branches:
         annotate_branch_delays(modules, aliases, Path(assembly_files[0]).read_text(), topology)
     bounds = {}
     for filename in metadata_files:
@@ -255,6 +255,7 @@ def load_final_modules(path):
         "profile_metadata_files": metadata_files,
         "sparsecore_bundle_files": sparsecore_files,
         "assembly_files": assembly_files,
+        "assembly_branch_resolution_requested": resolve_branches,
     }
 
 
