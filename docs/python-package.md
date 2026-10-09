@@ -8,7 +8,7 @@ separate dependency; the package has no SGLang extra and does not install it.
 
 ```sh
 uv build --wheel
-uv pip install --python /path/to/venv/bin/python dist/sim_pjrt-0.1.1-py3-none-linux_x86_64.whl
+uv pip install --python /path/to/venv/bin/python dist/sim_pjrt-0.1.2-py3-none-linux_x86_64.whl
 ```
 
 The setuptools build invokes `bazel build //:plugin`, then includes the resulting
@@ -45,7 +45,7 @@ Model/tokenizer files and server options belong to SGLang-Jax. The launcher
 does not create model files or change its arguments. Dummy weights and simulator
 placeholder outputs do not validate model accuracy.
 
-For a workload managed by uv, run `uv add /absolute/path/to/sim_pjrt-0.1.1-py3-none-linux_x86_64.whl`
+For a workload managed by uv, run `uv add /absolute/path/to/sim_pjrt-0.1.2-py3-none-linux_x86_64.whl`
 in that workload project, add SGLang-Jax there separately, then use
 `uv run spjrt run ...`. `uvx` uses an isolated tool environment and will not
 automatically see a workload project's SGLang-Jax installation.
@@ -141,6 +141,15 @@ as the default branch so branches/tags can reuse its snapshots. Eviction can
 still cause cold builds, which may require multiple attempts. Only successful
 builds produce release artifacts.
 
+After a native workflow finishes, **Native cache maintenance** retains the newest
+default-branch native cache and the newest native cache from other branches or
+tags. Older native snapshots are removed; other caches are left alone. This
+limits accumulation of the roughly 4–5 GB snapshots that can otherwise evict the
+default branch's cache. Main cannot restore a child branch's cache, so merging a
+branch does not make its cache available on main. A missing main cache must be
+rebuilt; let that build finish or reach its timeout so it can save progress.
+Cancelling a build skips its cache-save step. Maintenance can also be run manually.
+
 For shared caching, create a [BuildBuddy API key](https://www.buildbuddy.io/docs/guide-auth/).
 Store a read-only key as the repository secret `BUILDBUDDY_API_KEY`; CI then reads
 BuildBuddy in addition to its disk cache. Without the secret, existing CI behavior
@@ -170,8 +179,8 @@ into `main` and wait for its native build to pass. Tag that exact commit:
 
 ```sh
 git fetch origin main
-git tag v0.1.1 origin/main
-git push origin v0.1.1
+git tag v0.1.2 origin/main
+git push origin v0.1.2
 ```
 
 Tag pushes skip compilation. The release job downloads the artifact from a

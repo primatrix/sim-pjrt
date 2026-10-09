@@ -1,0 +1,35 @@
+name: Native cache maintenance
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Native build and release]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: native-cache-maintenance
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # Completed builds always use the default branch's maintenance code.
+      # Do not check out workflow_run.head_sha with this job's write token.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.repository.default_branch || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Keep the latest main cache and one branch cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/scripts/prune_native_caches.py --repo "$GITHUB_REPOSITORY" --delete
