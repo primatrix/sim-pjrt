@@ -214,3 +214,5 @@ smoke tests run against the installed package. Native compilation/tests are
 reused from the matching source run. The artifact records the source run,
 commit, input fingerprint and binary checksums in `NATIVE_PROVENANCE.json`.
 Leave the input empty to run the full native build. Manual runs do not publish.
+Reuse runs have a separate concurrency group, so a manual main wheel build can
+run while a full main build is still warming its cache.

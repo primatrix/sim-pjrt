@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: native-${{ github.ref }}
+  group: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_native_run != '' && 'wheel-reuse' || 'native' }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
