@@ -194,3 +194,23 @@ in `pyproject.toml` and are published as prereleases. Manual runs never publish.
 The release job alone receives `contents: write` permission. The host runner
 uses Ubuntu 24.04, while compilation, auditwheel repair and
 runtime checks all run inside the manylinux_2_34 container. macOS is not supported.
+
+For a Python-only update, a manual run can reuse the plugin from a successful
+native build in this repository:
+
+```sh
+gh workflow run native.yml --ref main -f reuse_native_run=SUCCESSFUL_RUN_ID
+```
+
+The helper compares the committed native sources, native tests/fixtures, Bazel
+configuration, toolchain inputs and native build commands with the source run.
+It verifies the downloaded wheel checksum and extracts only its standalone
+Linux x86-64 plugin. A mismatch or a wheel with additional bundled shared
+libraries fails; use the full build in that case. Packaging always uses the
+current checkout's Python files, configuration and version. The repaired wheel
+is installed in a clean environment on glibc 2.34, its packaged tables and libtpu
+identity are checked, and all offline Python regressions and the JAX simulation
+smoke tests run against the installed package. Native compilation/tests are
+reused from the matching source run. The artifact records the source run,
+commit, input fingerprint and binary checksums in `NATIVE_PROVENANCE.json`.
+Leave the input empty to run the full native build. Manual runs do not publish.
