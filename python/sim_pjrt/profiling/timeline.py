@@ -7,7 +7,7 @@ import re
 TRACKS = ("XLA Modules", "XLA Ops", "Async XLA Ops", "XLA TraceMe")
 
 
-def read_xplane(path):
+def read_xplane(path, *, include_instructions=False):
     # Trace Viewer's converter caps large captures for browser rendering. Import
     # the original events instead; metadata strings remain shared in memory.
     from sim_pjrt.profiling.xplane_pb2 import XSpace
@@ -23,6 +23,9 @@ def read_xplane(path):
     wanted = {"program_id", "run_id", "queue_id", "replica_id", "hlo_category",
               "tf_op", "source", "source_stack", "model_flops", "bytes_accessed",
               "raw_bytes_accessed", "clock_domain"}
+    if include_instructions:
+        wanted |= {"bundle_number", "instruction_ordinal", "details", "unit_id",
+                   "device_offset_ps", "device_duration_ps"}
     for plane in planes:
         def stats(values):
             result = {}
@@ -40,7 +43,8 @@ def read_xplane(path):
         events.append({"ph": "M", "name": "process_name", "pid": plane.id,
                        "args": {"name": plane.name}})
         for line in plane.lines:
-            if line.name not in TRACKS:
+            instruction_lane = line.name.endswith(' Instructions')
+            if line.name not in TRACKS and not (include_instructions and instruction_lane):
                 continue
             events.append({"ph": "M", "name": "thread_name", "pid": plane.id,
                            "tid": line.id, "args": {"name": line.name}})
@@ -48,10 +52,16 @@ def read_xplane(path):
                 if event.WhichOneof("data") != "offset_ps":
                     continue
                 name, args = metadata[event.metadata_id]
+                args = args | stats(event.stats)
+                if instruction_lane:
+                    args = args | {"timestamp_provenance": "xprof_reconstructed",
+                                   "xplane_offset_ps": event.offset_ps,
+                                   "xplane_duration_ps": event.duration_ps,
+                                   "xplane_line_timestamp_ns": line.timestamp_ns}
                 events.append({"ph": "X", "name": name, "pid": plane.id, "tid": line.id,
                                "ts": (line.timestamp_ns - epoch) / 1000 + event.offset_ps / 1e6,
                                "dur": event.duration_ps / 1e6,
-                               "args": args | stats(event.stats)})
+                               "args": args})
     return trace
 
 

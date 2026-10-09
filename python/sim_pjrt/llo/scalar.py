@@ -12,9 +12,23 @@ _FLAG = re.compile(r'\[#allocation\d+(?:\s*\+\s*\$0x[\da-fA-F]+)?\]')
 _SMEM = re.compile(r'\[smem:\[(#allocation\d+(?:_spill)?)(?:\s*\+\s*\$0x([\da-fA-F]+))?\]\]')
 
 
-def _smem_slot(text):
+def _smem_slot(text, read=None):
     match = _SMEM.search(text)
-    return (match[1], int(match[2] or '0', 16)) if match else None
+    if match:
+        return (match[1], int(match[2] or '0', 16))
+    if read is None:
+        return None
+    indirect = re.search(r'\[smem:\[([^\[\]]+)\]\]', text)
+    if not indirect:
+        return None
+    parts = [part.strip() for part in indirect[1].split('+')]
+    if len(parts) > 2:
+        return None
+    base = (parts[0], 0) if re.fullmatch(r'#allocation\d+(?:_spill)?', parts[0]) else _address(read(parts[0]))
+    offset = read(parts[1]) if len(parts) == 2 else 0
+    if base and type(offset) is int:
+        return base[0], base[1] + offset
+    return None
 
 
 def _address(value):
@@ -51,6 +65,12 @@ def _evaluate(opcode, args, read, memory):
     """Evaluate one scalar write using the register state before this bundle."""
     base = opcode.split('.')[0]
     value = None
+    if opcode == 'scalar_lea.sflag':
+        # The trailing allocation is compiler provenance, not part of the
+        # numeric displacement: scalar_lea.sflag %base, 6 [#allocation6].
+        args = re.sub(r'(,\s*[^,\[\]]+?)\s+\[#allocation\d+\]\s*$', r'\1', args)
+    if base in ('int_to_ptr', 'ptr_to_int'):
+        return read(re.sub(r'\[resolvable:\$\w+\]\s*', '', args).strip())
     select = re.fullmatch(r'\((!?%p\w+),\s*([^()]+)\),\s*(.+)', args)
     if base == 'smov' and select:
         cond = read(select[1])
@@ -64,6 +84,13 @@ def _evaluate(opcode, args, read, memory):
                 value = lo if lo == hi else range(lo, hi + 1)
     else:
         operands = [read(x) for x in args.split(',')]
+        # A disabled DMA arm can contain undefined values. Boolean predicates
+        # still resolve when a known operand determines the whole expression.
+        if len(operands) == 2:
+            if base in ('pand', 'pnand') and any(v == 0 for v in operands if isinstance(v, int)):
+                return int(base == 'pnand')
+            if base == 'por' and any(v != 0 for v in operands if isinstance(v, int)):
+                return 1
         if (len(operands) == 2 and any(isinstance(v, range) for v in operands)
                 and all(isinstance(v, (int, range)) for v in operands)
                 and base in ('sadd', 'ssub', 'sshll', 'sshrl', 'sshra', 'scmp')):
@@ -136,17 +163,19 @@ def _evaluate(opcode, args, read, memory):
         elif base in ('pneg', 'pnot') and len(operands) == 1 and operands[0] is not None:
             value = int(not operands[0])
         elif base == 'sld':
-            slot = _smem_slot(args)
+            slot = _smem_slot(args, read)
             if slot:
                 value = memory.get(slot)
         elif base == 'scalar_select' and len(operands) == 3 and isinstance(operands[0], int):
             value = operands[1] if operands[0] else operands[2]
         elif base == 'scalar_lea' and opcode.endswith('.sflag') and len(operands) == 2:
             flag, offset = operands
-            if isinstance(flag, str) and isinstance(offset, int) and offset >= 0:
-                m = re.fullmatch(r'\[(#allocation\d+)\]', flag)
-                if m:
-                    value = flag if offset == 0 else f'[{m[1]} + $0x{offset:x}]'
+            address = _address(flag)
+            if address and address[0].startswith('#allocation') and type(offset) is int:
+                displacement = address[1] + offset
+                if displacement >= 0:
+                    value = (f'[{address[0]}]' if displacement == 0 else
+                             f'[{address[0]} + $0x{displacement:x}]')
         elif len(operands) == 2 and all(isinstance(x, int) for x in operands):
             a, b = operands
             if '.s32' in opcode:

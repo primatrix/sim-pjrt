@@ -26,8 +26,8 @@ working in this repository: editable installs are not the supported route for
 bundled native assets. When running directly from a checkout, pass `--plugin`
 to select the built native library.
 
-Runtime dependencies follow SGLang-Jax's `jax[tpu]==0.11.1` extra, which selects
-JAX/jaxlib 0.11.1 and libtpu 0.0.46.*, with Python >=3.12,<3.14.
+Runtime dependencies pin JAX/jaxlib 0.11.1 and libtpu 0.0.48 separately, with
+Python >=3.12,<3.14. The libtpu version matches the bundled GF execution tables.
 See [dependency baseline](dependencies.md#python-runtime-baseline) for the upstream
 revision and validation status; [integration setup](../tests/README.md) records
 the previously tested environment.

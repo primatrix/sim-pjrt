@@ -17,7 +17,7 @@ PYTHONPATH=python python3 python/bundle_timing.py \
 The Pallas vector-add fixture has 34 scheduled bundles and 8,192 DMA bytes.
 Its illustrative profile assumes 1 GHz, one issue cycle per bundle, 512-byte DMA
 units, 100 GB/s HBM and 20-cycle DMA startup. The result is 34 issue cycles plus
-118 exposed wait cycles: 152 ns of modeled work, not a TPU measurement.
+126 exposed wait cycles: 160 ns of modeled work, not a TPU measurement.
 Without the no-faults scenario, conditional bounds-check halts remain gaps.
 
 ## TPU7x profile
@@ -94,8 +94,10 @@ require a finite wait bound; it never bypasses unmarked compute loops.
 
 ### Issue, DMA and waits
 
-The estimator charges once per issued bundle and assumes the compiler schedule
-covers internal instruction dependencies. `bundle_issue_cycles`,
+The unified GF execution model charges once per issued bundle and reconstructs
+register dependencies, MRB/EUP producer-consumer relationships and modeled resource
+reservations. Compiler schedules do not replace those execution checks.
+`bundle_issue_cycles`,
 `completion_tail_cycles` and `instruction_extra_cycles` are profile parameters.
 Parallel instruction extras use the maximum and overlap with waits.
 `vdelay_semantics` must explicitly select `additional_cycles` or `total_cycles`.
@@ -106,18 +108,24 @@ for 4, 8 and 8 cycles respectively. Independent MXUs overlap; existing bundle
 spacing, delays and DMA waits hide reservations. Only the remaining wait is
 added before the next conflicting bundle, including its co-issued DMA.
 Branch/loop bounds drain these reservations along with DMA. Reports expose
-`mxu_stall_cycles` (included in `wait_stall_cycles`) and
-`mxu_completion_cycles` (included in `completion_cycles`).
+aggregate `wait_stall_cycles` and `completion_cycles`; detailed events identify
+modeled blockers and resource activity.
 
 These are throughput constraints, **not** per-instruction result latencies.
 The [GF reservation analysis](https://gh.evko.io/crucible-notes/libtpu/cost/mxu-latency-gf.html)
 describes libtpu 0.0.40. We checked its constants against libtpu 0.0.46.1:
 `MatmulDataFormat` 1 is F32 and 2 is BF16, unlike the page's labels.
-The model does not add 211/204 cycles to each matmul. Result dependencies still
-rely on compiler scheduling. Full MXU sub-resource conflicts, staging/latch
-sequences and MRB result availability remain future work. Unsupported formats,
-modifiers or missing unit IDs remain gaps; other targets keep their existing
-profile behavior. These compiler-derived constants are not hardware calibration.
+The model does not add a result latency serially to every matmul. The pinned
+libtpu 0.0.48 GF table determines result readiness, and explicit consumers wait
+on those results. Full MXU sub-resource conflicts and some staging/latch rules
+remain gaps. Unsupported formats, modifiers or missing unit IDs remain gaps.
+The implementation is in `python/sim_pjrt/llo/`: `runtime.py` adapts whole
+programs, `execution.py` constructs dependencies, `pipeline.py` schedules them,
+and `compiler_costs.py` reads the bundled cost table. The cost and opcode mapping
+tables in `configs/` carry the libtpu 0.0.48 binary identity; supplying a different
+compiler identity fails instead of falling back to the former estimator.
+These compiler-derived constants are not hardware calibration or independently
+validated hardware latency predictions.
 
 For `dma.hbm_to_vmem` and `dma.vmem_to_hbm`, resolved granule counts and completion
 flags determine transfers. Each configured DMA resource serializes its work,
@@ -131,7 +139,8 @@ and contends for its resource even when its completion flag is unresolved.
 An optional per-direction `vmem_bytes_per_second` limits the VMEM side;
 transfer time uses the slower interface. All rates are per modeled core.
 
-For `dma.general`, typed addresses identify memory spaces. A known payload size
+For `dma.general`, typed addresses or the compiler's direction annotation identify
+memory spaces; contradictory evidence is rejected. A known payload size
 uses the same directional bandwidth model. Detailed DMA events retain source
 and destination flags, descriptor address and overrides for diagnosis. Descriptor
 stride/padding and source completion remain gaps; contiguous transfer semantics
@@ -149,13 +158,12 @@ Reports include the profile, scenario, counts, gaps and `activity_timeline`.
 
 `status=modeled` means the recognized work is covered by the supplied assumptions.
 With gaps, `status=partial` and `estimated_seconds=null`; `modeled_seconds` remains
-the accounted work. Strict profiles reject gaps; `allow_partial` permits partial
-estimates. Missing ISA/latency, DMA/synchronization and operand-binding semantics
-are not replaced with guessed costs.
+the accounted work. Unmapped instruction costs retain an explicit one-cycle placeholder
+and a gap; unresolved DMA/synchronization and operand bindings also remain gaps.
+Partial results must not be interpreted as a hardware timing bound.
 
-`--summary` streams call expansion and groups gaps by module, bundle and reason,
-retaining occurrence counts and compact activities. Detailed mode keeps individual
-events. Neither unique gap sites nor occurrence counts measure missing time.
+`--summary` omits individual events while retaining counts and activity summaries.
+Detailed mode keeps individual events. Gap counts do not measure missing time.
 Static bundle counts and dynamic visits are reported separately.
 
 ## Execution scenarios
@@ -168,17 +176,19 @@ Explicit scenarios do not reconstruct branch delays from assembly; that alignmen
 is required only for automatic path resolution. Reports record whether assembly
 branch resolution was requested. Missing path decisions still produce gaps and
 prevent a complete timing estimate.
+With a scenario but no `path`, the listed bundle order is assumed; unresolved
+branches, predicates and phi inputs remain gaps. This does not establish an
+executed path or a complete latency estimate.
 
 | Input | Meaning |
 | --- | --- |
 | `predicates` | Boolean execution decisions keyed by `visit_index:instruction_index` |
 | `inactive` | Instruction visits to skip |
 | `assume_no_faults` | Assume conditional bounds-check halts do not fire |
-| `call_cycles` | Additional callee costs keyed by instruction visit |
 | `wait_until_cycles` | Absolute completion cycles for external synchronization |
 
-Indices are zero-based on the expanded path and parsed slots. Invalid references
-fail; missing decisions or costs remain gaps. Explicit scenarios preserve their
+Indices are zero-based on the expanded path and parsed slots. Invalid path and
+`inactive` references fail; missing decisions or costs remain gaps. Explicit scenarios preserve their
 supplied path and overlap semantics. Without one, the segment policy above applies.
 
 ## XProf activities

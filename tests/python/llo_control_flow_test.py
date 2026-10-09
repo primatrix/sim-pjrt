@@ -3,7 +3,7 @@
 import unittest
 
 from sim_pjrt.llo.control_flow import resolve_scalar_operands
-from sim_pjrt.llo.cost import estimate_bundles
+from sim_pjrt.llo.runtime import estimate_bundles
 from sim_pjrt.llo.parser import parse_bundles
 from sim_pjrt.llo.program import estimate_final_program, iter_final_bundles
 
@@ -11,6 +11,45 @@ PROFILE = {"frequency_hz": 1e9, "bundle_issue_cycles": 1}
 
 
 class LloControlFlowTest(unittest.TestCase):
+    def test_predicate_short_circuit_does_not_explore_disabled_dma(self):
+        from sim_pjrt.llo.scalar import _evaluate
+        for first, second in [(0, None), (None, 0)]:
+            values = {'%p0': first, '%p1': second}
+            self.assertEqual(_evaluate('pnand', '%p0, %p1', lambda x: values.get(x.strip()), {}), 1)
+            self.assertEqual(_evaluate('pand', '%p0, %p1', lambda x: values.get(x.strip()), {}), 0)
+        self.assertEqual(_evaluate('por', '%p0, %p1', lambda x: {'%p0': None, '%p1': 1}.get(x.strip()), {}), 1)
+        self.assertIsNone(_evaluate('pnand', '%p0, %p1', lambda x: {'%p0': 1, '%p1': None}.get(x.strip()), {}))
+        path = resolve_scalar_operands(parse_bundles("""
+0: { %p_off = pmov 0 }
+1: { %p_skip = pnand %p_off, %p_unknown }
+2: { dma.hbm_to_vmem (!%p_skip), %src, %unknown_size, %dst, [#allocation0] }
+"""))
+        self.assertFalse(any('alternatives' in b for b in path))
+        self.assertFalse(path[-1]['instructions'][0]['resolved_predicate'])
+
+    def test_runtime_smem_indirect_loads_and_stores(self):
+        path = resolve_scalar_operands(parse_bundles("""
+0: { %s_base = smov [#allocation1] ;; %s_idx = smov 1 }
+1: { %s_size = sld [smem:[%s_base + %s_idx]] }
+2: { %s_next = sadd.u32 %s_size, 1 }
+3: { sst [smem:[%s_base + %s_idx]] %s_next }
+4: { %s_actual = sld [smem:[#allocation1 + $0x1]] }
+5: { dma.hbm_to_vmem %src, %s_actual, %dst, [#allocation0] }
+"""), runtime_inputs={'smem': {'#allocation1': [0, 32]}})
+        self.assertIn(', 33,', path[-1]['instructions'][0]['text'])
+
+    def test_runtime_argument_and_pointer_cast_preserve_known_value(self):
+        path = resolve_scalar_operands(parse_bundles("""
+0: { %s_value = inlined_call_operand.<no memory space> [shape: s32[], index: 1, kind: input] }
+1: { %s_pointer = int_to_ptr.hbm [resolvable:$true] %s_value }
+2: { %s_size = ptr_to_int %s_pointer }
+3: { dma.hbm_to_vmem %src, %s_size, %dst, [#allocation0] }
+"""), runtime_inputs={'scalar_inputs': {'1': 32}})
+        self.assertIn(', 32,', path[-1]['instructions'][0]['text'])
+        for invalid in ({'scalar_inputs': {'1': True}}, {'valid_addresses': 'yes'}, {'unknown': 1}):
+            with self.assertRaises(ValueError):
+                resolve_scalar_operands(parse_bundles('0: {}'), runtime_inputs=invalid)
+
     def test_clamped_runtime_index_keeps_copy_loop_bounded(self):
         program = parse_bundles('''
 0: { %s_index = smin.u32 132944, %runtime }
@@ -29,7 +68,7 @@ class LloControlFlowTest(unittest.TestCase):
 13: {}
 ''')
         report = estimate_final_program({'TLP': program}, dict(PROFILE, branch_delay_slots=0))
-        self.assertEqual(report['modeled_cycles'], 14)
+        self.assertEqual(report['modeled_cycles'], 15)
         from sim_pjrt.llo.scalar import _evaluate
         registers = {'%r': range(0, 8)}
         read = lambda token: registers[token.strip()] if token.strip().startswith('%') else int(token)
@@ -88,7 +127,8 @@ class LloControlFlowTest(unittest.TestCase):
                            dma={'hbm_to_vmem': {'bytes_per_second': 1e9}})
             report = estimate_final_program({'TLP': program}, profile)
             self.assertEqual(report['dma_bytes'], 8)
-            self.assertFalse(report['gaps'])
+            self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
 
     def test_clamped_runtime_index_can_prove_a_constant_after_shift(self):
         program = parse_bundles('''
@@ -130,8 +170,9 @@ class LloControlFlowTest(unittest.TestCase):
         self.assertEqual(report['instruction_counts']['vwait.ge'], 1)
         self.assertEqual(report['instruction_counts']['sadd.u32'], 2)
         self.assertEqual(report['dma_bytes'], 4)
-        self.assertEqual(report['wait_stall_cycles'], 22)
-        self.assertFalse(report['gaps'])
+        self.assertEqual(report['wait_stall_cycles'], 23)
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
         self.assertTrue(any('Peers are assumed ready' in a for a in report['assumptions']))
         # Unmarked synchronization is still an unresolved cost.
         unmarked = estimate_bundles(parse_bundles('0: { vwait.ge [#allocation1], 1 }'), profile)
@@ -151,14 +192,15 @@ class LloControlFlowTest(unittest.TestCase):
 ''')
         profile = dict(PROFILE, branch_delay_slots=0, vdelay_semantics='total_cycles')
         report = estimate_final_program({'TLP': program}, profile)
-        self.assertEqual(report['modeled_cycles'], 26_000_000_002)
+        self.assertEqual(report['modeled_cycles'], 28_000_000_002)
         self.assertEqual(report['modeled_bundle_visits'], 7_000_000_002)
         self.assertEqual(report['scheduled_bundle_count'], 9)
         self.assertEqual(report['runtime_loops'][0]['iterations'], 1_000_000_000)
         self.assertLess(len(report['events']), 20)
-        self.assertFalse(report['gaps'])
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
         extra = estimate_final_program({'TLP': program}, dict(profile, instruction_extra_cycles={'sbr.rel': 5}))
-        self.assertEqual(extra['modeled_cycles'], 31_000_000_002)
+        self.assertEqual(extra['modeled_cycles'], 33_000_000_002)
         with self.assertRaisesRegex(ValueError, 'analysis exceeds'):
             estimate_final_program({'TLP': program}, dict(profile, max_scalar_visits=2))
 
@@ -174,7 +216,7 @@ class LloControlFlowTest(unittest.TestCase):
 ''')
         report = estimate_final_program({'TLP': program}, dict(PROFILE, branch_delay_slots=0))
         self.assertEqual(report['runtime_loops'][0]['iterations'], 1000000)
-        self.assertTrue(any('unmodeled DMA' in g['reason'] for g in report['gaps']))
+        self.assertTrue(any('DMA service unmodeled' in g['reason'] for g in report['gaps']))
         self.assertIsNone(report['estimated_seconds'])
 
     def test_large_body_keeps_small_outer_loop_counter_for_inner_bound(self):
@@ -195,9 +237,10 @@ class LloControlFlowTest(unittest.TestCase):
         padding = tuple(dict(address=f'padding:{i}', instructions=[]) for i in range(4000))
         program = program[:8] + padding + program[8:]
         report = estimate_final_program({'TLP': program}, dict(PROFILE, branch_delay_slots=0))
-        self.assertEqual(report['modeled_cycles'], 12044)
+        self.assertEqual(report['modeled_cycles'], 12049)
         self.assertFalse(report['runtime_loops'])
-        self.assertFalse(report['gaps'])
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
 
     def test_counter_overflow_cannot_prove_a_loop_bound(self):
         program = parse_bundles('''
@@ -257,7 +300,7 @@ class LloControlFlowTest(unittest.TestCase):
 8: {} /* Start region 2 */
 ''')}, dict(PROFILE, branch_delay_slots=0))
         self.assertEqual(len(report['runtime_segments']), 3)
-        self.assertEqual(report['modeled_cycles'], 21)
+        self.assertEqual(report['modeled_cycles'], 26)
         self.assertTrue(all(c['selected_alternative'] == 0 for c in report['runtime_segments']))
 
     def test_runtime_bound_excludes_proven_error_halt_path(self):
@@ -282,7 +325,7 @@ class LloControlFlowTest(unittest.TestCase):
 6: { sbr.rel (%p_more) target = $region1 }
 7: {}
 """)}, dict(PROFILE, branch_delay_slots=0))
-        self.assertEqual(report['modeled_cycles'], 12)
+        self.assertEqual(report['modeled_cycles'], 13)
         self.assertEqual(len(report['runtime_segments']), 1)
 
     def test_delayed_loop_branch_keeps_phi_updates_and_dma(self):

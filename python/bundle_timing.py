@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sim_pjrt.llo.parser import parse_bundles
 from sim_pjrt.llo.program import load_final_modules, estimate_final_program, iter_final_bundles
-from sim_pjrt.llo.cost import estimate_bundles
+from sim_pjrt.llo.runtime import estimate_bundles
 
 
 def main():

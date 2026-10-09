@@ -8,7 +8,7 @@ import re
 
 from .parser import _HEADER, _number, parse_bundles, parse_deduplication_map
 from .control_flow import HaltedPath, resolve_scalar_operands
-from .cost import estimate_bundles
+from .runtime import estimate_bundles
 from .metadata import hlo_loop_bounds
 
 def compose_final_bundles(modules, aliases=None, root="TLP", limit=None):
@@ -18,7 +18,7 @@ def compose_final_bundles(modules, aliases=None, root="TLP", limit=None):
 
 def iter_final_bundles(modules, aliases=None, root="TLP", limit=None, *, resolve=None):
     """Stream invocations without copying the whole model's expanded loops."""
-    allocations = {}
+    allocations, scopes = {}, {}
     count = 0
 
     def visit(name, prefix, stack, scalar_inputs=()):
@@ -95,6 +95,15 @@ def iter_final_bundles(modules, aliases=None, root="TLP", limit=None, *, resolve
                 if text not in renamed:
                     renamed[text] = re.sub(r"#allocation\d+", allocation, text)
                 instruction['text'] = renamed[text]
+                # SSA identities are invocation-local. Preserve register class
+                # and physical suffix while preventing same-name callee aliases.
+                def register(match):
+                    value = match[0]
+                    return value[:2] + '_call' + str(scopes.setdefault(prefix, len(scopes))) + '_' + value[2:]
+                for field in ('text', 'timing_operand_text', 'selected_phi_input'):
+                    if field in instruction:
+                        value = re.sub(r'#allocation\d+', allocation, instruction[field]) if field != 'text' else instruction[field]
+                        instruction[field] = re.sub(r'%[\w]+', register, value)
             count += 1
             if limit is not None and count > limit:
                 raise ValueError("Final LLO call expansion exceeds limit")
@@ -266,6 +275,9 @@ def estimate_final_program(modules, profile, aliases=None, *, retain_events=True
     Scalar facts are intersected at joins. No complete path combinations are
     built; independent branch choices can deliberately overestimate a real path.
     """
+    unknown_inputs = set(profile.get('module_inputs', {})) - set(modules)
+    if unknown_inputs:
+        raise ValueError('runtime inputs name unknown modules: ' + ', '.join(sorted(unknown_inputs)))
     @cache
     def resolve(name, scalar_inputs):
         try:
@@ -274,13 +286,17 @@ def estimate_final_program(modules, profile, aliases=None, *, retain_events=True
                 scalar_inputs=scalar_inputs,
                 branch_delay_slots=profile.get('branch_delay_slots'),
                 assume_peers_ready=profile.get('assume_peers_ready', False),
-                max_visits=profile.get('max_scalar_visits', 1_000_000))
+                max_visits=profile.get('max_scalar_visits', 1_000_000),
+                preserve_timing_operands=True,
+                runtime_inputs=profile.get('module_inputs', {}).get(name))
         except HaltedPath:
             raise ValueError(f'no normally completing path in {name}') from None
         except ValueError as error:
             raise ValueError(f'{name}: {error}') from error
     report = estimate_bundles(iter_final_bundles(modules, aliases, resolve=resolve), profile,
-                              retain_events=retain_events)
+                              retain_events=retain_events, resolved=True)
+    if profile.get('module_inputs'):
+        report['assumptions'].append('Explicit runtime SMEM inputs and predicate decisions supplied per module; timing is conditional on these values.')
     report['runtime_branch_policy'] = 'segment_bound'
     report['timing_semantics'] = 'conservative_modeled_cost'
     report['path_source'] = 'segment_bound'

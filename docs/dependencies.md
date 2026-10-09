@@ -29,11 +29,15 @@ select expressions; they do not enable a GPU build.
 
 ## Python runtime baseline
 
-The package follows SGLang-Jax main as of 2026-09-23, commit
+The earlier package baseline followed SGLang-Jax main as of 2026-09-23, commit
 [`d966db449817692b566ee646bdd3ae15964265a7`](https://github.com/sgl-project/sglang-jax/blob/d966db449817692b566ee646bdd3ae15964265a7/python/pyproject.toml):
 Python >=3.12,<3.14 and `jax[tpu]==0.11.1`. JAX's TPU extra requires
-jaxlib 0.11.1 and libtpu 0.0.46.*. The package uses this extra directly rather
-than maintaining a separate libtpu version pin. Upstream leaves Flax unpinned.
+jaxlib 0.11.1 and libtpu 0.0.46.*. The unified GF instruction execution model now pins JAX/jaxlib 0.11.1 and
+libtpu 0.0.48 separately: its checked-in cost and opcode mapping tables were
+extracted from that compiler. A mismatched compiler is rejected; no old estimator
+is retained as a fallback. The full SGLang serving matrix has not been rerun for
+this migration. Environments requiring SGLang's older TPU extra need dependency
+reconciliation before using this build. Upstream leaves Flax unpinned.
 
 On 2026-09-29, a clean wheel installation with libtpu 0.0.46.1 passed dependency
 checks, five single-device runtime smoke tests, and 28 collection/HLO import

@@ -134,8 +134,29 @@ def _counted_loops(program, labels, default_delay):
 
 
 def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots=None,
-                            assume_peers_ready=False, scalar_inputs=()):
+                            assume_peers_ready=False, scalar_inputs=(), preserve_timing_operands=True, runtime_inputs=None):
     """Return a copy with proven DMA constants, preserving unresolved operands."""
+    runtime_inputs = runtime_inputs or {}
+    if not isinstance(runtime_inputs, dict) or set(runtime_inputs) - {'smem', 'scalar_inputs', 'predicates', 'valid_addresses'}:
+        raise ValueError('invalid runtime input fields')
+    if any(not isinstance(runtime_inputs.get(field, {}), dict) for field in ('smem', 'scalar_inputs', 'predicates')):
+        raise ValueError('runtime input bindings must be dictionaries')
+    if type(runtime_inputs.get('valid_addresses', False)) is not bool:
+        raise ValueError('valid_addresses must be a boolean assumption')
+    if any(not isinstance(k, str) or not re.fullmatch(r'0|[1-9][0-9]*', k) or type(v) is not int
+           for k, v in runtime_inputs.get('scalar_inputs', {}).items()):
+        raise ValueError('runtime scalar inputs require integer values and argument indices')
+    input_memory = {}
+    for allocation, items in runtime_inputs.get('smem', {}).items():
+        if not isinstance(allocation, str) or not re.fullmatch(r'#allocation\d+', allocation) or not isinstance(items, list):
+            raise ValueError('invalid runtime SMEM input')
+        for offset, value in enumerate(items):
+            if type(value) is not int:
+                raise ValueError('runtime SMEM values must be integers')
+            input_memory[allocation, offset] = value
+    predicates = runtime_inputs.get('predicates', {})
+    if any(not isinstance(k, str) or not re.fullmatch(r'%p\w+', k) or type(v) is not bool for k, v in predicates.items()):
+        raise ValueError('invalid runtime predicate assumptions')
     labels = {}
     for index, bundle in enumerate(program):
         for region in bundle.get('regions', []):
@@ -181,7 +202,7 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                 value = read(token[1:], registers)
                 return None if value is None else int(not value)
             if token.startswith('%'):
-                return registers.get(token)
+                return int(predicates[token]) if token in predicates else registers.get(token)
             if _FLAG.fullmatch(token):
                 return token
             if re.fullmatch(r'\$?(?:0x[\da-fA-F]+|\d+)', token):
@@ -240,6 +261,12 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                 continue
             bundle = dict(original, instructions=[dict(ins) for ins in original['instructions']])
             if not phi_done:
+                if preserve_timing_operands:
+                    selected = _phi_values(bundle, pc, previous, lambda token: token.strip())
+                    for ins in bundle['instructions']:
+                        match = _ASSIGN.match(ins['text'])
+                        if match and match[2] == 'sphi':
+                            ins['selected_phi_input'] = selected.get(match[1])
                 values.update(_phi_values(bundle, pc, previous, read))
             phi_done = False
             if pc in ready_latches:
@@ -361,7 +388,7 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                             loop_states.add(state)
                         branch = (delay, labels[target[1]])
                 if op == 'sst':
-                    slot = _smem_slot(text)
+                    slot = _smem_slot(text, read)
                     store = re.search(r'\]\]\s*(%s\w+)\s*$',
                                       re.sub(r'\(!?%p\w+\)\s*,?', '', text))
                     if slot and store:
@@ -389,6 +416,8 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                         return str(value)
                     resolved = _REGISTER.sub(substitute, source)
                     if resolved != source:
+                        if preserve_timing_operands:
+                            ins['timing_operand_text'] = text
                         ins['text'] = lhs + sep + resolved if sep else resolved
                         ins['scalar_operands_resolved'] = True
                 match = _ASSIGN.match(text)
@@ -402,11 +431,17 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
                 if guard:
                     args = re.sub(r'\((!?%p\w+)\)\s*,?', '', args).strip()
                 value = _evaluate(opcode, args, read, memory)
-                if opcode == 'inlined_call_operand.':
-                    index = re.search(r'\bindex: (\d+), kind: input\b', args)
+                if opcode.startswith('inlined_call_operand.'):
+                    index = re.search(r'\bindex: (\d+), kind: (?:input|output)\b', args)
                     if index and int(index[1]) < len(scalar_inputs):
                         value = scalar_inputs[int(index[1])]
-                if value is None and opcode in ('scalar_lea.vmem', 'int_to_ptr.vmem', 'inlined_call_operand.vmem'):
+                    if index and index[1] in runtime_inputs.get('scalar_inputs', {}):
+                        value = runtime_inputs['scalar_inputs'][index[1]]
+                        if type(value) is not int:
+                            raise ValueError('runtime scalar inputs must be integers')
+                if value is None and (opcode in ('scalar_lea.vmem', 'int_to_ptr.vmem', 'inlined_call_operand.vmem')
+                        or (runtime_inputs.get('valid_addresses') and opcode in
+                            ('scalar_lea.hbm', 'int_to_ptr.hbm', 'inlined_call_operand.hbm'))):
                     # Even an unknown VMEM base can retain a known displacement
                     # in later pointer increments and relative comparisons.
                     repeated = any(header <= pc <= end for header, end in loop_ranges)
@@ -421,6 +456,8 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
             elif dma_destinations:
                 memory = {slot: value for slot, value in memory.items()
                           if slot[0] not in dma_destinations}
+                memory.update({slot: value for slot, value in input_memory.items()
+                               if slot[0] in dma_destinations})
             count = visits.get(original['address'], 0)
             visits[original['address']] = count + 1
             bundle['source_address'] = original['address']
@@ -442,7 +479,7 @@ def resolve_scalar_operands(program, *, max_visits=1_000_000, branch_delay_slots
             raise ValueError('truncated branch delay window')
         return tuple(result), (values, memory, previous, pending_branch, loop_states)
 
-    program_result, _ = walk(0, {}, {})
+    program_result, _ = walk(0, {}, dict(input_memory))
     if program_result:
         def counts(items):
             for bundle in items:

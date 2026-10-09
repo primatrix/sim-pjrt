@@ -27,9 +27,15 @@ class BuildPy(build_py):
             raise RuntimeError(f"Native plugin not found: {plugin}")
         super().run()
         package = Path(self.build_lib) / "sim_pjrt"
+        # Reused setuptools staging trees must not ship the removed estimator.
+        (package / "llo/cost.py").unlink(missing_ok=True)
         for source, relative in (
             (plugin, "lib/pjrt_sim_plugin.so"),
             (ROOT / "configs/tpu7x.json", "configs/tpu7x.json"),
+            (ROOT / "configs/gf_costs_libtpu_0_0_48.json",
+             "configs/gf_costs_libtpu_0_0_48.json"),
+            (ROOT / "configs/gf_mapping_libtpu_0_0_48.json",
+             "configs/gf_mapping_libtpu_0_0_48.json"),
             (ROOT / "configs/bundle_timing_example.json",
              "configs/bundle_timing_example.json"),
         ):
