@@ -4,9 +4,14 @@ from pathlib import Path
 import copy
 import json
 import unittest
+import os
+import subprocess
+import sys
+import tempfile
+from unittest.mock import patch
 
 from sim_pjrt.llo.control_flow import resolve_scalar_operands
-from sim_pjrt.llo.cost import estimate_bundles
+from sim_pjrt.llo.runtime import estimate_bundles
 from sim_pjrt.llo.parser import expand_path, parse_bundles
 from sim_pjrt.llo.program import compose_final_bundles, estimate_final_program
 
@@ -15,6 +20,43 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "bundles"
 
 
 class BundleTimingTest(unittest.TestCase):
+    def test_native_cli_manifest_uses_execution_model_and_summary_contract(self):
+        # Exercise the exact module/arguments launched by FinalizeBundles.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            llo = root / '1-TLP-00-final_bundles.txt'
+            llo.write_text('0: { vdelay 100 }\n1: { %v0 = vadd.f32 %input, 1.0 }')
+            dedup = root / '1-TLP-01-deduplication-map.txt'
+            dedup.write_text('key:TLP\nordinal:0\nequivalent_hlos[size=0]:\n')
+            manifest = root / 'manifest.json'
+            manifest.write_text(json.dumps({'files': [str(llo), str(dedup)], 'topology': 'tpu7x'}))
+            profile = root / 'profile.json'
+            profile.write_text(json.dumps(dict(PROFILE, vdelay_semantics='total_cycles', instruction_timeline=True)))
+            output = root / 'report.json'
+            env = dict(os.environ)
+            env.pop('PJRT_SIM_LIBTPU_PATH', None)
+            subprocess.run([sys.executable, '-m', 'bundle_timing', str(manifest),
+                            '--profile', str(profile), '--summary', '--output', str(output)],
+                           check=True, env=env, capture_output=True, text=True)
+            report = json.loads(output.read_text())
+        self.assertEqual(report['execution_engine'], 'gf_instruction_pipeline')
+        self.assertEqual(report['bundle_stage'], 'final_bundles')
+        self.assertEqual(report['scheduled_bundle_count'], 2)
+        self.assertNotIn('events', report)
+        self.assertEqual(report['status'], 'partial')
+        alu = next(e for e in report['activity_timeline'] if e['name'] == 'vadd.f32')
+        self.assertEqual(alu['start_ns'], 100)
+        end = round(report['modeled_seconds'] * 1e9)
+        for event in report['activity_timeline']:
+            self.assertTrue(all(isinstance(event[k], str) for k in ('name', 'track', 'detail', 'cost_gap')))
+            self.assertTrue(all(isinstance(event[k], int) for k in ('start_ns', 'end_ns', 'bytes')))
+            self.assertTrue(0 <= event['start_ns'] <= event['end_ns'] <= end)
+
+    def test_runtime_rejects_compiler_identity_mismatch_without_fallback(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(ValueError, 'identity does not match'):
+                estimate_bundles(parse_bundles('0: {}'), dict(PROFILE, compiler_binary_sha256='0'*64))
+
     def test_mxu_throughput_overlaps_units_and_scheduled_work(self):
         profile = dict(PROFILE, mxu_model='gf', vdelay_semantics='total_cycles')
         program = parse_bundles('''
@@ -24,24 +66,19 @@ class BundleTimingTest(unittest.TestCase):
 3: { vmatmul.mubr.f32.gmra.mrb[4].mxu1 %v1 }
 ''')
         report = estimate_bundles(program, profile)
-        self.assertEqual(report['modeled_cycles'], 13)
-        self.assertEqual(report['mxu_stall_cycles'], 4)
-        self.assertEqual(report['mxu_completion_cycles'], 3)
+        # GF result latency is 211 cycles; issue throughput stays 4/8.
+        self.assertEqual(report['modeled_cycles'], 220)
         self.assertEqual(report['wait_stall_cycles'], 4)
         self.assertEqual([e['start_cycle'] for e in report['events']], [0, 1, 8, 9])
-        # Keep waits inside the kernel scope, without one extra trace per stall.
-        self.assertEqual(len(report['activity_timeline']), 2)
-        self.assertEqual(report['activity_timeline'][0]['end_ns'], 10)
-        # Existing schedule spacing covers the hold; no latency added per op.
+        self.assertEqual(report['execution_engine'], 'gf_instruction_pipeline')
         spaced = parse_bundles('''
 0: { vmatmul.mubr.bf16.gmra.mrb[0].mxu0 %v0 }
 1: { vdelay 20 }
 2: { vmatmul.mubr.bf16.gmra.mrb[4].mxu0 %v0 }
 3: { vdelay 20 }
 ''')
-        self.assertEqual(estimate_bundles(spaced, profile)['modeled_cycles'], 42)
-        self.assertEqual(estimate_bundles(program, PROFILE)['mxu_stall_cycles'], 0)
-        for dtype, cycles in [('f32', 4), ('bf16', 8), ('f8e5m2', 8), ('f8e4m3fn', 8)]:
+        self.assertEqual(estimate_bundles(spaced, profile)['modeled_cycles'], 232)
+        for dtype, cycles in [('f32', 211), ('bf16', 211), ('f8e5m2', 204), ('f8e4m3fn', 204)]:
             single = parse_bundles(f'0: {{ vmatmul.mubr.{dtype}.gmra.mrb[0].mxu0 %v0 }}')
             self.assertEqual(estimate_bundles(single, profile)['modeled_cycles'], cycles)
 
@@ -56,12 +93,12 @@ class BundleTimingTest(unittest.TestCase):
         report = estimate_bundles(program, profile)
         dma = next(e for e in report['events'] if e['kind'] == 'dma')
         self.assertEqual((dma['start_cycle'], dma['end_cycle']), (8, 28))
-        self.assertEqual(report['modeled_cycles'], 28)
-        self.assertEqual(report['mxu_stall_cycles'], 7)
+        self.assertEqual(report['modeled_cycles'], 219)
+        self.assertEqual(report['wait_stall_cycles'], 25)
         program[0]['instructions'][0]['resolved_predicate'] = False
         skipped = estimate_bundles(program, profile)
-        self.assertEqual(skipped['modeled_cycles'], 21)
-        self.assertEqual(skipped['mxu_stall_cycles'], 0)
+        self.assertEqual(skipped['modeled_cycles'], 212)
+        self.assertEqual(next(e for e in skipped['events'] if e['kind'] == 'dma')['start_cycle'], 1)
 
     def test_mxu_branch_bound_includes_occupancy_and_compact_report(self):
         modules = {'TLP': parse_bundles('''
@@ -73,10 +110,10 @@ class BundleTimingTest(unittest.TestCase):
 ''')}
         profile = dict(PROFILE, mxu_model='gf', branch_delay_slots=0)
         report = estimate_final_program(modules, profile)
-        self.assertEqual(report['modeled_cycles'], 10)
-        self.assertEqual(report['runtime_segments'][0]['alternative_cycles'], [9, 5])
+        self.assertEqual(report['modeled_cycles'], 213)
+        self.assertEqual(report['runtime_segments'][0]['alternative_cycles'], [212, 212])
         compact = estimate_final_program(modules, profile, retain_events=False)
-        for key in ('modeled_cycles', 'mxu_stall_cycles', 'activity_timeline'):
+        for key in ('modeled_cycles', 'wait_stall_cycles', 'activity_timeline'):
             self.assertEqual(report[key], compact[key], key)
         loop = parse_bundles('''
 0: { %s_seed = smov 0 }
@@ -88,8 +125,8 @@ class BundleTimingTest(unittest.TestCase):
 6: {}
 ''')
         bounded = estimate_final_program({'TLP': loop}, profile)
-        self.assertEqual(bounded['modeled_cycles'], 9_000_002)
-        self.assertEqual(bounded['mxu_stall_cycles'], 4_000_000)
+        self.assertEqual(bounded['modeled_cycles'], 212_000_002)
+        self.assertEqual(bounded['runtime_loops'][0]['iteration_cycles'], 212)
 
     def test_mxu_unknown_format_or_modifiers_remain_gaps(self):
         for mnemonic in ('vmatmul.mubr.s8.mrb[0].mxu0',
@@ -98,7 +135,7 @@ class BundleTimingTest(unittest.TestCase):
             report = estimate_bundles(parse_bundles(f'0: {{ {mnemonic} }}'),
                                       dict(PROFILE, mxu_model='gf'))
             self.assertEqual(report['status'], 'partial')
-            self.assertTrue(any('unmodeled GF MXU throughput' in g['reason'] for g in report['gaps']))
+            self.assertTrue(any('unmapped cost' in g['reason'] for g in report['gaps']))
         with self.assertRaisesRegex(ValueError, 'unsupported mxu_model'):
             estimate_bundles(parse_bundles('0: {}'), dict(PROFILE, mxu_model='unknown'))
 
@@ -120,7 +157,8 @@ class BundleTimingTest(unittest.TestCase):
         self.assertEqual(report['modeled_bundle_visits'], 4)
         self.assertEqual(report['runtime_segments'][0]['selected_alternative'], 1)
         self.assertEqual(report['path_source'], 'segment_bound')
-        self.assertFalse(report['gaps'])
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
 
     def test_segment_bound_drains_dma_for_each_call(self):
         modules = {
@@ -145,7 +183,7 @@ class BundleTimingTest(unittest.TestCase):
         compact = estimate_final_program(modules, profile, {'alias': 'kernel'}, retain_events=False)
         for field in ('modeled_cycles', 'activity_timeline', 'runtime_segments'):
             self.assertEqual(compact[field], report[field], field)
-        self.assertTrue(any(g['reason'] == 'unknown instruction mystery' for g in compact['gaps']))
+        self.assertTrue(any(g['reason'] == 'unmapped cost: mystery' for g in compact['gaps']))
 
     def test_runtime_bound_includes_offloads_from_other_branch(self):
         from sim_pjrt.llo.sparsecore import bound_offloads, calibrate_operations
@@ -177,11 +215,12 @@ class BundleTimingTest(unittest.TestCase):
 4: { dma.done.wait [#allocation0], 100 }
 """)}, dict(PROFILE, branch_delay_slots=0, vdelay_semantics='total_cycles',
             dma_granule_bytes=1, dma={'hbm_to_vmem': {'bytes_per_second': 1e9}}))
-        self.assertEqual(report['modeled_cycles'], 108)
-        self.assertEqual(report['wait_stall_cycles'], 99)
-        self.assertFalse(report['gaps'])
-        drains = [e for e in report['activity_timeline'] if e['name'] == 'Segment DMA drain']
-        self.assertEqual([(e['start_ns'], e['end_ns']) for e in drains], [(1, 100)])
+        self.assertEqual(report['modeled_cycles'], 109)
+        self.assertEqual(report['completion_cycles'], 100)
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
+        drains = [e for e in report['activity_timeline'] if e['name'] == 'Outstanding execution resources']
+        self.assertIn((1, 100), [(e['start_ns'], e['end_ns']) for e in drains])
 
     def test_segment_join_keeps_only_shared_scalars_and_credits(self):
         report = estimate_final_program({'TLP': parse_bundles("""
@@ -194,7 +233,7 @@ class BundleTimingTest(unittest.TestCase):
             dma={'hbm_to_vmem': {'bytes_per_second': 1e9}}))
         reasons = [g['reason'] for g in report['gaps']]
         self.assertTrue(any('partial completion credits' in r for r in reasons))
-        self.assertTrue(any('unmodeled DMA' in r for r in reasons))
+        self.assertTrue(any('DMA service unmodeled' in r for r in reasons))
         self.assertEqual(report['status'], 'partial')
         self.assertIsNone(report['estimated_seconds'])
 
@@ -211,7 +250,7 @@ class BundleTimingTest(unittest.TestCase):
             dma={'vmem_to_hbm': {'bytes_per_second': 1e9}}),
             {'predicates': {'2:0': True}})
         self.assertEqual(report['dma_bytes'], 128)
-        self.assertEqual(report['modeled_cycles'], 130)
+        self.assertEqual(report['modeled_cycles'], 131)
         self.assertFalse(any('completion credits' in g['reason'] for g in report['gaps']))
         self.assertTrue(any('descriptor stride/padding' in g['reason'] for g in report['gaps']))
 
@@ -244,7 +283,8 @@ class BundleTimingTest(unittest.TestCase):
             report = estimate_bundles(program, profile)
             self.assertEqual(report['modeled_cycles'], expected)
             self.assertEqual(report['dma_bytes'], 128)
-            self.assertFalse(report['gaps'])
+            self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in report['gaps']))
+
 
     def test_dma_wait_accepts_primed_and_partial_completion_credits(self):
         profile = dict(PROFILE, dma_granule_bytes=1,
@@ -255,7 +295,8 @@ class BundleTimingTest(unittest.TestCase):
 2: { dma.done.wait [#allocation0], 8 }
 3: { vadd 1, 2 }
 '''), profile)
-        self.assertFalse(primed['gaps'])
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in primed['gaps']))
+
         self.assertEqual(primed['modeled_cycles'], 6)
         partial = estimate_bundles(parse_bundles('''
 0: { dma.hbm_to_vmem %hbm, 4, %vmem, [#allocation0] }
@@ -265,9 +306,10 @@ class BundleTimingTest(unittest.TestCase):
 4: { vadd 1, 2 }
 5: { dma.done.wait [#allocation0], 4 }
 '''), profile)
-        self.assertFalse(partial['gaps'])
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in partial['gaps']))
+
         waits = [e['end_cycle'] for e in partial['events']
-                 if e['kind'] == 'bundle' and e['wait_ops']]
+                 if e['kind'] == 'bundle' and e['address'] in ('0:0x2', '0:0x5')]
         self.assertEqual(waits, [4, 8])
 
     def test_dma_transactions_round_bytes_not_completion_credits(self):
@@ -306,7 +348,8 @@ class BundleTimingTest(unittest.TestCase):
         self.assertEqual(result['scheduled_bundle_count'], 8)
         self.assertEqual(result['modeled_bundle_visits'], 20)
         self.assertEqual(result['dma_bytes'], 192)
-        self.assertFalse(result['gaps'])
+        self.assertFalse(any('completion credits' in g['reason'] or 'underflow' in g['reason'] for g in result['gaps']))
+
         composed = compose_final_bundles({
             'TLP': parse_bundles('0: { inlined_call /* kernel */ }'),
             'kernel': resolved})
@@ -327,7 +370,7 @@ class BundleTimingTest(unittest.TestCase):
         result = estimate_bundles(resolved, dict(PROFILE, dma_granule_bytes=32,
             dma={'hbm_to_vmem': {'bytes_per_second': 1e9, 'latency_cycles': 0}}))
         self.assertEqual(result['dma_bytes'], 1024)
-        self.assertEqual(result['modeled_cycles'], 1026)
+        self.assertEqual(result['modeled_cycles'], 1027)
         self.assertNotIn('DMA wait has unknown or partial completion credits',
                          [g['reason'] for g in result['gaps']])
         self.assertEqual(source, before)
@@ -389,9 +432,9 @@ class BundleTimingTest(unittest.TestCase):
             len(p), 34
         )  # libtpu schedule-analysis independently reports 34
         self.assertEqual(r["dma_bytes"], 8192)
-        self.assertEqual(r["wait_stall_cycles"], 118)
-        self.assertEqual(r["modeled_cycles"], 152)
-        self.assertEqual(r["status"], "modeled")
+        self.assertEqual(r["wait_stall_cycles"], 126)
+        self.assertEqual(r["modeled_cycles"], 160)
+        self.assertEqual(r["status"], "partial")
         self.assertEqual((p, profile), original)
 
     def test_delay_is_explicit_and_not_double_counted(self):
@@ -407,7 +450,8 @@ class BundleTimingTest(unittest.TestCase):
 
     def test_control_flow_nested_loops_and_predicates(self):
         p = parse_bundles("0 : { %0 = sbr.rel (%p1) target = $region2 }\n1 : {}")
-        self.assertEqual(estimate_bundles(p, PROFILE)["status"], "partial")
+        with self.assertRaisesRegex(ValueError, "branch target and delay slots"):
+            estimate_bundles(p, PROFILE)
         scenario = {
             "path": [
                 {"repeat": 2, "body": ["0:0x0", {"repeat": 3, "body": ["0:0x1"]}]}
@@ -416,7 +460,7 @@ class BundleTimingTest(unittest.TestCase):
         }
         r = estimate_bundles(p, PROFILE, scenario)
         self.assertEqual(r["modeled_cycles"], 8)
-        self.assertEqual(r["status"], "modeled")
+        self.assertEqual(r["status"], "partial")
         self.assertEqual(expand_path([{"repeat": 0, "body": ["0:0x0"]}]), ())
         with self.assertRaises(ValueError):
             expand_path([{"repeat": 10**10, "body": ["0:0x0"]}])

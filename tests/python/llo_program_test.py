@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from sim_pjrt.llo.control_flow import resolve_scalar_operands
-from sim_pjrt.llo.cost import estimate_bundles
+from sim_pjrt.llo.runtime import estimate_bundles
 from sim_pjrt.llo.parser import parse_bundles, parse_deduplication_map
 from sim_pjrt.llo.program import (
     annotate_branch_delays, annotate_loop_bounds, compose_final_bundles,
@@ -33,7 +33,7 @@ class LloProgramTest(unittest.TestCase):
 ''')}
         report = estimate_final_program(modules, dict(PROFILE, branch_delay_slots=0,
             vdelay_semantics='total_cycles'), {'alias': 'kernel'})
-        self.assertEqual(report['modeled_cycles'], 110)
+        self.assertEqual(report['modeled_cycles'], 111)
 
     def test_assembly_recovers_missing_exit_region_for_every_invocation(self):
         modules = {
