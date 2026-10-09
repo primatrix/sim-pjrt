@@ -65,7 +65,7 @@ class GfMapping:
                 raise ValueError('invalid vector compare equivalence class')
         if not self.compare_ids or any(i not in costs.rows for i in self.compare_ids):
             raise ValueError('invalid compare equivalence class')
-        self.provenance = 'GF direct classifier 0x19360660; ' + costs.provenance
+        self.provenance = 'GF instruction mapping; ' + costs.provenance
 
     def classify(self, instruction):
         """Do not confuse duplicate display mnemonics with unique raw opcodes."""

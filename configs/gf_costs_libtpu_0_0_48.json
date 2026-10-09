@@ -7,8 +7,6 @@
   "id_space": "GF performance-table Instruction; NOT LloOpcode",
   "row_count": 465,
   "resource_count": 32,
-  "constructor_address": "0x1937a450",
-  "owner_constructor_address": "0x193450f0",
   "source_kind": "static binary constructor extraction; not hardware calibration",
   "rows": [
     {

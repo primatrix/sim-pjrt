@@ -2,10 +2,6 @@
   "schema_version": 1,
   "target": "gf",
   "binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
-  "classifier_address": "0x19360660",
-  "direct_table_address": "0x267517a",
-  "owner_constructor_address": "0x1935f8a0",
-  "resource_pair_function": "0x19360330",
   "matpush_latch_rows": [
     {
       "mode": 0,
@@ -60,164 +56,135 @@
   "bf16_matpush_transpose_issue_cycles": 8,
   "exact_mnemonics": {
     "vpack.c.b16": {
-      "llo_opcode": 294,
-      "source_address": "0x199aa55a"
+      "llo_opcode": 294
     },
     "vpack.i.b16": {
-      "llo_opcode": 294,
-      "source_address": "0x1999ea37"
+      "llo_opcode": 294
     },
     "vunpack.c.l.s4": {
-      "llo_opcode": 265,
-      "source_address": "0x199b5da9"
+      "llo_opcode": 265
     },
     "vunpack.c.0.s8": {
-      "llo_opcode": 265,
-      "source_address": "0x199b4f10"
+      "llo_opcode": 265
     },
     "vweird.f32": {
-      "llo_opcode": 173,
-      "source_address": "0x1991d8ad"
+      "llo_opcode": 173
     },
     "vunpack.c.l.bf16": {
-      "llo_opcode": 265,
-      "source_address": "0x199f6230"
+      "llo_opcode": 265
     },
     "vunpack.c.h.bf16": {
-      "llo_opcode": 265,
-      "source_address": "0x199f6270"
+      "llo_opcode": 265
     },
     "vmin.xlane.f32.xlu0": {
       "llo_opcode": 245,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.xlane.f32.xlu1": {
       "llo_opcode": 245,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.xlane.f32.xlu0": {
       "llo_opcode": 246,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.xlane.f32.xlu1": {
       "llo_opcode": 246,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vadd.xlane.f32.xlu0": {
       "llo_opcode": 247,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vadd.xlane.f32.xlu1": {
       "llo_opcode": 247,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.index.xlane.f32.xlu0": {
       "llo_opcode": 248,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.index.xlane.f32.xlu1": {
       "llo_opcode": 248,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.index.xlane.f32.xlu0": {
       "llo_opcode": 249,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.index.xlane.f32.xlu1": {
       "llo_opcode": 249,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.xlane.bf16.xlu0": {
       "llo_opcode": 253,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.xlane.bf16.xlu1": {
       "llo_opcode": 253,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.xlane.bf16.xlu0": {
       "llo_opcode": 254,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.xlane.bf16.xlu1": {
       "llo_opcode": 254,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vadd.xlane.bf16.xlu0": {
       "llo_opcode": 255,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vadd.xlane.bf16.xlu1": {
       "llo_opcode": 255,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.index.xlane.bf16.xlu0": {
       "llo_opcode": 256,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmax.index.xlane.bf16.xlu1": {
       "llo_opcode": 256,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.index.xlane.bf16.xlu0": {
       "llo_opcode": 257,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vmin.index.xlane.bf16.xlu1": {
       "llo_opcode": 257,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vpop.xlane.xlu0": {
       "llo_opcode": 335,
       "execution_unit": "xlu0",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     },
     "vpop.xlane.xlu1": {
       "llo_opcode": 335,
       "execution_unit": "xlu1",
-      "source_address": "0x267517a",
-      "note": "XLU unit suffix; raw mnemonic table"
+      "note": "XLU unit suffix"
     }
   },
   "vector_compare_cost_equivalence": {
@@ -229,8 +196,7 @@
         213,
         214,
         215
-      ],
-      "source_address": "0x19360ae9"
+      ]
     },
     "u32.totalorder": {
       "performance_ids": [
@@ -240,8 +206,7 @@
         217,
         218,
         219
-      ],
-      "source_address": "0x19360b44"
+      ]
     },
     "f32.partialorder": {
       "performance_ids": [
@@ -251,15 +216,13 @@
         225,
         226,
         227
-      ],
-      "source_address": "0x19360ac6"
+      ]
     },
     "f32.totalorder": {
       "performance_ids": [
         230,
         231
-      ],
-      "source_address": "0x19360ac6"
+      ]
     }
   },
   "raw_iar_performance_ids": {
@@ -270,14 +233,12 @@
     "scalar_parameter_address": {
       "llo_opcode": 44,
       "performance_id": 27,
-      "latency_multiplier": 1,
-      "source_address": "0x193601a4"
+      "latency_multiplier": 1
     },
     "scalar_select": {
       "llo_opcode": 136,
       "performance_id": 27,
       "latency_multiplier": 2,
-      "source_address": "0x193602c8",
       "limitation": "scalar_select assembly issue expansion is not modeled"
     }
   },
@@ -287,12 +248,10 @@
       "vpop.sfrf": 15
     }
   },
-  "matpush_latency_rule": "nontranspose ceil(table_latency/2), transpose table_latency; 0x19360000",
+  "matpush_latency_rule": "nontranspose ceil(table_latency/2), transpose table_latency",
   "pack_mnemonics": {
     "vpack.c.bf16": {
-      "llo_opcode": 294,
-      "builder_address": "0x199b2de0",
-      "opcode_store_address": "0x199b2e1a"
+      "llo_opcode": 294
     }
   },
   "matmul_format_rows": {
@@ -314,11 +273,7 @@
       "f8e5m2": 9,
       "f8e4m3fn": 10
     },
-    "enum_name_provenance": "llo/mxu.py; checked on 0.0.46.1; retained assumption for 0.0.48",
-    "source_addresses": [
-      "0x1936082e",
-      "0x1936085a"
-    ]
+    "enum_name_provenance": "llo/mxu.py; checked on 0.0.46.1; retained assumption for 0.0.48"
   },
   "scalar_compare_cost_equivalence": {
     "llo_opcode": 363,
@@ -339,11 +294,6 @@
       460,
       461,
       462
-    ],
-    "source_addresses": [
-      "0x19360902",
-      "0x19360a7d",
-      "0x19360a94"
     ],
     "note": "Scalar compare switch variants; only use if every candidate has identical costs."
   },
@@ -1996,195 +1946,131 @@
   "resource_rules": [
     {
       "resource": 0,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     },
     {
       "resource": 1,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     },
     {
       "resource": 2,
-      "rule": "specialized",
-      "same_unit_branch": "0x19360624",
-      "different_unit_branch": "0x19360624"
+      "rule": "specialized"
     },
     {
       "resource": 3,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     },
     {
       "resource": 4,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 5,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 6,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 7,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 8,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 9,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 10,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 11,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 12,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 13,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 14,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 15,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 16,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 17,
-      "rule": "same_unit_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x1936055f"
+      "rule": "same_unit_nonzero_intersection"
     },
     {
       "resource": 18,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 19,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 20,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 21,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 22,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 23,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 24,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 25,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936043f",
-      "different_unit_branch": "0x1936055f"
+      "rule": "specialized"
     },
     {
       "resource": 26,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     },
     {
       "resource": 27,
-      "rule": "specialized",
-      "same_unit_branch": "0x1936049c",
-      "different_unit_branch": "0x193605b9"
+      "rule": "specialized"
     },
     {
       "resource": 28,
-      "rule": "specialized",
-      "same_unit_branch": "0x193605e1",
-      "different_unit_branch": "0x193605e1"
+      "rule": "specialized"
     },
     {
       "resource": 29,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     },
     {
       "resource": 30,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     },
     {
       "resource": 31,
-      "rule": "global_nonzero_intersection",
-      "same_unit_branch": "0x19360430",
-      "different_unit_branch": "0x19360550"
+      "rule": "global_nonzero_intersection"
     }
   ],
   "limitations": [
