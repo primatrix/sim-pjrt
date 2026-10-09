@@ -1,0 +1,72 @@
+{
+  "execution_engine": "gf_instruction_pipeline",
+  "status": "partial",
+  "modeled_cycles": 269980.866502,
+  "modeled_seconds": 0.00012271857568272728,
+  "estimated_seconds": null,
+  "scheduled_bundle_count": 60223,
+  "modeled_bundle_visits": 250832,
+  "dma_bytes": 234882080,
+  "unresolved_gap_count": 111,
+  "source_sha256": "4e16bfbdeb2172bf79a4f404d058b24b9354773ab019a542306726afd023489d",
+  "source": "/home/yanko/lab/tpu-kernel-lab/kernels/output_heads16_candidate.py",
+  "manifest": ".build/pipeline-validation/output-heads16-2k/compile/dump/process-2269168-95T3VV/1791515086982438232-<late-finalization>-01-final_bundles.txt.manifest.json",
+  "manifest_sha256": "f3bccba386466d9d68aac390a84638930848b1f47ee544cbc8c76f90f5ab2e90",
+  "module": "varlen_attention_mha_native.1",
+  "modeled_microseconds": 122.71857568272728,
+  "source_still_current": true,
+  "scope": "full compiled program, two 16-head iterations; includes modeled resource completion",
+  "scenario": "single 2048-token sequence, MHA32 D256 BF16 Q512 KV256, guard-pass; aligned virtual addresses",
+  "compiler_identity_basis": "artifact records libtpu 0.0.48; original producing binary hash was not recorded",
+  "hardware_validation": false,
+  "kernel_microseconds": 122.433,
+  "kernel_modeled_cycles": 269352.6,
+  "issue_calibration": null,
+  "full_report": ".build/pipeline-validation/output-heads16-2k/default/report.json",
+  "cycle_breakdown": {
+    "issue_cycles": 250832,
+    "wait_stall_cycles": 19143.86650200002,
+    "extra_instruction_cycles": 0,
+    "completion_cycles": 5.0
+  },
+  "profile_sha256": "095eb9632b34fab1464b993ffd9aba47b04ea238ae3d2d72e2f6ac632009b5fd",
+  "compile_metadata": {
+    "kernel": "/home/yanko/lab/tpu-kernel-lab/kernels/output_heads16_candidate.py",
+    "source_sha256": "4e16bfbdeb2172bf79a4f404d058b24b9354773ab019a542306726afd023489d",
+    "tokens": 2048,
+    "heads": 32,
+    "kv_heads": 32,
+    "dim": 256,
+    "q_block": 512,
+    "kv_block": 256,
+    "status": "compiled",
+    "versions": {
+      "jax": "0.11.1",
+      "jaxlib": "0.11.1",
+      "libtpu": "0.0.48"
+    },
+    "hardware_validation": false,
+    "exit_code": 0,
+    "compile_result": {
+      "seconds": 219.5080922749912,
+      "lower_seconds": 18.64783067899407,
+      "backend_compile_seconds": 200.86026159599714,
+      "shape": [
+        2048,
+        32,
+        256
+      ],
+      "kv_heads": 32,
+      "q_block": 512,
+      "kv_block": 256,
+      "short_locations": false,
+      "source_sha256": "4e16bfbdeb2172bf79a4f404d058b24b9354773ab019a542306726afd023489d"
+    }
+  },
+  "unmapped_costs": [
+    {
+      "address": "Final LLO",
+      "reason": "unmapped cost: sfence"
+    }
+  ]
+}

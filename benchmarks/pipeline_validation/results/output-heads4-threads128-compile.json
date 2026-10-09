@@ -1,0 +1,45 @@
+{
+  "kernel": "/home/yanko/lab/tpu-kernel-lab/kernels/output_heads4_candidate.py",
+  "source_sha256": "ce6226d690181ce75e747c1371d58a2fe05d12b1ff1c215428e6b7df5f130a55",
+  "tokens": 2048,
+  "heads": 32,
+  "kv_heads": 32,
+  "dim": 256,
+  "q_block": 512,
+  "kv_block": 256,
+  "status": "compiled",
+  "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.48"
+  },
+  "libtpu_flags": "--xla_jf_internal_num_threads=128",
+  "skip_empty_remainder": true,
+  "persistent_compilation_cache": false,
+  "hardware_validation": false,
+  "exit_code": 0,
+  "compile_result": {
+    "seconds": 220.30852945199877,
+    "lower_seconds": 18.588770286994986,
+    "backend_compile_seconds": 201.71975916500378,
+    "shape": [
+      2048,
+      32,
+      256
+    ],
+    "kv_heads": 32,
+    "q_block": 512,
+    "kv_block": 256,
+    "short_locations": false,
+    "source_sha256": "ce6226d690181ce75e747c1371d58a2fe05d12b1ff1c215428e6b7df5f130a55"
+  },
+  "service_wall_seconds": 221.411,
+  "cpu_seconds": 239.82,
+  "average_cpu_cores": 1.083144017234916,
+  "memory_peak": "1.4G",
+  "swap_bytes": 0,
+  "compile_log": ".build/pipeline-validation/output-heads4-threads128-2k/compile/compile.log",
+  "manifests": [
+    ".build/pipeline-validation/output-heads4-threads128-2k/compile/dump/process-2279264-xTMqjO/1791515736724004229-<late-finalization>-01-final_bundles.txt.manifest.json"
+  ]
+}

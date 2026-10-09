@@ -1,0 +1,136 @@
+{
+  "kernel": "kernels/output_heads1_candidate.py",
+  "scenario": "single 2K causal BF16 MHA32 D256, Q512/KV256, normal guard-pass path",
+  "hardware_validation": false,
+  "calibration_scope": "Fixed prior best-kernel XProf issue costs transferred unchanged; prediction on this candidate, not independent validation.",
+  "simulator_commit": "0ba957b6309aedf848f2aaf02b9b6882f42c4547",
+  "measurement_script_sha256": "7908208478bad5a83ee1d007d9e6ee0d2153e0fb47105249cca48db81529f472",
+  "calibration_sha256": "aa44aef52d6f17a1652c382a447f95fa97ecd3eeb96b6d1bb55b3573dfb97faf",
+  "runs": {
+    "default": {
+      "execution_engine": "gf_instruction_pipeline",
+      "status": "partial",
+      "modeled_cycles": 390672.866502,
+      "modeled_seconds": 0.00017757857568272728,
+      "estimated_seconds": null,
+      "scheduled_bundle_count": 104593,
+      "modeled_bundle_visits": 372876,
+      "dma_bytes": 234882080,
+      "unresolved_gap_count": 111,
+      "source_sha256": "51c9bd9e71b218c7510b7bf02271f3cca941a1b567492deb384ae7b5d9f2325a",
+      "source": "/home/yanko/lab/tpu-kernel-lab/kernels/output_heads1_candidate.py",
+      "manifest": "/home/yanko/lab/tpu-kernel-lab/runs/output-heads1-2k-01/dump/process-2247042-qCXXXI/1791513187054218000-<late-finalization>-01-final_bundles.txt.manifest.json",
+      "manifest_sha256": "43ed5260bc8a8e4ab6e57ac8f462f34b8653aa640772013b46e711c11ab86481",
+      "module": "varlen_attention_mha_native.1",
+      "modeled_microseconds": 177.5785756827273,
+      "source_still_current": true,
+      "scope": "full compiled program, two 16-head iterations; includes modeled resource completion",
+      "scenario": "single 2K sequence, MHA32 D256 BF16 Q512 KV256, guard-pass; aligned virtual addresses",
+      "compiler_identity_basis": "artifact records libtpu 0.0.48; original producing binary hash was not recorded",
+      "hardware_validation": false,
+      "kernel_microseconds": 177.293,
+      "kernel_modeled_cycles": 390044.6,
+      "issue_calibration": null,
+      "full_report": ".build/pipeline-validation/output-heads1/default/report.json",
+      "profile": ".build/pipeline-validation/output-heads1/default/profile.json",
+      "profile_sha256": "d3235e05fa0fe0bf4734a3b8fd6f2c181fe1898723ed39fcde7d3a4b85f5f1ce",
+      "cycle_breakdown": {
+        "issue_cycles": 372876,
+        "wait_stall_cycles": 17791.86650200002,
+        "extra_instruction_cycles": 0,
+        "completion_cycles": 5.0
+      },
+      "unmapped_costs": [
+        {
+          "address": "Final LLO",
+          "reason": "unmapped cost: sfence"
+        }
+      ]
+    },
+    "calibrated": {
+      "execution_engine": "gf_instruction_pipeline",
+      "status": "partial",
+      "modeled_cycles": 506366.9724314846,
+      "modeled_seconds": 0.00023016680565067483,
+      "estimated_seconds": null,
+      "scheduled_bundle_count": 104593,
+      "modeled_bundle_visits": 372876,
+      "dma_bytes": 234882080,
+      "unresolved_gap_count": 112,
+      "source_sha256": "51c9bd9e71b218c7510b7bf02271f3cca941a1b567492deb384ae7b5d9f2325a",
+      "source": "/home/yanko/lab/tpu-kernel-lab/kernels/output_heads1_candidate.py",
+      "manifest": "/home/yanko/lab/tpu-kernel-lab/runs/output-heads1-2k-01/dump/process-2247042-qCXXXI/1791513187054218000-<late-finalization>-01-final_bundles.txt.manifest.json",
+      "manifest_sha256": "43ed5260bc8a8e4ab6e57ac8f462f34b8653aa640772013b46e711c11ab86481",
+      "module": "varlen_attention_mha_native.1",
+      "modeled_microseconds": 230.16680565067483,
+      "source_still_current": true,
+      "scope": "full compiled program, two 16-head iterations; includes modeled resource completion",
+      "scenario": "single 2K sequence, MHA32 D256 BF16 Q512 KV256, guard-pass; aligned virtual addresses",
+      "compiler_identity_basis": "artifact records libtpu 0.0.48; original producing binary hash was not recorded",
+      "hardware_validation": false,
+      "kernel_microseconds": 229.862,
+      "kernel_modeled_cycles": 505696.4,
+      "issue_calibration": "/home/yanko/lab/sim-pjrt/configs/tpu7x_xprof_issue_calibration.json",
+      "full_report": ".build/pipeline-validation/output-heads1/calibrated/report.json",
+      "profile": ".build/pipeline-validation/output-heads1/calibrated/profile.json",
+      "profile_sha256": "1c3a0947452aba7a726389ce69c3d7ac9e3df690c9361c061ceff1b79e456af0",
+      "cycle_breakdown": {
+        "issue_cycles": 372876,
+        "wait_stall_cycles": 14895.044232592576,
+        "extra_instruction_cycles": 118592.848198892,
+        "completion_cycles": 3.080000000018458
+      },
+      "unmapped_costs": [
+        {
+          "address": "Final LLO",
+          "reason": "unmapped cost: sfence"
+        }
+      ]
+    }
+  },
+  "compile_metadata": {
+    "kernel": "kernels/output_heads1_candidate.py",
+    "source_sha256": "51c9bd9e71b218c7510b7bf02271f3cca941a1b567492deb384ae7b5d9f2325a",
+    "tokens": 2048,
+    "heads": 32,
+    "kv_heads": 32,
+    "dim": 256,
+    "q_block": 512,
+    "kv_block": 256,
+    "status": "compiled",
+    "hardware_validation": false,
+    "skip_empty_remainder": true,
+    "short_locations": false,
+    "libtpu_flags": "",
+    "plugin": "/home/yanko/lab/sim-pjrt/bazel-bin/pjrt_sim_plugin.so",
+    "plugin_sha256": "4ff18dea813421317663b3999f03471253721c93ab63646fe38c8dac66326a39",
+    "versions": {
+      "jax": "0.11.1",
+      "jaxlib": "0.11.1",
+      "libtpu": "0.0.48"
+    },
+    "persistent_compilation_cache": false,
+    "exit_code": 0,
+    "compiler_compat": {
+      "skip_empty_remainder": true,
+      "original_function_sha256": "ab53014dbcb57bcf64e181b9ac3654079ed451bca03cd141300d82dc14d5c538",
+      "jax_version": "0.11.1",
+      "installed_environment_modified": false
+    },
+    "compile_result": {
+      "seconds": 305.1190208379994,
+      "lower_seconds": 18.834427751004114,
+      "backend_compile_seconds": 286.2845930869953,
+      "shape": [
+        2048,
+        32,
+        256
+      ],
+      "kv_heads": 32,
+      "q_block": 512,
+      "kv_block": 256,
+      "short_locations": false,
+      "source_sha256": "51c9bd9e71b218c7510b7bf02271f3cca941a1b567492deb384ae7b5d9f2325a"
+    }
+  }
+}
