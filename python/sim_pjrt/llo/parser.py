@@ -62,6 +62,11 @@ def parse_bundles(text):
     )
     text = re.sub(r'(vwait\.[\w.]+\b[^;{}]*?)/\*\s*global-barrier-wait\s*\*/',
                   r'\1 __peer_wait__', text)
+    # General DMA pointers can pass through scalar phi/arithmetic and lose their
+    # local type spelling. The compiler prints the resolved transfer direction.
+    text = re.sub(
+        r'(dma\.general\b[^;{}]*?)/\*\s*(hbm|vmem|smem)-to-(hbm|vmem|smem)\s*\*/',
+        lambda m: m[1] + ' __dma_direction_' + m[2] + '_to_' + m[3] + '__', text)
     text = _COMMENT.sub("", text)
     if "/*" in text or "*/" in text:
         raise ValueError("unterminated or unmatched diagnostic comment")
@@ -103,6 +108,9 @@ def parse_bundles(text):
                 continue
             peer_wait = '__peer_wait__' in raw
             raw = raw.replace('__peer_wait__', '').strip()
+            direction = re.search(r'__dma_direction_(\w+_to_\w+)__', raw)
+            if direction:
+                raw = raw.replace(direction[0], '').strip()
             rhs = re.sub(r"^[%\w.-]+\s*=\s*", "", raw)
             opcode = re.match(r"[\w.-]+", rhs)
             if not opcode:
@@ -114,6 +122,10 @@ def parse_bundles(text):
                 args = dma_operands(raw)
                 if len(args) >= 3 and args[0] in spaces and args[2] in spaces:
                     instruction['dma_direction'] = spaces[args[0]] + '_to_' + spaces[args[2]]
+                if direction:
+                    if instruction.get('dma_direction', direction[1]) != direction[1]:
+                        raise ValueError('DMA direction annotation conflicts with pointer address spaces')
+                    instruction['dma_direction'] = direction[1]
             if "__callee__" in raw:
                 instruction["callee"] = raw.split("__callee__", 1)[1].strip()
                 instruction["text"] = raw.split("__callee__", 1)[0].strip()
@@ -126,6 +138,28 @@ def parse_bundles(text):
         if regions.get(i):
             bundle['regions'] = regions[i]
         result.append(bundle)
+    # Identical printed push mnemonics can target different FIFOs. Preserve the
+    # observed SSA consumer kind, rather than guessing from the destination name.
+    pushes, duplicate_pushes = {}, set()
+    for bundle in result:
+        for ins in bundle['instructions']:
+            if ins['opcode'] == 'vsyncmov':
+                match = re.match(r'^(%\w+)\s*=', ins['text'])
+                if match:
+                    if match[1] in pushes:
+                        duplicate_pushes.add(match[1])
+                    pushes[match[1]] = ins
+    consumers = {name: set() for name in pushes}
+    if pushes:
+        for bundle in result:
+            for ins in bundle['instructions']:
+                rhs = re.sub(r'^%\w+\s*=\s*', '', ins['text'])
+                for register in re.findall(r'%\w+', rhs):
+                    if register in consumers:
+                        consumers[register].add(ins['opcode'])
+        for register, kinds in consumers.items():
+            if kinds and register not in duplicate_pushes:
+                pushes[register]['result_consumer_opcodes'] = sorted(kinds)
     return tuple(result)
 
 

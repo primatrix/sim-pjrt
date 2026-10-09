@@ -1,0 +1,2080 @@
+{
+  "schema_version": 1,
+  "target": "gf",
+  "binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "matpush_latch_rows": [
+    {
+      "mode": 0,
+      "name": "NoXposeF32",
+      "unmasked_id": 324,
+      "masked_id": 328
+    },
+    {
+      "mode": 1,
+      "name": "XposeF32",
+      "unmasked_id": 324,
+      "masked_id": 328
+    },
+    {
+      "mode": 10,
+      "name": "XposePackedBf16",
+      "unmasked_id": 326,
+      "masked_id": 330
+    },
+    {
+      "mode": 11,
+      "name": "NoXposePackedBf16",
+      "unmasked_id": 326,
+      "masked_id": 330
+    },
+    {
+      "mode": 48,
+      "name": "NoXposePackedE5M2",
+      "unmasked_id": 327,
+      "masked_id": 331
+    },
+    {
+      "mode": 49,
+      "name": "XposePackedE5M2",
+      "unmasked_id": 327,
+      "masked_id": 331
+    },
+    {
+      "mode": 50,
+      "name": "NoXposePackedE4M3Fn",
+      "unmasked_id": 325,
+      "masked_id": 329
+    },
+    {
+      "mode": 51,
+      "name": "XposePackedE4M3Fn",
+      "unmasked_id": 325,
+      "masked_id": 329
+    }
+  ],
+  "bf16_matpush_nontranspose_issue_cycles": 4,
+  "bf16_matpush_transpose_issue_cycles": 8,
+  "exact_mnemonics": {
+    "vpack.c.b16": {
+      "llo_opcode": 294
+    },
+    "vpack.i.b16": {
+      "llo_opcode": 294
+    },
+    "vunpack.c.l.s4": {
+      "llo_opcode": 265
+    },
+    "vunpack.c.0.s8": {
+      "llo_opcode": 265
+    },
+    "vweird.f32": {
+      "llo_opcode": 173
+    },
+    "vunpack.c.l.bf16": {
+      "llo_opcode": 265
+    },
+    "vunpack.c.h.bf16": {
+      "llo_opcode": 265
+    },
+    "vmin.xlane.f32.xlu0": {
+      "llo_opcode": 245,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmin.xlane.f32.xlu1": {
+      "llo_opcode": 245,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmax.xlane.f32.xlu0": {
+      "llo_opcode": 246,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmax.xlane.f32.xlu1": {
+      "llo_opcode": 246,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vadd.xlane.f32.xlu0": {
+      "llo_opcode": 247,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vadd.xlane.f32.xlu1": {
+      "llo_opcode": 247,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmax.index.xlane.f32.xlu0": {
+      "llo_opcode": 248,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmax.index.xlane.f32.xlu1": {
+      "llo_opcode": 248,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmin.index.xlane.f32.xlu0": {
+      "llo_opcode": 249,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmin.index.xlane.f32.xlu1": {
+      "llo_opcode": 249,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmin.xlane.bf16.xlu0": {
+      "llo_opcode": 253,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmin.xlane.bf16.xlu1": {
+      "llo_opcode": 253,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmax.xlane.bf16.xlu0": {
+      "llo_opcode": 254,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmax.xlane.bf16.xlu1": {
+      "llo_opcode": 254,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vadd.xlane.bf16.xlu0": {
+      "llo_opcode": 255,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vadd.xlane.bf16.xlu1": {
+      "llo_opcode": 255,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmax.index.xlane.bf16.xlu0": {
+      "llo_opcode": 256,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmax.index.xlane.bf16.xlu1": {
+      "llo_opcode": 256,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vmin.index.xlane.bf16.xlu0": {
+      "llo_opcode": 257,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vmin.index.xlane.bf16.xlu1": {
+      "llo_opcode": 257,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    },
+    "vpop.xlane.xlu0": {
+      "llo_opcode": 335,
+      "execution_unit": "xlu0",
+      "note": "XLU unit suffix"
+    },
+    "vpop.xlane.xlu1": {
+      "llo_opcode": 335,
+      "execution_unit": "xlu1",
+      "note": "XLU unit suffix"
+    }
+  },
+  "vector_compare_cost_equivalence": {
+    "s32.totalorder": {
+      "performance_ids": [
+        210,
+        211,
+        212,
+        213,
+        214,
+        215
+      ]
+    },
+    "u32.totalorder": {
+      "performance_ids": [
+        210,
+        211,
+        216,
+        217,
+        218,
+        219
+      ]
+    },
+    "f32.partialorder": {
+      "performance_ids": [
+        222,
+        223,
+        224,
+        225,
+        226,
+        227
+      ]
+    },
+    "f32.totalorder": {
+      "performance_ids": [
+        230,
+        231
+      ]
+    }
+  },
+  "raw_iar_performance_ids": {
+    "0": 435,
+    "1": 436
+  },
+  "pseudo_mnemonics": {
+    "scalar_parameter_address": {
+      "llo_opcode": 44,
+      "performance_id": 27,
+      "latency_multiplier": 1
+    },
+    "scalar_select": {
+      "llo_opcode": 136,
+      "performance_id": 27,
+      "latency_multiplier": 2,
+      "limitation": "scalar_select assembly issue expansion is not modeled"
+    }
+  },
+  "consumer_disambiguation": {
+    "vsyncmov": {
+      "spop": 11,
+      "vpop.sfrf": 15
+    }
+  },
+  "matpush_latency_rule": "nontranspose ceil(table_latency/2), transpose table_latency",
+  "pack_mnemonics": {
+    "vpack.c.bf16": {
+      "llo_opcode": 294
+    }
+  },
+  "matmul_format_rows": {
+    "unmasked": {
+      "1": 289,
+      "2": 295,
+      "9": 301,
+      "10": 307
+    },
+    "masked": {
+      "1": 292,
+      "2": 298,
+      "9": 304,
+      "10": 310
+    },
+    "enum_names": {
+      "f32": 1,
+      "bf16": 2,
+      "f8e5m2": 9,
+      "f8e4m3fn": 10
+    },
+    "enum_name_provenance": "llo/mxu.py; checked on 0.0.46.1; retained assumption for 0.0.48"
+  },
+  "scalar_compare_cost_equivalence": {
+    "llo_opcode": 363,
+    "performance_ids": [
+      446,
+      447,
+      448,
+      449,
+      450,
+      451,
+      453,
+      454,
+      455,
+      456,
+      457,
+      458,
+      459,
+      460,
+      461,
+      462
+    ],
+    "note": "Scalar compare switch variants; only use if every candidate has identical costs."
+  },
+  "rows": [
+    {
+      "llo_opcode": 9,
+      "opcode_name": "kScalarToVector",
+      "mnemonic": "vstv",
+      "performance_id": 93
+    },
+    {
+      "llo_opcode": 10,
+      "opcode_name": "kVectorToScalarPush",
+      "mnemonic": "vpush",
+      "performance_id": 437
+    },
+    {
+      "llo_opcode": 11,
+      "opcode_name": "kSyncFlagToScalarPush",
+      "mnemonic": "vsyncmov",
+      "performance_id": 437
+    },
+    {
+      "llo_opcode": 13,
+      "opcode_name": "kScalarV2SPop",
+      "mnemonic": "spop",
+      "performance_id": 439
+    },
+    {
+      "llo_opcode": 15,
+      "opcode_name": "kSyncFlagToSfrfPush",
+      "mnemonic": "vsyncmov",
+      "performance_id": 406
+    },
+    {
+      "llo_opcode": 16,
+      "opcode_name": "kSyncFlagDoneToSfrfPush",
+      "mnemonic": "vsyncdonemov",
+      "performance_id": 407
+    },
+    {
+      "llo_opcode": 17,
+      "opcode_name": "kSfrfPop",
+      "mnemonic": "vpop.sfrf",
+      "performance_id": 441
+    },
+    {
+      "llo_opcode": 18,
+      "opcode_name": "kDrfPop",
+      "mnemonic": "spop.drf",
+      "performance_id": 440
+    },
+    {
+      "llo_opcode": 35,
+      "opcode_name": "kScalarReadCycleHigh",
+      "mnemonic": "cycles_hi",
+      "performance_id": 4
+    },
+    {
+      "llo_opcode": 36,
+      "opcode_name": "kScalarReadCycleLow",
+      "mnemonic": "cycles_lo",
+      "performance_id": 3
+    },
+    {
+      "llo_opcode": 37,
+      "opcode_name": "kScalarHalt",
+      "mnemonic": "shalt",
+      "performance_id": 0
+    },
+    {
+      "llo_opcode": 39,
+      "opcode_name": "kScalarHaltOnError",
+      "mnemonic": "shalt.err",
+      "performance_id": 0
+    },
+    {
+      "llo_opcode": 43,
+      "opcode_name": "kVectorInterrupt",
+      "mnemonic": "vint",
+      "performance_id": 409
+    },
+    {
+      "llo_opcode": 45,
+      "opcode_name": "kIntToPtr",
+      "mnemonic": "int_to_ptr",
+      "performance_id": 27
+    },
+    {
+      "llo_opcode": 46,
+      "opcode_name": "kVectorIntToVectorPtr",
+      "mnemonic": "vector_int_to_vector_ptr",
+      "performance_id": 93
+    },
+    {
+      "llo_opcode": 47,
+      "opcode_name": "kVectorLoadSublaneShuffle",
+      "mnemonic": "vld.sshfl",
+      "performance_id": 366
+    },
+    {
+      "llo_opcode": 48,
+      "opcode_name": "kVectorLoad",
+      "mnemonic": "vld",
+      "performance_id": 362
+    },
+    {
+      "llo_opcode": 50,
+      "opcode_name": "kVectorLoadReplicateEvenOddSublanes",
+      "mnemonic": "vld.even.odd.slanes",
+      "performance_id": 363
+    },
+    {
+      "llo_opcode": 53,
+      "opcode_name": "kVectorPermute",
+      "mnemonic": "vperm",
+      "performance_id": 344
+    },
+    {
+      "llo_opcode": 54,
+      "opcode_name": "kVectorPermuteSublane",
+      "mnemonic": "vperm.slane",
+      "performance_id": 205
+    },
+    {
+      "llo_opcode": 55,
+      "opcode_name": "kVectorCombineHigh",
+      "mnemonic": "vcombine.high",
+      "performance_id": 207
+    },
+    {
+      "llo_opcode": 56,
+      "opcode_name": "kVectorCombineLow",
+      "mnemonic": "vcombine.low",
+      "performance_id": 206
+    },
+    {
+      "llo_opcode": 57,
+      "opcode_name": "kVectorRotate",
+      "mnemonic": "vrot.lane",
+      "performance_id": 345
+    },
+    {
+      "llo_opcode": 58,
+      "opcode_name": "kVectorBroadcastLane",
+      "mnemonic": "vbcast.lane",
+      "performance_id": 348
+    },
+    {
+      "llo_opcode": 59,
+      "opcode_name": "kVectorPrng",
+      "mnemonic": "vrng",
+      "performance_id": 379
+    },
+    {
+      "llo_opcode": 60,
+      "opcode_name": "kVectorSetRngSeed",
+      "mnemonic": "set.rngseed",
+      "performance_id": 438
+    },
+    {
+      "llo_opcode": 61,
+      "opcode_name": "kVectorGetRngSeed",
+      "mnemonic": "getrngseed",
+      "performance_id": 378
+    },
+    {
+      "llo_opcode": 62,
+      "opcode_name": "kVectorStore",
+      "mnemonic": "vst",
+      "performance_id": 419
+    },
+    {
+      "llo_opcode": 64,
+      "opcode_name": "kVectorStoreSublaneShuffle",
+      "mnemonic": "vst.sshfl",
+      "performance_id": 423
+    },
+    {
+      "llo_opcode": 68,
+      "opcode_name": "kVectorStoreMasked",
+      "mnemonic": "vst.msk",
+      "performance_id": 421
+    },
+    {
+      "llo_opcode": 69,
+      "opcode_name": "kVectorStoreEvenOddSublanes",
+      "mnemonic": "vst.even.odd.slanes",
+      "performance_id": 427
+    },
+    {
+      "llo_opcode": 70,
+      "opcode_name": "kVectorNop",
+      "mnemonic": "vnop",
+      "performance_id": 399
+    },
+    {
+      "llo_opcode": 71,
+      "opcode_name": "kVectorClampGezF32",
+      "mnemonic": "vclamp-gez-f32",
+      "performance_id": 71
+    },
+    {
+      "llo_opcode": 72,
+      "opcode_name": "kVectorClampGezBf16",
+      "mnemonic": "vclamp-gez-bf16",
+      "performance_id": 104
+    },
+    {
+      "llo_opcode": 73,
+      "opcode_name": "kVectorClampSymmetricF32",
+      "mnemonic": "vclamps-f32",
+      "performance_id": 72
+    },
+    {
+      "llo_opcode": 74,
+      "opcode_name": "kVectorClampSymmetricBf16",
+      "mnemonic": "vclamps-bf16",
+      "performance_id": 105
+    },
+    {
+      "llo_opcode": 75,
+      "opcode_name": "kVectorClampAsymmetricF32",
+      "mnemonic": "vclampa-f32",
+      "performance_id": 112
+    },
+    {
+      "llo_opcode": 76,
+      "opcode_name": "kVectorClampAsymmetricBf16",
+      "mnemonic": "vclampa-bf16",
+      "performance_id": 113
+    },
+    {
+      "llo_opcode": 78,
+      "opcode_name": "kVectorRemapF32",
+      "mnemonic": "vremap.f32",
+      "performance_id": 116
+    },
+    {
+      "llo_opcode": 79,
+      "opcode_name": "kVectorRemapBf16",
+      "mnemonic": "vremap.bf16",
+      "performance_id": 117
+    },
+    {
+      "llo_opcode": 80,
+      "opcode_name": "kVectorMultiplyAccumulate",
+      "mnemonic": "vmac.bf16.f32",
+      "performance_id": 118
+    },
+    {
+      "llo_opcode": 81,
+      "opcode_name": "kVectorMulSetAcc",
+      "mnemonic": "vmul.bf16.f32",
+      "performance_id": 119
+    },
+    {
+      "llo_opcode": 82,
+      "opcode_name": "kVectorMaxAbsF32",
+      "mnemonic": "vmaxabs.f32",
+      "performance_id": 120
+    },
+    {
+      "llo_opcode": 83,
+      "opcode_name": "kVectorMaxAbsBf16",
+      "mnemonic": "vmaxabs.bf16",
+      "performance_id": 121
+    },
+    {
+      "llo_opcode": 84,
+      "opcode_name": "kVectorMaxAbsSetAccF32",
+      "mnemonic": "vmaxabs.init.f32",
+      "performance_id": 122
+    },
+    {
+      "llo_opcode": 85,
+      "opcode_name": "kVectorMaxAbsSetAccBf16",
+      "mnemonic": "vmaxabs.init.bf16",
+      "performance_id": 123
+    },
+    {
+      "llo_opcode": 86,
+      "opcode_name": "kVectorSetAcc",
+      "mnemonic": "vsetacc.b32",
+      "performance_id": 124
+    },
+    {
+      "llo_opcode": 87,
+      "opcode_name": "kVectorMoveAccHigh",
+      "mnemonic": "vmovacc.add.high",
+      "performance_id": 125
+    },
+    {
+      "llo_opcode": 88,
+      "opcode_name": "kVectorMoveAccLow",
+      "mnemonic": "vmovacc.add.low",
+      "performance_id": 126
+    },
+    {
+      "llo_opcode": 89,
+      "opcode_name": "kVectorMoveEvenAccLow",
+      "mnemonic": "vmovacc.low.even",
+      "performance_id": 127
+    },
+    {
+      "llo_opcode": 91,
+      "opcode_name": "kScalarConvertF32ToS32",
+      "mnemonic": "scvt.f32.s32",
+      "performance_id": 10
+    },
+    {
+      "llo_opcode": 94,
+      "opcode_name": "kVectorConvertF32ToS32",
+      "mnemonic": "vcvt.f32.s32",
+      "performance_id": 76
+    },
+    {
+      "llo_opcode": 96,
+      "opcode_name": "kVectorConvertF32ToF8E5M2",
+      "mnemonic": "vcvt.f32.f8e5m2",
+      "performance_id": 77
+    },
+    {
+      "llo_opcode": 97,
+      "opcode_name": "kVectorConvertF32ToF8E4M3Fn",
+      "mnemonic": "vcvt.f32.f8e4m3fn",
+      "performance_id": 78
+    },
+    {
+      "llo_opcode": 99,
+      "opcode_name": "kVectorConvertF32ToHf16",
+      "mnemonic": "vcvt.f32.hf16",
+      "performance_id": 80
+    },
+    {
+      "llo_opcode": 101,
+      "opcode_name": "kVectorConvertS8ToBf16",
+      "mnemonic": "vcvt.s8.bf16",
+      "performance_id": 89
+    },
+    {
+      "llo_opcode": 102,
+      "opcode_name": "kVectorConvertS4ToBf16",
+      "mnemonic": "vcvt.s4.bf16",
+      "performance_id": 91
+    },
+    {
+      "llo_opcode": 103,
+      "opcode_name": "kVectorConvertU8ToBf16",
+      "mnemonic": "vcvt.u8.bf16",
+      "performance_id": 90
+    },
+    {
+      "llo_opcode": 104,
+      "opcode_name": "kVectorConvertU4ToBf16",
+      "mnemonic": "vcvt.u4.bf16",
+      "performance_id": 92
+    },
+    {
+      "llo_opcode": 105,
+      "opcode_name": "kVectorConvertBf16ToS8",
+      "mnemonic": "vcvt.bf16.s8",
+      "performance_id": 85
+    },
+    {
+      "llo_opcode": 106,
+      "opcode_name": "kVectorConvertBf16ToS4",
+      "mnemonic": "vcvt.bf16.s4",
+      "performance_id": 87
+    },
+    {
+      "llo_opcode": 107,
+      "opcode_name": "kVectorConvertBf16ToU8",
+      "mnemonic": "vcvt.bf16.u8",
+      "performance_id": 86
+    },
+    {
+      "llo_opcode": 108,
+      "opcode_name": "kVectorConvertBf16ToU4",
+      "mnemonic": "vcvt.bf16.u4",
+      "performance_id": 88
+    },
+    {
+      "llo_opcode": 109,
+      "opcode_name": "kVectorConvertEXMYToE4M3",
+      "mnemonic": "vcvt.eXmY.e4m3",
+      "performance_id": 254
+    },
+    {
+      "llo_opcode": 110,
+      "opcode_name": "kVectorConvertEXMYToE5M2",
+      "mnemonic": "vcvt.eXmY.e5m2",
+      "performance_id": 255
+    },
+    {
+      "llo_opcode": 111,
+      "opcode_name": "kVectorConvertF32ToE5M2Stochastic",
+      "mnemonic": "vcvt.sr.f32.e5m2",
+      "performance_id": 81
+    },
+    {
+      "llo_opcode": 112,
+      "opcode_name": "kVectorConvertF32ToE4M3Stochastic",
+      "mnemonic": "vcvt.sr.f32.e4m3",
+      "performance_id": 82
+    },
+    {
+      "llo_opcode": 114,
+      "opcode_name": "kVectorConvertF32ToBf16Stochastic",
+      "mnemonic": "vcvt.sr.f32.bf16",
+      "performance_id": 83
+    },
+    {
+      "llo_opcode": 115,
+      "opcode_name": "kVectorConvertF32ToHf16Stochastic",
+      "mnemonic": "vcvt.sr.f32.hf16",
+      "performance_id": 84
+    },
+    {
+      "llo_opcode": 116,
+      "opcode_name": "kVectorMultiSublaneRotateTZ",
+      "mnemonic": "vrot.slane",
+      "performance_id": 204
+    },
+    {
+      "llo_opcode": 118,
+      "opcode_name": "kScalarLoad",
+      "mnemonic": "sld",
+      "performance_id": 443
+    },
+    {
+      "llo_opcode": 119,
+      "opcode_name": "kScalarStore",
+      "mnemonic": "sst",
+      "performance_id": 43
+    },
+    {
+      "llo_opcode": 120,
+      "opcode_name": "kVectorSyncFlagAdd",
+      "mnemonic": "vsyncadd",
+      "performance_id": 383
+    },
+    {
+      "llo_opcode": 121,
+      "opcode_name": "kVectorSyncFlagAddRemote",
+      "mnemonic": "vsyncadd.remote",
+      "performance_id": 387
+    },
+    {
+      "llo_opcode": 122,
+      "opcode_name": "kVectorSyncFlagAddDone",
+      "mnemonic": "vsyncadd.done",
+      "performance_id": 384
+    },
+    {
+      "llo_opcode": 123,
+      "opcode_name": "kVectorSyncFlagAddNotDone",
+      "mnemonic": "vsyncadd.notdone",
+      "performance_id": 384
+    },
+    {
+      "llo_opcode": 124,
+      "opcode_name": "kVectorSyncFlagSet",
+      "mnemonic": "vsyncset",
+      "performance_id": 380
+    },
+    {
+      "llo_opcode": 125,
+      "opcode_name": "kVectorSyncFlagSetDone",
+      "mnemonic": "vsyncset.done",
+      "performance_id": 381
+    },
+    {
+      "llo_opcode": 126,
+      "opcode_name": "kVectorSyncFlagSetNotDone",
+      "mnemonic": "vsyncset.notdone",
+      "performance_id": 381
+    },
+    {
+      "llo_opcode": 127,
+      "opcode_name": "kVectorSyncFlagSetRemote",
+      "mnemonic": "vsyncset.remote",
+      "performance_id": 386
+    },
+    {
+      "llo_opcode": 128,
+      "opcode_name": "kVectorSyncFlagPublicAccessSet",
+      "mnemonic": "vsyncpa",
+      "performance_id": 414
+    },
+    {
+      "llo_opcode": 129,
+      "opcode_name": "kVectorSetTracemark",
+      "mnemonic": "vsettm",
+      "performance_id": 412
+    },
+    {
+      "llo_opcode": 130,
+      "opcode_name": "kVectorTrace",
+      "mnemonic": "vtrace",
+      "performance_id": 413
+    },
+    {
+      "llo_opcode": 131,
+      "opcode_name": "kVectorTraceArg",
+      "mnemonic": "vtrace.arg",
+      "performance_id": 413
+    },
+    {
+      "llo_opcode": 133,
+      "opcode_name": "kScalarAddressCalculation",
+      "mnemonic": "scalar_lea",
+      "performance_id": 11
+    },
+    {
+      "llo_opcode": 134,
+      "opcode_name": "kScalarBranchRel",
+      "mnemonic": "sbr.rel",
+      "performance_id": 32
+    },
+    {
+      "llo_opcode": 135,
+      "opcode_name": "kScalarBranchInd",
+      "mnemonic": "sbr.ind",
+      "performance_id": 33
+    },
+    {
+      "llo_opcode": 137,
+      "opcode_name": "kVectorSelect",
+      "mnemonic": "vsel",
+      "performance_id": 128
+    },
+    {
+      "llo_opcode": 150,
+      "opcode_name": "kVectorMatprepSubr",
+      "mnemonic": "vmatprep.subr",
+      "performance_id": 285
+    },
+    {
+      "llo_opcode": 151,
+      "opcode_name": "kVectorMatprepSubrMsk",
+      "mnemonic": "vmatprep.subr.msk",
+      "performance_id": 286
+    },
+    {
+      "llo_opcode": 152,
+      "opcode_name": "kVectorMatprepMubr",
+      "mnemonic": "vmatprep.mubr",
+      "performance_id": 281
+    },
+    {
+      "llo_opcode": 153,
+      "opcode_name": "kVectorMatprepMubrMsk",
+      "mnemonic": "vmatprep.mubr.msk",
+      "performance_id": 282
+    },
+    {
+      "llo_opcode": 164,
+      "opcode_name": "kVectorMatmulLmr",
+      "mnemonic": "vmatmul.lmr",
+      "performance_id": 313
+    },
+    {
+      "llo_opcode": 167,
+      "opcode_name": "kVectorDoneWithGains",
+      "mnemonic": "vdwg",
+      "performance_id": 316
+    },
+    {
+      "llo_opcode": 168,
+      "opcode_name": "kVectorLoadGmr",
+      "mnemonic": "vlgmr",
+      "performance_id": 316
+    },
+    {
+      "llo_opcode": 169,
+      "opcode_name": "kVectorLoadLmr",
+      "mnemonic": "vllmr",
+      "performance_id": 321
+    },
+    {
+      "llo_opcode": 170,
+      "opcode_name": "kVectorLoadLmrWithBf16Conversion",
+      "mnemonic": "vllmr.bf16",
+      "performance_id": 323
+    },
+    {
+      "llo_opcode": 171,
+      "opcode_name": "kVectorDelay",
+      "mnemonic": "vdelay",
+      "performance_id": 1
+    },
+    {
+      "llo_opcode": 172,
+      "opcode_name": "kScalarWeird",
+      "mnemonic": "sweird.f32",
+      "performance_id": 452
+    },
+    {
+      "llo_opcode": 173,
+      "opcode_name": "kVectorWeird",
+      "mnemonic": "vweird",
+      "performance_id": 209
+    },
+    {
+      "llo_opcode": 174,
+      "opcode_name": "kVectorCreateSublaneMask",
+      "mnemonic": "vsmask.f32",
+      "performance_id": 221
+    },
+    {
+      "llo_opcode": 176,
+      "opcode_name": "kVectorCreateMask",
+      "mnemonic": "vcmask",
+      "performance_id": 229
+    },
+    {
+      "llo_opcode": 177,
+      "opcode_name": "kScalarDelay",
+      "mnemonic": "sdelay",
+      "performance_id": 1
+    },
+    {
+      "llo_opcode": 178,
+      "opcode_name": "kDmaGeneral",
+      "mnemonic": "dma.general",
+      "performance_id": 50
+    },
+    {
+      "llo_opcode": 179,
+      "opcode_name": "kDma",
+      "mnemonic": "dma",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 180,
+      "opcode_name": "kDmaHbmToVmem",
+      "mnemonic": "dma.hbm_to_vmem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 181,
+      "opcode_name": "kDmaHbmToVmemVsrcVdst",
+      "mnemonic": "dma.vv.hbm_to_vmem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 182,
+      "opcode_name": "kDmaHbmToVmemVsrc",
+      "mnemonic": "dma.sv.hbm_to_vmem_vsrc",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 183,
+      "opcode_name": "kDmaHbmToVmemVdst",
+      "mnemonic": "dma.sv.hbm_to_vmem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 185,
+      "opcode_name": "kDmaHbmToSmem",
+      "mnemonic": "dma.hbm_to_smem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 186,
+      "opcode_name": "kDmaVmemToSmem",
+      "mnemonic": "dma.vmem_to_smem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 187,
+      "opcode_name": "kDmaHbmToHib",
+      "mnemonic": "dma.hbm_to_hib",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 188,
+      "opcode_name": "kDmaHbmToImem",
+      "mnemonic": "dma.hbm_to_imem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 189,
+      "opcode_name": "kDmaVmemToHbm",
+      "mnemonic": "dma.vmem_to_hbm",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 190,
+      "opcode_name": "kDmaVmemToHbmVsrcVdst",
+      "mnemonic": "dma.vv.vmem_to_hbm",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 191,
+      "opcode_name": "kDmaVmemToHbmVsrc",
+      "mnemonic": "dma.vs.vmem_to_hbm",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 192,
+      "opcode_name": "kDmaVmemToHbmVdst",
+      "mnemonic": "dma.sv.vmem_to_hbm",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 194,
+      "opcode_name": "kDmaVmemToVmem",
+      "mnemonic": "dma.vmem_to_vmem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 201,
+      "opcode_name": "kDmaSmemToHbm",
+      "mnemonic": "dma.smem_to_hbm",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 203,
+      "opcode_name": "kDmaSmemToVmem",
+      "mnemonic": "dma.smem_to_vmem",
+      "performance_id": 48
+    },
+    {
+      "llo_opcode": 204,
+      "opcode_name": "kDmaHbmToVmemWithHibUpdate",
+      "mnemonic": "dma.hibupdate.hbm_to_vmem",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 205,
+      "opcode_name": "kDmaHbmToVmemVsrcVdstWithHibUpdate",
+      "mnemonic": "dma.vv.hibupdate.hbm_to_vmem",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 206,
+      "opcode_name": "kDmaHbmToVmemVsrcWithHibUpdate",
+      "mnemonic": "dma.vs.hibupdate.hbm_to_vmem",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 207,
+      "opcode_name": "kDmaHbmToVmemVdstWithHibUpdate",
+      "mnemonic": "dma.sv.hibupdate.hbm_to_vmem",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 208,
+      "opcode_name": "kDmaHbmToHost",
+      "mnemonic": "dma.hbm_to_host",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 209,
+      "opcode_name": "kDmaHostToHbm",
+      "mnemonic": "dma.host_to_hbm",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 210,
+      "opcode_name": "kDmaVmemToHost",
+      "mnemonic": "dma.vmem_to_host",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 211,
+      "opcode_name": "kDmaSmemToHost",
+      "mnemonic": "dma.smem_to_host",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 212,
+      "opcode_name": "kDmaHbmToHostIova",
+      "mnemonic": "dma.hbm_to_host_iova",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 213,
+      "opcode_name": "kDmaHostIovaToHbm",
+      "mnemonic": "dma.host_iova_to_hbm",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 214,
+      "opcode_name": "kDmaVmemToHostIova",
+      "mnemonic": "dma.vmem_to_host_iova",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 215,
+      "opcode_name": "kDmaSmemToHostIova",
+      "mnemonic": "dma.smem_to_host_iova",
+      "performance_id": 45
+    },
+    {
+      "llo_opcode": 216,
+      "opcode_name": "kDmaDone",
+      "mnemonic": "dma.done",
+      "performance_id": 392
+    },
+    {
+      "llo_opcode": 217,
+      "opcode_name": "kDmaDoneWait",
+      "mnemonic": "dma.done.wait",
+      "performance_id": 392
+    },
+    {
+      "llo_opcode": 229,
+      "opcode_name": "kPredicateNegate",
+      "mnemonic": "pneg",
+      "performance_id": 464
+    },
+    {
+      "llo_opcode": 230,
+      "opcode_name": "kPredicateMove",
+      "mnemonic": "pmov",
+      "performance_id": 464
+    },
+    {
+      "llo_opcode": 231,
+      "opcode_name": "kPredicateNand",
+      "mnemonic": "pnand",
+      "performance_id": 464
+    },
+    {
+      "llo_opcode": 232,
+      "opcode_name": "kPredicateOr",
+      "mnemonic": "por",
+      "performance_id": 464
+    },
+    {
+      "llo_opcode": 239,
+      "opcode_name": "kCall",
+      "mnemonic": "call",
+      "performance_id": 35
+    },
+    {
+      "llo_opcode": 245,
+      "opcode_name": "kVectorMinReduceF32",
+      "mnemonic": "vmin.xlane.f32",
+      "performance_id": 353
+    },
+    {
+      "llo_opcode": 246,
+      "opcode_name": "kVectorMaxReduceF32",
+      "mnemonic": "vmax.xlane.f32",
+      "performance_id": 352
+    },
+    {
+      "llo_opcode": 247,
+      "opcode_name": "kVectorAddReduceF32",
+      "mnemonic": "vadd.xlane.f32",
+      "performance_id": 351
+    },
+    {
+      "llo_opcode": 248,
+      "opcode_name": "kVectorMaxIndexReduceF32",
+      "mnemonic": "vmax.index.xlane.f32",
+      "performance_id": 354
+    },
+    {
+      "llo_opcode": 249,
+      "opcode_name": "kVectorMinIndexReduceF32",
+      "mnemonic": "vmin.index.xlane.f32",
+      "performance_id": 355
+    },
+    {
+      "llo_opcode": 253,
+      "opcode_name": "kVectorMinReduceBf16",
+      "mnemonic": "vmin.xlane.bf16",
+      "performance_id": 358
+    },
+    {
+      "llo_opcode": 254,
+      "opcode_name": "kVectorMaxReduceBf16",
+      "mnemonic": "vmax.xlane.bf16",
+      "performance_id": 357
+    },
+    {
+      "llo_opcode": 255,
+      "opcode_name": "kVectorAddReduceBf16",
+      "mnemonic": "vadd.xlane.bf16",
+      "performance_id": 356
+    },
+    {
+      "llo_opcode": 256,
+      "opcode_name": "kVectorMaxIndexReduceBf16",
+      "mnemonic": "vmax.index.xlane.bf16",
+      "performance_id": 359
+    },
+    {
+      "llo_opcode": 257,
+      "opcode_name": "kVectorMinIndexReduceBf16",
+      "mnemonic": "vmin.index.xlane.bf16",
+      "performance_id": 360
+    },
+    {
+      "llo_opcode": 258,
+      "opcode_name": "kVectorSublaneId",
+      "mnemonic": "vsublane.id",
+      "performance_id": 94
+    },
+    {
+      "llo_opcode": 259,
+      "opcode_name": "kVectorLaneId",
+      "mnemonic": "vlane.id",
+      "performance_id": 94
+    },
+    {
+      "llo_opcode": 260,
+      "opcode_name": "kVectorLaneSequence",
+      "mnemonic": "vlaneseq",
+      "performance_id": 94
+    },
+    {
+      "llo_opcode": 261,
+      "opcode_name": "kVectorLaneSequenceCompressedB16",
+      "mnemonic": "vlaneseq.c.b16",
+      "performance_id": 97
+    },
+    {
+      "llo_opcode": 262,
+      "opcode_name": "kVectorLaneSequenceInterleavedB16",
+      "mnemonic": "vlaneseq.i.b16",
+      "performance_id": 98
+    },
+    {
+      "llo_opcode": 263,
+      "opcode_name": "kScalarConvertS32ToF32",
+      "mnemonic": "scvt.s32.f32",
+      "performance_id": 9
+    },
+    {
+      "llo_opcode": 264,
+      "opcode_name": "kVectorConvertS32ToF32",
+      "mnemonic": "vcvt.s32.f32",
+      "performance_id": 75
+    },
+    {
+      "llo_opcode": 265,
+      "opcode_name": "kVectorUnpack",
+      "mnemonic": "vunpack",
+      "performance_id": 161
+    },
+    {
+      "llo_opcode": 266,
+      "opcode_name": "kVectorUnpackAndJoinLowerB2ToB4",
+      "mnemonic": "vunpack.c.join.l.b2.b4",
+      "performance_id": 200
+    },
+    {
+      "llo_opcode": 267,
+      "opcode_name": "kVectorUnpackAndJoinUpperB2ToB4",
+      "mnemonic": "vunpack.c.join.u.b2.b4",
+      "performance_id": 201
+    },
+    {
+      "llo_opcode": 268,
+      "opcode_name": "kVectorUnpackAndJoinLowerB4ToB8",
+      "mnemonic": "vunpack.c.join.l.b4.b8",
+      "performance_id": 202
+    },
+    {
+      "llo_opcode": 269,
+      "opcode_name": "kVectorUnpackAndJoinUpperB4ToB8",
+      "mnemonic": "vunpack.c.join.u.b4.b8",
+      "performance_id": 203
+    },
+    {
+      "llo_opcode": 270,
+      "opcode_name": "kVectorUnpackEXMY",
+      "mnemonic": "vunpack",
+      "performance_id": 258
+    },
+    {
+      "llo_opcode": 271,
+      "opcode_name": "kVectorDynamicUnpack",
+      "mnemonic": "vunpack.vsel",
+      "performance_id": 208
+    },
+    {
+      "llo_opcode": 272,
+      "opcode_name": "kVectorCeilF32",
+      "mnemonic": "vceil.f32",
+      "performance_id": 73
+    },
+    {
+      "llo_opcode": 273,
+      "opcode_name": "kVectorCeilBf16",
+      "mnemonic": "vceil.bf16",
+      "performance_id": 106
+    },
+    {
+      "llo_opcode": 274,
+      "opcode_name": "kVectorFloorF32",
+      "mnemonic": "vfloor.f32",
+      "performance_id": 74
+    },
+    {
+      "llo_opcode": 275,
+      "opcode_name": "kVectorFloorBf16",
+      "mnemonic": "vfloor.bf16",
+      "performance_id": 107
+    },
+    {
+      "llo_opcode": 277,
+      "opcode_name": "kVectorRoundRtnaF32",
+      "mnemonic": "vround.rtna.f32",
+      "performance_id": 108
+    },
+    {
+      "llo_opcode": 278,
+      "opcode_name": "kVectorRoundRtnaBf16",
+      "mnemonic": "vround.rtna.bf16",
+      "performance_id": 109
+    },
+    {
+      "llo_opcode": 279,
+      "opcode_name": "kVectorRoundRtneF32",
+      "mnemonic": "vround.rtne.f32",
+      "performance_id": 110
+    },
+    {
+      "llo_opcode": 280,
+      "opcode_name": "kVectorRoundRtneBf16",
+      "mnemonic": "vround.rtne.bf16",
+      "performance_id": 111
+    },
+    {
+      "llo_opcode": 281,
+      "opcode_name": "kVectorTruncateF32",
+      "mnemonic": "vtrunc.f32",
+      "performance_id": 114
+    },
+    {
+      "llo_opcode": 282,
+      "opcode_name": "kVectorTruncateBf16",
+      "mnemonic": "vtrunc.bf16",
+      "performance_id": 115
+    },
+    {
+      "llo_opcode": 283,
+      "opcode_name": "kVectorAddS32",
+      "mnemonic": "vadd.s32",
+      "performance_id": 51
+    },
+    {
+      "llo_opcode": 284,
+      "opcode_name": "kVectorAddF32",
+      "mnemonic": "vadd.f32",
+      "performance_id": 66
+    },
+    {
+      "llo_opcode": 285,
+      "opcode_name": "kVectorAddBf16",
+      "mnemonic": "vadd.bf16",
+      "performance_id": 99
+    },
+    {
+      "llo_opcode": 286,
+      "opcode_name": "kVectorAddF32Bf16High",
+      "mnemonic": "vadd.high.f32.bf16",
+      "performance_id": 96
+    },
+    {
+      "llo_opcode": 287,
+      "opcode_name": "kVectorAddF32Bf16Low",
+      "mnemonic": "vadd.low.f32.bf16",
+      "performance_id": 95
+    },
+    {
+      "llo_opcode": 288,
+      "opcode_name": "kVectorAddS16",
+      "mnemonic": "vadd.s16",
+      "performance_id": 52
+    },
+    {
+      "llo_opcode": 289,
+      "opcode_name": "kVectorSubtractS32",
+      "mnemonic": "vsub.s32",
+      "performance_id": 53
+    },
+    {
+      "llo_opcode": 290,
+      "opcode_name": "kVectorSubtractF32",
+      "mnemonic": "vsub.f32",
+      "performance_id": 67
+    },
+    {
+      "llo_opcode": 291,
+      "opcode_name": "kVectorSubtractBf16",
+      "mnemonic": "vsub.bf16",
+      "performance_id": 100
+    },
+    {
+      "llo_opcode": 292,
+      "opcode_name": "kVectorSubtractS16",
+      "mnemonic": "vsub.s16",
+      "performance_id": 54
+    },
+    {
+      "llo_opcode": 294,
+      "opcode_name": "kVectorPack",
+      "mnemonic": "vpack",
+      "performance_id": 136
+    },
+    {
+      "llo_opcode": 295,
+      "opcode_name": "kVectorPackEXMY",
+      "mnemonic": "vpack",
+      "performance_id": 256
+    },
+    {
+      "llo_opcode": 296,
+      "opcode_name": "kVectorTanhF32",
+      "mnemonic": "vtanh.f32",
+      "performance_id": 266
+    },
+    {
+      "llo_opcode": 297,
+      "opcode_name": "kVectorPow2F32",
+      "mnemonic": "vpow2.f32",
+      "performance_id": 264
+    },
+    {
+      "llo_opcode": 298,
+      "opcode_name": "kVectorReciprocalF32",
+      "mnemonic": "vrcp.f32",
+      "performance_id": 268
+    },
+    {
+      "llo_opcode": 299,
+      "opcode_name": "kVectorLog2F32",
+      "mnemonic": "vlog2.f32",
+      "performance_id": 265
+    },
+    {
+      "llo_opcode": 300,
+      "opcode_name": "kVectorRsqrtF32",
+      "mnemonic": "vrsqrt.f32",
+      "performance_id": 263
+    },
+    {
+      "llo_opcode": 301,
+      "opcode_name": "kVectorSigShftF32",
+      "mnemonic": "vsigshft.f32",
+      "performance_id": 267
+    },
+    {
+      "llo_opcode": 302,
+      "opcode_name": "kVectorSinqF32",
+      "mnemonic": "vsinq.f32",
+      "performance_id": 269
+    },
+    {
+      "llo_opcode": 303,
+      "opcode_name": "kVectorCosqF32",
+      "mnemonic": "vcosq.f32",
+      "performance_id": 270
+    },
+    {
+      "llo_opcode": 304,
+      "opcode_name": "kVectorErfF32",
+      "mnemonic": "verf.f32",
+      "performance_id": 271
+    },
+    {
+      "llo_opcode": 306,
+      "opcode_name": "kVectorTanhBf16",
+      "mnemonic": "vtanh.bf16",
+      "performance_id": 275
+    },
+    {
+      "llo_opcode": 307,
+      "opcode_name": "kVectorPow2Bf16",
+      "mnemonic": "vpow.bf16",
+      "performance_id": 273
+    },
+    {
+      "llo_opcode": 308,
+      "opcode_name": "kVectorReciprocalBf16",
+      "mnemonic": "vrcp.bf16",
+      "performance_id": 277
+    },
+    {
+      "llo_opcode": 309,
+      "opcode_name": "kVectorLog2Bf16",
+      "mnemonic": "vlog2.bf16",
+      "performance_id": 274
+    },
+    {
+      "llo_opcode": 310,
+      "opcode_name": "kVectorRsqrtBf16",
+      "mnemonic": "vrsqrt.bf16",
+      "performance_id": 272
+    },
+    {
+      "llo_opcode": 311,
+      "opcode_name": "kVectorSigShftBf16",
+      "mnemonic": "vsigshft.bf16",
+      "performance_id": 276
+    },
+    {
+      "llo_opcode": 312,
+      "opcode_name": "kVectorSinqBf16",
+      "mnemonic": "vsinq.bf16",
+      "performance_id": 278
+    },
+    {
+      "llo_opcode": 313,
+      "opcode_name": "kVectorCosqBf16",
+      "mnemonic": "vcosq.bf16",
+      "performance_id": 279
+    },
+    {
+      "llo_opcode": 314,
+      "opcode_name": "kVectorErfBf16",
+      "mnemonic": "verf.bf16",
+      "performance_id": 280
+    },
+    {
+      "llo_opcode": 334,
+      "opcode_name": "kVectorEupResult",
+      "mnemonic": "vpop.eup",
+      "performance_id": 416
+    },
+    {
+      "llo_opcode": 335,
+      "opcode_name": "kVectorXlaneResult",
+      "mnemonic": "vpop.xlane",
+      "performance_id": 417
+    },
+    {
+      "llo_opcode": 336,
+      "opcode_name": "kVectorPermuteResult",
+      "mnemonic": "vpop.permute",
+      "performance_id": 417
+    },
+    {
+      "llo_opcode": 338,
+      "opcode_name": "kVectorMatres",
+      "mnemonic": "vpop",
+      "performance_id": 418
+    },
+    {
+      "llo_opcode": 340,
+      "opcode_name": "kVectorTransposeResult",
+      "mnemonic": "vpop.trf",
+      "performance_id": 417
+    },
+    {
+      "llo_opcode": 344,
+      "opcode_name": "kVectorMultiplyF32",
+      "mnemonic": "vmul.f32",
+      "performance_id": 68
+    },
+    {
+      "llo_opcode": 345,
+      "opcode_name": "kVectorMultiplyU32",
+      "mnemonic": "vmul.u32",
+      "performance_id": 260
+    },
+    {
+      "llo_opcode": 346,
+      "opcode_name": "kVectorMultiplyU16",
+      "mnemonic": "vmul.u16",
+      "performance_id": 261
+    },
+    {
+      "llo_opcode": 347,
+      "opcode_name": "kVectorMultiplyBf16",
+      "mnemonic": "vmul.bf16",
+      "performance_id": 101
+    },
+    {
+      "llo_opcode": 348,
+      "opcode_name": "kVectorAndU32",
+      "mnemonic": "vand.u32",
+      "performance_id": 55
+    },
+    {
+      "llo_opcode": 349,
+      "opcode_name": "kVectorAndNegatedU32",
+      "mnemonic": "vandn.u32",
+      "performance_id": 56
+    },
+    {
+      "llo_opcode": 350,
+      "opcode_name": "kVectorOrU32",
+      "mnemonic": "vor.u32",
+      "performance_id": 57
+    },
+    {
+      "llo_opcode": 351,
+      "opcode_name": "kVectorXorU32",
+      "mnemonic": "vxor.u32",
+      "performance_id": 58
+    },
+    {
+      "llo_opcode": 355,
+      "opcode_name": "kVectorMultiplyU64Low32",
+      "mnemonic": "vmul.u32.u64.low",
+      "performance_id": 262
+    },
+    {
+      "llo_opcode": 356,
+      "opcode_name": "kVectorMultiplyU64High32",
+      "mnemonic": "vmul.u32.u64.high",
+      "performance_id": 262
+    },
+    {
+      "llo_opcode": 360,
+      "opcode_name": "kVectorNez",
+      "mnemonic": "vnez",
+      "performance_id": 232
+    },
+    {
+      "llo_opcode": 361,
+      "opcode_name": "kVectorAddCarryU32",
+      "mnemonic": "vc.u32",
+      "performance_id": 220
+    },
+    {
+      "llo_opcode": 362,
+      "opcode_name": "kVectorAddCarryU16",
+      "mnemonic": "vc.u16",
+      "performance_id": 244
+    },
+    {
+      "llo_opcode": 364,
+      "opcode_name": "kScalarAddCarryU32",
+      "mnemonic": "sc.u32",
+      "performance_id": 463
+    },
+    {
+      "llo_opcode": 367,
+      "opcode_name": "kScalarMultiplyU32",
+      "mnemonic": "smul.u32",
+      "performance_id": 38
+    },
+    {
+      "llo_opcode": 368,
+      "opcode_name": "kScalarMultiplyHighU32",
+      "mnemonic": "smulhi.u32",
+      "performance_id": 38
+    },
+    {
+      "llo_opcode": 369,
+      "opcode_name": "kScalarMultiplyF32",
+      "mnemonic": "smul.f32",
+      "performance_id": 37
+    },
+    {
+      "llo_opcode": 370,
+      "opcode_name": "kScalarAddF32",
+      "mnemonic": "sadd.f32",
+      "performance_id": 46
+    },
+    {
+      "llo_opcode": 371,
+      "opcode_name": "kScalarAddS32",
+      "mnemonic": "sadd.s32",
+      "performance_id": 11
+    },
+    {
+      "llo_opcode": 372,
+      "opcode_name": "kScalarSubtractS32",
+      "mnemonic": "ssub.s32",
+      "performance_id": 13
+    },
+    {
+      "llo_opcode": 373,
+      "opcode_name": "kScalarSubtractF32",
+      "mnemonic": "ssub.f32",
+      "performance_id": 47
+    },
+    {
+      "llo_opcode": 374,
+      "opcode_name": "kScalarBitwiseAnd",
+      "mnemonic": "sand.u32",
+      "performance_id": 15
+    },
+    {
+      "llo_opcode": 375,
+      "opcode_name": "kScalarBitwiseOr",
+      "mnemonic": "sor.u32",
+      "performance_id": 16
+    },
+    {
+      "llo_opcode": 376,
+      "opcode_name": "kScalarBitwiseXor",
+      "mnemonic": "sxor.u32",
+      "performance_id": 17
+    },
+    {
+      "llo_opcode": 377,
+      "opcode_name": "kScalarDivRemU32",
+      "mnemonic": "sdivrem.u32",
+      "performance_id": 42
+    },
+    {
+      "llo_opcode": 378,
+      "opcode_name": "kScalarDivU32AndPop",
+      "mnemonic": "sdiv.u32.pop",
+      "performance_id": 42
+    },
+    {
+      "llo_opcode": 379,
+      "opcode_name": "kScalarRemU32AndPop",
+      "mnemonic": "srem.u32.pop",
+      "performance_id": 42
+    },
+    {
+      "llo_opcode": 380,
+      "opcode_name": "kScalarMove",
+      "mnemonic": "smov",
+      "performance_id": 27
+    },
+    {
+      "llo_opcode": 381,
+      "opcode_name": "kRelocatableConstant",
+      "mnemonic": "reloc",
+      "performance_id": 27
+    },
+    {
+      "llo_opcode": 382,
+      "opcode_name": "kScalarFloorF32",
+      "mnemonic": "sfloor.f32",
+      "performance_id": 30
+    },
+    {
+      "llo_opcode": 383,
+      "opcode_name": "kScalarCeilF32",
+      "mnemonic": "sceil.f32",
+      "performance_id": 29
+    },
+    {
+      "llo_opcode": 384,
+      "opcode_name": "kScalarCountLeadingZeros",
+      "mnemonic": "sclz",
+      "performance_id": 28
+    },
+    {
+      "llo_opcode": 385,
+      "opcode_name": "kVectorCountLeadingZeros",
+      "mnemonic": "vclz",
+      "performance_id": 65
+    },
+    {
+      "llo_opcode": 386,
+      "opcode_name": "kVectorMove",
+      "mnemonic": "vmov",
+      "performance_id": 93
+    },
+    {
+      "llo_opcode": 387,
+      "opcode_name": "kVectorPopCount",
+      "mnemonic": "vpcnt",
+      "performance_id": 64
+    },
+    {
+      "llo_opcode": 391,
+      "opcode_name": "kVectorWaitLt",
+      "mnemonic": "vwait.lt",
+      "performance_id": 396
+    },
+    {
+      "llo_opcode": 392,
+      "opcode_name": "kVectorWaitGe",
+      "mnemonic": "vwait.ge",
+      "performance_id": 395
+    },
+    {
+      "llo_opcode": 393,
+      "opcode_name": "kVectorWaitGt",
+      "mnemonic": "vwait.gt",
+      "performance_id": 394
+    },
+    {
+      "llo_opcode": 394,
+      "opcode_name": "kVectorWaitEq",
+      "mnemonic": "vwait.eq",
+      "performance_id": 392
+    },
+    {
+      "llo_opcode": 395,
+      "opcode_name": "kVectorWaitNe",
+      "mnemonic": "vwait.ne",
+      "performance_id": 393
+    },
+    {
+      "llo_opcode": 396,
+      "opcode_name": "kVectorWaitDone",
+      "mnemonic": "vwait.done",
+      "performance_id": 397
+    },
+    {
+      "llo_opcode": 397,
+      "opcode_name": "kVectorWaitNotDone",
+      "mnemonic": "vwait.notdone",
+      "performance_id": 398
+    },
+    {
+      "llo_opcode": 404,
+      "opcode_name": "kVectorMaskXor",
+      "mnemonic": "vmxor",
+      "performance_id": 403
+    },
+    {
+      "llo_opcode": 405,
+      "opcode_name": "kVectorMaskOr",
+      "mnemonic": "vmor",
+      "performance_id": 402
+    },
+    {
+      "llo_opcode": 406,
+      "opcode_name": "kVectorMaskAnd",
+      "mnemonic": "vmand",
+      "performance_id": 401
+    },
+    {
+      "llo_opcode": 407,
+      "opcode_name": "kVectorMaskPackCompressedLow",
+      "mnemonic": "vmpackc.low",
+      "performance_id": 404
+    },
+    {
+      "llo_opcode": 408,
+      "opcode_name": "kVectorMaskPackCompressedEven",
+      "mnemonic": "vmpackc.even",
+      "performance_id": 405
+    },
+    {
+      "llo_opcode": 409,
+      "opcode_name": "kVectorMaskNegate",
+      "mnemonic": "vmneg",
+      "performance_id": 400
+    },
+    {
+      "llo_opcode": 410,
+      "opcode_name": "kVectorMaskMove",
+      "mnemonic": "vmmov",
+      "performance_id": 399
+    },
+    {
+      "llo_opcode": 411,
+      "opcode_name": "kVectorShiftRightLogical",
+      "mnemonic": "vshrl.u32",
+      "performance_id": 60
+    },
+    {
+      "llo_opcode": 412,
+      "opcode_name": "kVectorShiftRightArithmetic",
+      "mnemonic": "vshra.s32",
+      "performance_id": 61
+    },
+    {
+      "llo_opcode": 413,
+      "opcode_name": "kVectorShiftLeftLogical",
+      "mnemonic": "vshll.u32",
+      "performance_id": 59
+    },
+    {
+      "llo_opcode": 414,
+      "opcode_name": "kVectorMaximumF32",
+      "mnemonic": "vmax.f32",
+      "performance_id": 69
+    },
+    {
+      "llo_opcode": 415,
+      "opcode_name": "kVectorMaximumBf16",
+      "mnemonic": "vmax.bf16",
+      "performance_id": 102
+    },
+    {
+      "llo_opcode": 416,
+      "opcode_name": "kVectorMaximumU32",
+      "mnemonic": "vmax.u32",
+      "performance_id": 62
+    },
+    {
+      "llo_opcode": 417,
+      "opcode_name": "kVectorMinimumF32",
+      "mnemonic": "vmin.f32",
+      "performance_id": 70
+    },
+    {
+      "llo_opcode": 418,
+      "opcode_name": "kVectorMinimumBf16",
+      "mnemonic": "vmin.bf16",
+      "performance_id": 103
+    },
+    {
+      "llo_opcode": 419,
+      "opcode_name": "kVectorMinimumU32",
+      "mnemonic": "vmin.u32",
+      "performance_id": 63
+    },
+    {
+      "llo_opcode": 420,
+      "opcode_name": "kScalarShrl",
+      "mnemonic": "sshrl.u32",
+      "performance_id": 21
+    },
+    {
+      "llo_opcode": 421,
+      "opcode_name": "kScalarShra",
+      "mnemonic": "sshra.s32",
+      "performance_id": 22
+    },
+    {
+      "llo_opcode": 422,
+      "opcode_name": "kScalarShll",
+      "mnemonic": "sshll.u32",
+      "performance_id": 18
+    },
+    {
+      "llo_opcode": 423,
+      "opcode_name": "kScalarShllOnes",
+      "mnemonic": "sshllo.u32",
+      "performance_id": 19
+    },
+    {
+      "llo_opcode": 424,
+      "opcode_name": "kScalarMinimumF32",
+      "mnemonic": "smin.f32",
+      "performance_id": 24
+    },
+    {
+      "llo_opcode": 425,
+      "opcode_name": "kScalarMaximumF32",
+      "mnemonic": "smax.f32",
+      "performance_id": 23
+    },
+    {
+      "llo_opcode": 426,
+      "opcode_name": "kScalarMinimumU32",
+      "mnemonic": "smin.u32",
+      "performance_id": 26
+    },
+    {
+      "llo_opcode": 427,
+      "opcode_name": "kScalarMaximumU32",
+      "mnemonic": "smax.u32",
+      "performance_id": 25
+    }
+  ],
+  "resource_rules": [
+    {
+      "resource": 0,
+      "rule": "global_nonzero_intersection"
+    },
+    {
+      "resource": 1,
+      "rule": "global_nonzero_intersection"
+    },
+    {
+      "resource": 2,
+      "rule": "accumulator_sequence"
+    },
+    {
+      "resource": 3,
+      "rule": "global_nonzero_intersection"
+    },
+    {
+      "resource": 4,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 5,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 6,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 7,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 8,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 9,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 10,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 11,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 12,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 13,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 14,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 15,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 16,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 17,
+      "rule": "same_unit_nonzero_intersection"
+    },
+    {
+      "resource": 18,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 19,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 20,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 21,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 22,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 23,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 24,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 25,
+      "rule": "not_an_issue_constraint"
+    },
+    {
+      "resource": 26,
+      "rule": "global_nonzero_intersection"
+    },
+    {
+      "resource": 27,
+      "rule": "same_result_fifo"
+    },
+    {
+      "resource": 28,
+      "rule": "mxu_separate"
+    },
+    {
+      "resource": 29,
+      "rule": "global_nonzero_intersection"
+    },
+    {
+      "resource": 30,
+      "rule": "global_nonzero_intersection"
+    },
+    {
+      "resource": 31,
+      "rule": "global_nonzero_intersection"
+    }
+  ],
+  "limitations": [
+    "Direct classifier entries only; modifiers and pseudo-ops need separate handling.",
+    "MXU modifier/consumer footprints and runtime memory remain incomplete."
+  ]
+}

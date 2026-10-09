@@ -9,8 +9,8 @@ description = "Run JAX workloads with a simulated TPU PJRT backend on CPU"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 license = "Apache-2.0"
-# Follow SGLang-Jax's TPU extra; see docs/dependencies.md for the upstream revision.
-dependencies = ["jax[tpu]==0.11.1"]
+# The execution cost table is pinned to libtpu 0.0.48; see docs/dependencies.md.
+dependencies = ["jax==0.11.1", "jaxlib==0.11.1", "libtpu==0.0.48", "requests"]
 
 [project.optional-dependencies]
 collect = ["xprof==2.23.1", "protobuf>=6.32.1"]

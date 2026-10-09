@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from sim_pjrt.llo.control_flow import resolve_scalar_operands
-from sim_pjrt.llo.cost import estimate_bundles
+from sim_pjrt.llo.runtime import estimate_bundles
 from sim_pjrt.llo.parser import parse_bundles, parse_deduplication_map
 from sim_pjrt.llo.program import (
     annotate_branch_delays, annotate_loop_bounds, compose_final_bundles,
@@ -33,7 +33,7 @@ class LloProgramTest(unittest.TestCase):
 ''')}
         report = estimate_final_program(modules, dict(PROFILE, branch_delay_slots=0,
             vdelay_semantics='total_cycles'), {'alias': 'kernel'})
-        self.assertEqual(report['modeled_cycles'], 110)
+        self.assertEqual(report['modeled_cycles'], 111)
 
     def test_assembly_recovers_missing_exit_region_for_every_invocation(self):
         modules = {
@@ -178,9 +178,12 @@ class LloProgramTest(unittest.TestCase):
             modules, aliases, provenance = load_final_modules(
                 manifest, resolve_branches=False)
         self.assertFalse(provenance['assembly_branch_resolution_requested'])
+        with self.assertRaisesRegex(ValueError, 'branch delay slots'):
+            estimate_bundles(modules['TLP'], PROFILE)
         report = estimate_bundles(modules['TLP'], PROFILE, {'assume_no_faults': True})
         self.assertIsNone(report['estimated_seconds'])
-        self.assertTrue(report['gaps'])
+        self.assertTrue(any('control flow requires an explicit executed path'
+                            in gap['reason'] for gap in report['gaps']))
 
     def test_assembly_alignment_validates_calls_predicates_targets_and_length(self):
         modules = {

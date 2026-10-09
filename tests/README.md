@@ -8,9 +8,12 @@ bazel test //...
 
 Seven C++ targets cover compilation, CPU output substitution, Virtual HBM,
 raw-buffer ownership, runtime readiness, profiling and API error ownership.
-Nine Python targets cover LLO program loading, control flow and timing, SparseCore,
+Thirteen Python targets cover LLO program loading, control flow and timing, SparseCore,
 profile metadata/import/reporting, collection and replay, the launcher. The collection suite also checks predictor fallback
 and the difference between compile lookups and execution counts.
+The GF execution tests cover compiler identity and cost namespaces, register and
+MRB/EUP dependencies, resource overlap, DMA completion credits and scheduling
+against an independent reference implementation.
 
 These targets need no hardware, captured profile or SGLang installation.
 Native libtpu cases skip unless their explicit library environment is supplied.

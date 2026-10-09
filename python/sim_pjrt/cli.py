@@ -19,9 +19,9 @@ def existing_file(value, label):
 
 
 def check_versions(libtpu):
-    # Keep this baseline aligned with pyproject.toml's JAX TPU extra.
+    # Keep this baseline aligned with pyproject.toml and the pinned GF tables.
     for name, expected in (("jax", "0.11.1"), ("jaxlib", "0.11.1"),
-                           ("libtpu", "0.0.46.*")):
+                           ("libtpu", "0.0.48")):
         try:
             package = distribution(name)
         except PackageNotFoundError:

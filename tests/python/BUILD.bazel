@@ -1,6 +1,39 @@
 load("@rules_python//python:py_test.bzl", "py_test")
 
 py_test(
+    name = "execution_test",
+    size = "small",
+    srcs = ["execution_test.py"],
+    data = ["//configs:defaults"],
+    deps = ["//python:analysis_tools"],
+)
+
+py_test(
+    name = "compiler_costs_test",
+    size = "small",
+    srcs = ["compiler_costs_test.py"],
+    data = ["//configs:defaults"],
+    deps = ["//python:analysis_tools"],
+)
+
+py_test(
+    name = "pipeline_test",
+    size = "small",
+    srcs = ["pipeline_test.py"],
+    deps = ["//python:analysis_tools"],
+)
+
+py_test(
+    name = "pipeline_import_test",
+    size = "small",
+    srcs = ["pipeline_import_test.py"],
+    deps = [
+        "//python:analysis_tools",
+        "@com_google_protobuf//:protobuf_python",
+    ],
+)
+
+py_test(
     name = "profile_report_test",
     size = "small",
     srcs = ["profile_report_test.py"],
@@ -68,6 +101,10 @@ py_test(
 test_suite(
     name = "python_tests",
     tests = [
+        ":execution_test",
+        ":compiler_costs_test",
+        ":pipeline_test",
+        ":pipeline_import_test",
         ":bundle_timing_test",
         ":llo_control_flow_test",
         ":llo_program_test",
