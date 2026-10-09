@@ -2,6 +2,12 @@ name: Native build and release
 
 on:
   workflow_dispatch:
+    inputs:
+      reuse_native_run:
+        description: Successful native run to reuse when native inputs match (empty rebuilds)
+        required: false
+        type: string
+        default: ''
   push:
     branches: [main]
     tags: ['v*']
@@ -10,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: native-${{ github.ref }}
+  group: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_native_run != '' && 'wheel-reuse' || 'native' }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -18,6 +24,9 @@ jobs:
     if: github.ref_type != 'tag'
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,24 +39,41 @@ jobs:
       # Each attempt gets a fresh snapshot, including incomplete cold builds.
       - name: Restore Bazel dependencies and compiled actions
         id: bazel-cache
+        if: github.event_name != 'workflow_dispatch' || inputs.reuse_native_run == ''
         uses: actions/cache/restore@v4
         with:
           path: .build/bazel-cache
           key: native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             native-manylinux-2-34-x64-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'third_party/**', 'docker/Dockerfile.manylinux', 'docker/bazel.sha256') }}-
+      - name: Verify and download matching native plugin
+        if: github.event_name == 'workflow_dispatch' && inputs.reuse_native_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.reuse_native_run }}
+        run: |
+          python .github/scripts/reuse_native.py --repo "$GITHUB_REPOSITORY" \
+            --run-id "$SOURCE_RUN" --output .build/reused-native/pjrt_sim_plugin.so
       - name: Build and validate manylinux wheel
         id: native-build
         timeout-minutes: 330
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
           BUILDBUDDY_UPLOAD: 'false'
+          REUSE_NATIVE_RUN: ${{ inputs.reuse_native_run || '' }}
         run: |
           docker build -f docker/Dockerfile.manylinux \
             --build-arg BUILD_UID="$(id -u)" --build-arg BUILD_GID="$(id -g)" \
             -t sim-pjrt-manylinux .
-          docker run --rm --init -v "$PWD:/workspace" \
-            -e BUILDBUDDY_API_KEY -e BUILDBUDDY_UPLOAD sim-pjrt-manylinux
+          if [[ -n "$REUSE_NATIVE_RUN" ]]; then
+            docker run --rm --init -v "$PWD:/workspace" \
+              -e SIM_PJRT_PLUGIN_PATH=/workspace/.build/reused-native/pjrt_sim_plugin.so \
+              sim-pjrt-manylinux bash docker/package-wheel.sh
+            cp .build/reused-native/pjrt_sim_plugin.json dist/NATIVE_PROVENANCE.json
+          else
+            docker run --rm --init -v "$PWD:/workspace" \
+              -e BUILDBUDDY_API_KEY -e BUILDBUDDY_UPLOAD sim-pjrt-manylinux
+          fi
       # Ordinary build failures and step timeouts must not discard completed work.
       # Branch/tag snapshots remain subject to GitHub's cache access scope.
       - name: Save Bazel progress even when the build fails

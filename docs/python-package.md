@@ -8,7 +8,7 @@ separate dependency; the package has no SGLang extra and does not install it.
 
 ```sh
 uv build --wheel
-uv pip install --python /path/to/venv/bin/python dist/sim_pjrt-0.1.1-py3-none-linux_x86_64.whl
+uv pip install --python /path/to/venv/bin/python dist/sim_pjrt-0.1.2-py3-none-linux_x86_64.whl
 ```
 
 The setuptools build invokes `bazel build //:plugin`, then includes the resulting
@@ -45,7 +45,7 @@ Model/tokenizer files and server options belong to SGLang-Jax. The launcher
 does not create model files or change its arguments. Dummy weights and simulator
 placeholder outputs do not validate model accuracy.
 
-For a workload managed by uv, run `uv add /absolute/path/to/sim_pjrt-0.1.1-py3-none-linux_x86_64.whl`
+For a workload managed by uv, run `uv add /absolute/path/to/sim_pjrt-0.1.2-py3-none-linux_x86_64.whl`
 in that workload project, add SGLang-Jax there separately, then use
 `uv run spjrt run ...`. `uvx` uses an isolated tool environment and will not
 automatically see a workload project's SGLang-Jax installation.
@@ -141,6 +141,15 @@ as the default branch so branches/tags can reuse its snapshots. Eviction can
 still cause cold builds, which may require multiple attempts. Only successful
 builds produce release artifacts.
 
+After a native workflow finishes, **Native cache maintenance** retains the newest
+default-branch native cache and the newest native cache from other branches or
+tags. Older native snapshots are removed; other caches are left alone. This
+limits accumulation of the roughly 4–5 GB snapshots that can otherwise evict the
+default branch's cache. Main cannot restore a child branch's cache, so merging a
+branch does not make its cache available on main. A missing main cache must be
+rebuilt; let that build finish or reach its timeout so it can save progress.
+Cancelling a build skips its cache-save step. Maintenance can also be run manually.
+
 For shared caching, create a [BuildBuddy API key](https://www.buildbuddy.io/docs/guide-auth/).
 Store a read-only key as the repository secret `BUILDBUDDY_API_KEY`; CI then reads
 BuildBuddy in addition to its disk cache. Without the secret, existing CI behavior
@@ -170,8 +179,8 @@ into `main` and wait for its native build to pass. Tag that exact commit:
 
 ```sh
 git fetch origin main
-git tag v0.1.1 origin/main
-git push origin v0.1.1
+git tag v0.1.2 origin/main
+git push origin v0.1.2
 ```
 
 Tag pushes skip compilation. The release job downloads the artifact from a
@@ -185,3 +194,25 @@ in `pyproject.toml` and are published as prereleases. Manual runs never publish.
 The release job alone receives `contents: write` permission. The host runner
 uses Ubuntu 24.04, while compilation, auditwheel repair and
 runtime checks all run inside the manylinux_2_34 container. macOS is not supported.
+
+For a Python-only update, a manual run can reuse the plugin from a successful
+native build in this repository:
+
+```sh
+gh workflow run native.yml --ref main -f reuse_native_run=SUCCESSFUL_RUN_ID
+```
+
+The helper compares the committed native sources, native tests/fixtures, Bazel
+configuration, toolchain inputs and native build commands with the source run.
+It verifies the downloaded wheel checksum and extracts only its standalone
+Linux x86-64 plugin. A mismatch or a wheel with additional bundled shared
+libraries fails; use the full build in that case. Packaging always uses the
+current checkout's Python files, configuration and version. The repaired wheel
+is installed in a clean environment on glibc 2.34, its packaged tables and libtpu
+identity are checked, and all offline Python regressions and the JAX simulation
+smoke tests run against the installed package. Native compilation/tests are
+reused from the matching source run. The artifact records the source run,
+commit, input fingerprint and binary checksums in `NATIVE_PROVENANCE.json`.
+Leave the input empty to run the full native build. Manual runs do not publish.
+Reuse runs have a separate concurrency group, so a manual main wheel build can
+run while a full main build is still warming its cache.
