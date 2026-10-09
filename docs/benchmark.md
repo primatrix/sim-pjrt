@@ -56,3 +56,15 @@ and environment, not accuracy across different workloads or contention.
 Both LLO estimates remain partial: missing instruction, synchronization and DMA
 semantics prevent a hardware upper bound. The locally selected branches may
 not form one feasible input path. See [timing semantics](bundle-timing.md#model).
+
+## Multimodal request validation
+
+See the [PR 1780 validation report](pr1780-validation.md) for full-configuration
+multimodal request results, issue ownership between SGLang JAX and sim-pjrt,
+required fixes, and remaining timing and video metadata limitations.
+
+## TPU pipeline validation
+
+See the [TPU7x pipeline validation report](tpu-pipeline-validation.md) for copied
+XProf captures, instruction/counter coverage, pipeline scheduling improvements,
+repeatability checks, and the remaining gaps before independent hardware prediction.

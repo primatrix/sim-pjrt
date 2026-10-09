@@ -1,0 +1,13 @@
+diff --git a/python/sgl_jax/srt/multimodal/models/kimi_k25/kimi_k25_vl_generation.py b/python/sgl_jax/srt/multimodal/models/kimi_k25/kimi_k25_vl_generation.py
+index f3c096bed..6d18985e9 100644
+--- a/python/sgl_jax/srt/multimodal/models/kimi_k25/kimi_k25_vl_generation.py
++++ b/python/sgl_jax/srt/multimodal/models/kimi_k25/kimi_k25_vl_generation.py
+@@ -127,8 +127,6 @@ class KimiK25ForConditionalGeneration(DeepseekV3ForCausalLM, InModelMultimodalCo
+         )
+         loader.load(weight_mappings)
+ 
+-        for layer in self.model.layers:
+-            layer.self_attn.post_load_weights()
+         logger.info("Kimi K2.5 language model and vision tower weights loaded successfully!")
+ 
+ 

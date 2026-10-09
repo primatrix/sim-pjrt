@@ -1,0 +1,949 @@
+{
+  "provenance": {
+    "sim_pjrt_release": "https://github.com/primatrix/sim-pjrt/releases/tag/v0.1.1",
+    "sim_pjrt_commit": "9b21d0331551b99858632ba393218ba99757b22d",
+    "sglang_pr": 1780,
+    "sglang_commit": "5f4acc7a2060571f119f5adfb7a8fa1f64d3d0c0",
+    "full_model_configs": true,
+    "weights": "dummy",
+    "virtual_devices": {
+      "default": 8,
+      "kimi": 32
+    },
+    "logical_hbm_gib_per_device": 1024,
+    "cpu_regressions": {
+      "passed": 38
+    },
+    "limitations": [
+      "Simulator outputs are placeholders, not numerical correctness results.",
+      "Explicit scenario traverses static bundles and records missing branch/loop timing costs; no latency validation.",
+      "Kimi pack-quantized format is unsupported by the tested SGL code and is disabled by that code; full model dimensions are retained.",
+      "Kimi BF16 full configuration requires TP=32 for compiler HBM capacity; raising xla_tpu_max_hbm_size_mib did not override topology capacity.",
+      "Qwen3-VL/Qwen3.5 video processing warns that FPS metadata is missing and falls back to 24 FPS; video timestamp semantics are not validated."
+    ],
+    "wheel_sha256": "31030cbdfa5c21a171ec33539de6c26efe843dfc3f8d7a0727fa2d888bc2a367",
+    "fix_pr": "https://github.com/primatrix/sim-pjrt/pull/14",
+    "local_python_fix_commit": "31c4aa1",
+    "candidate_native_commit": "b09ac1549c82d18bf8c49d148521d02c39661b19",
+    "candidate_native_ci": "https://github.com/primatrix/sim-pjrt/actions/runs/37776656127",
+    "candidate_wheel_sha256": "bcaa5bf6634c53770438892a669b6ab5fcddd865d765aed5ab73cb7a489e409f",
+    "native_regression_targets_passed": 16,
+    "python_regression_suites_passed": 9
+  },
+  "models": {
+    "qwen25vl": {
+      "repo": "Qwen/Qwen2.5-VL-3B-Instruct",
+      "revision": "66285546d2b821cf421d4f5eb2576359d3770cd3",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 178.94330162500046,
+          "usage": {
+            "prompt_tokens": 42,
+            "total_tokens": 46,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 128.1576780400028,
+          "usage": {
+            "prompt_tokens": 76,
+            "total_tokens": 80,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 0.8615729120028846,
+          "usage": {
+            "prompt_tokens": 76,
+            "total_tokens": 80,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "video",
+          "seconds": 346.589374924999,
+          "usage": {
+            "prompt_tokens": 281,
+            "total_tokens": 285,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images",
+        "video"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/qwen25vl-dp-1791458876",
+      "flow_only_scenario": true,
+      "parser_fix": false,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "7ed3eed5be6924cc800e8a5e53fc405c1aab1aaf36bad65c33403b36c56827f5",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 8,
+        "jit__reduce_min": 4,
+        "jit__lambda": 972,
+        "jit_zeros": 36,
+        "jit_broadcast_in_dim": 10,
+        "jit_resolve_future_token_ids": 20,
+        "jit_reshard": 16,
+        "jit_less": 4,
+        "jit_add": 4,
+        "jit_select_n": 4,
+        "jit__broadcast_arrays": 4,
+        "jit_gather": 4,
+        "jit_encode": 4,
+        "jit_gather_overlay": 4,
+        "jit_jitted_run_model": 20,
+        "jit_jitted_sampler": 20,
+        "jit_set_future_token_ids": 20
+      },
+      "executions_with_timing_gaps": 1160,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen25vl-dp-1791458876",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen25vl-dp-1791458277",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen25vl-dp-1791458213",
+          "status": "failed",
+          "error": "server exited -9"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen25vl-dp-1791458170",
+          "status": "failed",
+          "error": "server exited -9"
+        }
+      ],
+      "fix_delivery": "published v0.1.1"
+    },
+    "qwen3vl": {
+      "repo": "Qwen/Qwen3-VL-2B-Instruct",
+      "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 183.52509535599893,
+          "usage": {
+            "prompt_tokens": 79,
+            "total_tokens": 83,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 188.89806963699812,
+          "usage": {
+            "prompt_tokens": 153,
+            "total_tokens": 157,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 61.269238110002334,
+          "usage": {
+            "prompt_tokens": 153,
+            "total_tokens": 157,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "video",
+          "seconds": 186.53261347499938,
+          "usage": {
+            "prompt_tokens": 226,
+            "total_tokens": 230,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images",
+        "video"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/qwen3vl-dp-1791458872",
+      "flow_only_scenario": true,
+      "parser_fix": false,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "bec4b3d446efa05807365c9e1cec03ac590836879d02f3a6da879971154bdd3b",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 8,
+        "jit__reduce_min": 4,
+        "jit__lambda": 741,
+        "jit_zeros": 28,
+        "jit_broadcast_in_dim": 10,
+        "jit_resolve_future_token_ids": 20,
+        "jit_reshard": 20,
+        "jit_less": 4,
+        "jit_add": 4,
+        "jit_select_n": 4,
+        "jit__broadcast_arrays": 4,
+        "jit_gather": 4,
+        "jit__pad": 4,
+        "jit_encode": 4,
+        "jit_gather_overlay": 4,
+        "jit_split": 4,
+        "jit_reshape": 4,
+        "jit_transpose": 4,
+        "jit_jitted_run_model": 20,
+        "jit_jitted_sampler": 20,
+        "jit_set_future_token_ids": 20
+      },
+      "executions_with_timing_gaps": 941,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen3vl-dp-1791458872",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen3vl-dp-1791458349",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        }
+      ],
+      "fix_delivery": "published v0.1.1"
+    },
+    "qwen35": {
+      "repo": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 259.87840903599863,
+          "usage": {
+            "prompt_tokens": 81,
+            "total_tokens": 85,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 217.29297562500142,
+          "usage": {
+            "prompt_tokens": 155,
+            "total_tokens": 159,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 1.9570496230007848,
+          "usage": {
+            "prompt_tokens": 155,
+            "total_tokens": 159,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "video",
+          "seconds": 173.83568327300236,
+          "usage": {
+            "prompt_tokens": 228,
+            "total_tokens": 232,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images",
+        "video"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/qwen35-dp-1791459613",
+      "flow_only_scenario": true,
+      "parser_fix": true,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 8,
+        "jit__reduce_min": 4,
+        "jit__lambda": 791,
+        "jit_zeros": 56,
+        "jit_broadcast_in_dim": 10,
+        "jit_resolve_future_token_ids": 20,
+        "jit_reshard": 16,
+        "jit_less": 4,
+        "jit_add": 4,
+        "jit_select_n": 4,
+        "jit__broadcast_arrays": 4,
+        "jit_gather": 4,
+        "jit_encode": 4,
+        "jit_gather_overlay": 4,
+        "jit_jitted_run_model": 20,
+        "jit_jitted_sampler": 20,
+        "jit_set_future_token_ids": 20
+      },
+      "executions_with_timing_gaps": 999,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35-dp-1791459613",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35-dp-1791459065",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35-dp-1791458788",
+          "status": "failed",
+          "error": "server exited -9"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35-dp-1791458426",
+          "status": "failed",
+          "error": "server exited -9"
+        }
+      ],
+      "python_fix_commits": [
+        "2d7dec6"
+      ],
+      "fix_delivery": "local Python overlay"
+    },
+    "qwen35moe": {
+      "repo": "Qwen/Qwen3.5-35B-A3B",
+      "revision": "59d61f3ce65a6d9863b86d2e96597125219dc754",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 324.22377265999967,
+          "usage": {
+            "prompt_tokens": 81,
+            "total_tokens": 85,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 293.1014669069991,
+          "usage": {
+            "prompt_tokens": 155,
+            "total_tokens": 159,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 2.5950695930005168,
+          "usage": {
+            "prompt_tokens": 155,
+            "total_tokens": 159,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "video",
+          "seconds": 155.95747306600242,
+          "usage": {
+            "prompt_tokens": 228,
+            "total_tokens": 232,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images",
+        "video"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791463195",
+      "flow_only_scenario": true,
+      "parser_fix": false,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": "/tmp/pr1780-validation/candidate-b09ac15/unpacked",
+      "build_commit": "b09ac1549c82d18bf8c49d148521d02c39661b19",
+      "native_plugin": {
+        "path": "/tmp/pr1780-validation/candidate-b09ac15/unpacked/sim_pjrt/lib/pjrt_sim_plugin.so",
+        "sha256": "5e4e8938f9156a30c8a94c632a8f8b665377d55a9a23b75c38ae1883ac24ee55"
+      },
+      "config_sha256": "5e4d7f74fec2f360eb9cfbfcd6ec0c4c76e684d3a11caaed259d9fd9bfbc7944",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 8,
+        "jit__reduce_min": 4,
+        "jit__lambda": 1134,
+        "jit_zeros": 70,
+        "jit_broadcast_in_dim": 10,
+        "jit_resolve_future_token_ids": 20,
+        "jit_reshard": 16,
+        "jit_less": 4,
+        "jit_add": 4,
+        "jit_select_n": 4,
+        "jit__broadcast_arrays": 4,
+        "jit_gather": 4,
+        "jit_encode": 4,
+        "jit_gather_overlay": 4,
+        "jit_jitted_run_model": 20,
+        "jit_jitted_sampler": 20,
+        "jit_set_future_token_ids": 20
+      },
+      "executions_with_timing_gaps": 1356,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791463195",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791461116",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791459616",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791459078",
+          "status": "failed",
+          "error": "server exited -9"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791458963",
+          "status": "cancelled",
+          "error": "Stopped before serving to add required recurrent extra-buffer settings"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/qwen35moe-dp-1791458426",
+          "status": "failed",
+          "error": "server exited -9"
+        }
+      ],
+      "native_fix_commit": "b09ac1549c82d18bf8c49d148521d02c39661b19",
+      "python_fix_commits": [
+        "2d7dec6",
+        "31c4aa1"
+      ],
+      "fix_delivery": "complete candidate wheel"
+    },
+    "gemma4": {
+      "repo": "google/gemma-4-31B-it",
+      "revision": "842da3794eaa0b77d5f08bae87a17459d91ff475",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 736.8074520800001,
+          "usage": {
+            "prompt_tokens": 277,
+            "total_tokens": 281,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 3.4452671770013694,
+          "usage": {
+            "prompt_tokens": 532,
+            "total_tokens": 536,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 147.0107297229988,
+          "usage": {
+            "prompt_tokens": 532,
+            "total_tokens": 536,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/gemma4-dp-1791459592",
+      "flow_only_scenario": true,
+      "parser_fix": false,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "e967dd38bc5cfd38bd09a995a7bf4a754075df2b46aba68f7fbb5a791e6d8dd1",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 11,
+        "jit__reduce_min": 4,
+        "jit__lambda": 2391,
+        "jit_zeros": 60,
+        "jit_broadcast_in_dim": 8,
+        "jit_resolve_future_token_ids": 15,
+        "jit_reshard": 12,
+        "jit_less": 3,
+        "jit_add": 3,
+        "jit_select_n": 3,
+        "jit__broadcast_arrays": 3,
+        "jit_gather": 3,
+        "jit_multiply": 3,
+        "jit_encode": 3,
+        "jit_gather_overlay": 3,
+        "jit_jitted_run_model": 15,
+        "jit_jitted_sampler": 15,
+        "jit_set_future_token_ids": 15
+      },
+      "executions_with_timing_gaps": 2576,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/gemma4-dp-1791459592",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/gemma4-dp-1791458426",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        }
+      ],
+      "fix_delivery": "published v0.1.1"
+    },
+    "gemma4moe": {
+      "repo": "google/gemma-4-26B-A4B-it",
+      "revision": "4d7ae4984b7db7de8f8457170b3f1a419ee76d52",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 570.5928508769975,
+          "usage": {
+            "prompt_tokens": 277,
+            "total_tokens": 281,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 1.2995803449994128,
+          "usage": {
+            "prompt_tokens": 532,
+            "total_tokens": 536,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 86.76947406700128,
+          "usage": {
+            "prompt_tokens": 532,
+            "total_tokens": 536,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/gemma4moe-dp-1791459357",
+      "flow_only_scenario": true,
+      "parser_fix": false,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "ed0c1eb3633de771906e9ba004a44cc5635bcc06ee2062077c3d2e88a50707d3",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 11,
+        "jit__reduce_min": 4,
+        "jit__lambda": 2101,
+        "jit_zeros": 30,
+        "jit_broadcast_in_dim": 8,
+        "jit_resolve_future_token_ids": 15,
+        "jit_reshard": 12,
+        "jit_less": 3,
+        "jit_add": 3,
+        "jit_select_n": 3,
+        "jit__broadcast_arrays": 3,
+        "jit_gather": 3,
+        "jit_multiply": 3,
+        "jit_encode": 3,
+        "jit_gather_overlay": 3,
+        "jit_jitted_run_model": 15,
+        "jit_jitted_sampler": 15,
+        "jit_set_future_token_ids": 15
+      },
+      "executions_with_timing_gaps": 2256,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/gemma4moe-dp-1791459357",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/gemma4moe-dp-1791458648",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        }
+      ],
+      "fix_delivery": "published v0.1.1"
+    },
+    "mimo": {
+      "repo": "XiaomiMiMo/MiMo-V2.5",
+      "revision": "63651580ca774f8504f676040460aed3e1244ac1",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 185.5723122399977,
+          "usage": {
+            "prompt_tokens": 47,
+            "total_tokens": 51,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 123.0793921129989,
+          "usage": {
+            "prompt_tokens": 77,
+            "total_tokens": 81,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 0.6592108599979838,
+          "usage": {
+            "prompt_tokens": 77,
+            "total_tokens": 81,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "video",
+          "seconds": 0.6311052450000716,
+          "usage": {
+            "prompt_tokens": 100,
+            "total_tokens": 104,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "audio",
+          "seconds": 14.951067676000093,
+          "usage": {
+            "prompt_tokens": 37,
+            "total_tokens": 41,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "audio",
+        "image",
+        "repeat_cache",
+        "uneven_images",
+        "video"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/mimo-dp-1791460667",
+      "flow_only_scenario": true,
+      "parser_fix": true,
+      "virtual_devices": 8,
+      "topology": "tpu7x:2x2x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "292a60e74ae9a6d53422b31b21468ce2111c0ab3f7f7a4f4e9c7cd5133b96587",
+      "execution_counts": {
+        "jit_stage": 3,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 149,
+        "jit__reduce_min": 4,
+        "jit_broadcast_in_dim": 153,
+        "jit_reshard": 161,
+        "jit__lambda": 1305,
+        "jit_zeros": 48,
+        "jit_resolve_future_token_ids": 25,
+        "jit_less": 5,
+        "jit_add": 5,
+        "jit_select_n": 5,
+        "jit__broadcast_arrays": 5,
+        "jit_gather": 5,
+        "jit_encode": 5,
+        "jit_gather_overlay": 5,
+        "jit_jitted_run_model": 25,
+        "jit_jitted_sampler": 25,
+        "jit_set_future_token_ids": 25,
+        "jit_reshape": 2
+      },
+      "executions_with_timing_gaps": 1963,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/mimo-dp-1791460667",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/mimo-dp-1791459747",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/mimo-dp-1791458758",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        }
+      ],
+      "python_fix_commits": [
+        "2d7dec6",
+        "31c4aa1"
+      ],
+      "fix_delivery": "local Python overlay"
+    },
+    "kimi": {
+      "repo": "moonshotai/Kimi-K2.5",
+      "revision": "4d01dfe0332d63057c186e0b262165819efb6611",
+      "status": "passed",
+      "requests": [
+        {
+          "name": "image",
+          "seconds": 433.54894379199686,
+          "usage": {
+            "prompt_tokens": 34,
+            "total_tokens": 38,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "uneven_images",
+          "seconds": 355.8273655369994,
+          "usage": {
+            "prompt_tokens": 71,
+            "total_tokens": 75,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "repeat_cache",
+          "seconds": 243.20709837699542,
+          "usage": {
+            "prompt_tokens": 71,
+            "total_tokens": 75,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        },
+        {
+          "name": "video",
+          "seconds": 337.78654592500243,
+          "usage": {
+            "prompt_tokens": 56,
+            "total_tokens": 60,
+            "completion_tokens": 4,
+            "prompt_tokens_details": null
+          },
+          "status": "passed"
+        }
+      ],
+      "expected_requests": [
+        "image",
+        "repeat_cache",
+        "uneven_images",
+        "video"
+      ],
+      "artifacts": "/tmp/pr1780-validation/results/kimi-dp-1791461461",
+      "flow_only_scenario": true,
+      "parser_fix": true,
+      "virtual_devices": 32,
+      "topology": "tpu7x:4x4x1",
+      "compiler_flags": "",
+      "candidate_package": null,
+      "build_commit": null,
+      "native_plugin": "published v0.1.1",
+      "config_sha256": "acd5bb01a16f64b309599cd6ed196be056f613c99d6bc9300692b82cd10882f6",
+      "execution_counts": {
+        "jit_stage": 4,
+        "jit__threefry_seed": 3,
+        "jit_convert_element_type": 1800,
+        "jit__reduce_min": 4,
+        "jit__lambda": 1451,
+        "jit_zeros": 61,
+        "jit_broadcast_in_dim": 2232,
+        "jit_resolve_future_token_ids": 20,
+        "jit_reshard": 568,
+        "jit_less": 8,
+        "jit_add": 1991,
+        "jit_select_n": 8,
+        "jit__broadcast_arrays": 8,
+        "jit_gather": 668,
+        "jit_iota": 450,
+        "jit_mul": 6,
+        "jit_true_divide": 12,
+        "jit__power": 6,
+        "jit_outer": 12,
+        "jit_tile": 18,
+        "jit_stack": 228,
+        "jit_reshape": 2025,
+        "jit_cos": 6,
+        "jit_sin": 6,
+        "jit_concatenate": 12,
+        "jit__resize": 6,
+        "jit_transpose": 4,
+        "jit_conv_general_dilated": 4,
+        "jit_square": 448,
+        "jit__mean": 448,
+        "jit_subtract": 664,
+        "jit_maximum": 224,
+        "jit_rsqrt": 224,
+        "jit_multiply": 2192,
+        "jit_dot_general": 440,
+        "jit_split": 108,
+        "jit__unnamed_function": 1188,
+        "jit_integer_pow": 108,
+        "jit_tanh": 108,
+        "jit__reduce_sum": 4,
+        "jit_negative": 4,
+        "jit_erfc": 4,
+        "jit_copy": 4,
+        "jit_gather_overlay": 4,
+        "jit_jitted_run_model": 20,
+        "jit_jitted_sampler": 20,
+        "jit_set_future_token_ids": 20
+      },
+      "executions_with_timing_gaps": 17853,
+      "attempts": [
+        {
+          "artifacts": "/tmp/pr1780-validation/results/kimi-dp-1791461461",
+          "status": "passed",
+          "error": null
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/kimi-dp-1791460693",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/kimi-dp-1791459837",
+          "status": "failed",
+          "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+        },
+        {
+          "artifacts": "/tmp/pr1780-validation/results/kimi-dp-1791459326",
+          "status": "failed",
+          "error": "server exited -9"
+        }
+      ],
+      "python_fix_commits": [
+        "2d7dec6",
+        "31c4aa1"
+      ],
+      "fix_delivery": "local Python overlay",
+      "sglang_patch": "kimi-weight-loading.patch"
+    }
+  }
+}
