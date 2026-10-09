@@ -29,6 +29,27 @@ class CompilerCostsTest(unittest.TestCase):
         self.assertEqual(self.costs.rows[337][1][17], 4)
         self.assertEqual(self.costs.rows[263][0], 10)
 
+    def test_current_xlu_costs_include_setter_bias(self):
+        self.assertEqual(len(self.costs.xlu_conflicts), 56)
+        self.assertEqual(self.costs.xlu_conflicts[0, 5, 0], 22)
+        self.assertEqual(self.costs.xlu_conflicts[0, 5, 1], 17)
+        self.assertEqual(self.costs.xlu_conflicts[5, 0, 0], 31)
+        # The 0.0.40 reference's final GL cell is 36 + 1. The current GF
+        # constructor instead installs 32 + 1: keep the current cost.
+        self.assertEqual(self.costs.xlu_conflicts[0, 4, 0], 33)
+        self.assertEqual(self.costs.bf16_eup_issue_cycles, 2)
+
+    def test_invalid_scheduling_costs(self):
+        for key, value in [('xlu_conflict_cycles', []),
+                           ('xlu_conflict_cycles', {'0:5:0': True}),
+                           ('xlu_conflict_cycles', {'6:5:0': 2}),
+                           ('xlu_conflict_cycles', {'0:5:2': 2}),
+                           ('bf16_eup_issue_cycles', True),
+                           ('bf16_eup_issue_cycles', 0)]:
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                data = dict(self.data, **{key: value})
+                CompilerCosts(data, binary_sha256=data['binary_sha256'])
+
     def test_binary_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'identity'):
             CompilerCosts(self.data, binary_sha256='0' * 64)

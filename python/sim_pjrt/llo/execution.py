@@ -17,7 +17,8 @@ from .control_flow import resolve_scalar_operands
 from .parser import parse_bundles, dma_operands
 from .pipeline import (Bundle, Operation, Reservation, ResourceHold, CreditWait,
                        CreditUpdate, simulate, chrome_trace)
-from .mxu import matmul_throughput
+from .mxu import matmul_resource
+from .gf_rules import execution_unit, mnemonic, result_fifo, xlu_constraints, xlu_kind
 
 _SYNC_FLAG = r"(\[#allocation\d+(?:\s*\+\s*\$0x[\da-fA-F]+)?\])"
 
@@ -99,7 +100,7 @@ class GfMapping:
         compare = re.fullmatch(r'vcmp\.(eq|ne|lt|le|gt|ge)\.(.+)', mnemonic)
         if compare and compare[2] in self.vector_compare:
             return self._equivalent(self.vector_compare[compare[2]]['performance_ids'])
-        if matmul_throughput(mnemonic):
+        if matmul_resource(mnemonic):
             parts = set(mnemonic.split('.'))
             dtype = next(name for name in self.matmul_rows['enum_names'] if name in parts)
             kind = 'masked' if 'msk' in parts else 'unmasked'
@@ -107,6 +108,13 @@ class GfMapping:
             return {'performance_id': identity, 'matmul': True}
         if re.fullmatch(r'vpop\.f32\.mrb\[\d+\]\.mxu[01]', mnemonic):
             return self.by_opcode[338]
+        xlu = re.fullmatch(r'(.+)\.xlu[01]', mnemonic)
+        if xlu:
+            rows = self.by_mnemonic.get(xlu[1], ())
+            if len(rows) == 1 and (xlu_kind(rows[0]) is not None
+                                   or rows[0]['llo_opcode'] in (335, 336, 340)):
+                return rows[0]
+            return None
         mnemonic = re.sub(r'\.mxu[01]$', '', mnemonic)
         # These are pointer address spaces, not different hardware operations.
         mnemonic = re.sub(r'^(scalar_lea|int_to_ptr)\.(hbm|vmem|smem|sflag)$', r'\1', mnemonic)
@@ -138,10 +146,16 @@ class GfMapping:
             interval = self.bf16_xpose_issue if row['transpose'] else self.bf16_push_issue
             reservations = (Reservation('mxu' + row['unit'] + '.matpush', interval),)
         if row.get('matmul'):
-            mnemonic = instruction['text'].split('=', 1)[-1].strip().split()[0]
-            reservations = (Reservation(*matmul_throughput(mnemonic)),)
-            gaps.append('matmul dtype names/issue intervals retained from 0.0.46.1 audit; modifier occupancy incomplete')
-        unit = re.search(r'\.(mxu[01]|xlu[01])(?:\s|$)', instruction['text'])
+            resource = matmul_resource(mnemonic(instruction))
+            # Performance r5 is the current table's matmul throughput cell.
+            # It is not the 0.0.40 MxuResource ordinal 3 or the result latency.
+            interval = resources.get(5)
+            if interval:
+                reservations = (Reservation(resource, interval),)
+            else:
+                gaps.append('matmul throughput cost missing')
+            gaps.append('matmul dtype names retained from 0.0.46.1 audit; modifier occupancy incomplete')
+        unit = execution_unit(instruction)
         for resource, cycles in resources.items():
             if not cycles:
                 continue
@@ -149,13 +163,40 @@ class GfMapping:
             if rule == 'global_nonzero_intersection':
                 scope = 'core'
             elif rule == 'same_unit_nonzero_intersection' and unit:
-                scope = unit[1]
+                scope = unit
+            elif rule == 'not_an_issue_constraint':
+                continue
+            elif rule == 'accumulator_sequence':
+                # These implicit accumulator users have no ordinary register
+                # operand linking successive accesses. Use result readiness.
+                holds.append(ResourceHold('core.vector_accumulator', latency))
+                checks.append('core.vector_accumulator')
+                continue
+            elif rule == 'same_result_fifo' and unit and result_fifo(instruction, row):
+                scope = unit + '.' + result_fifo(instruction, row)[0].lower()
+            elif rule == 'mxu_separate':
+                # The generic pair reducer rejects MXU columns: the dedicated
+                # modifier/consumer-footprint model must handle them instead.
+                # Retain a gap until that full model is available.
+                gaps.append('MXU modifier/consumer occupancy incomplete: ' + name)
+                continue
             else:
                 gaps.append(f'specialized resource rule missing: {resource} ({name})')
                 continue
             key = f'{scope}.gf.resource.{resource}'
             holds.append(ResourceHold(key, cycles))
             checks.append(key)
+        xlu_holds, xlu_checks, xlu_gaps = xlu_constraints(instruction, row, self.costs)
+        holds.extend(xlu_holds)
+        checks.extend(xlu_checks)
+        gaps.extend(xlu_gaps)
+        if row.get('llo_opcode') in range(306, 315):
+            interval = self.costs.bf16_eup_issue_cycles
+            if interval is None:
+                gaps.append('BF16 EUP issue cost missing')
+            else:
+                holds.append(ResourceHold('core.eup.bf16', interval))
+                checks.append('core.eup.bf16')
         if name.startswith(('vmat', 'vxpose')):
             gaps.append('modifier-specific latency/occupancy: ' + name)
         cost_identity = row.get('cost_equivalent_ids', row['performance_id'])
@@ -207,7 +248,7 @@ def build_execution(program, mapping, *, branch_delay_slots=None, max_visits=1_0
     if type(bf16_result_slots) is not int or bf16_result_slots < 1:
         raise ValueError('bf16_result_slots must be a positive integer')
     mrb, released = {}, {}
-    eup = defaultdict(deque)
+    fifos = defaultdict(deque)
 
     def producer(register):
         if register not in producers:
@@ -227,7 +268,7 @@ def build_execution(program, mapping, *, branch_delay_slots=None, max_visits=1_0
         issue_cycles = profile.get('bundle_issue_cycles', 1)
         extra_cycles = 0
         mrb_writes, mrb_reads = {}, {}
-        eup_writes = []
+        fifo_writes = []
         # Phi aliases exist at region entry, before any co-issued hardware op.
         aliases = {}
         for ins in bundle['instructions']:
@@ -269,14 +310,19 @@ def build_execution(program, mapping, *, branch_delay_slots=None, max_visits=1_0
             op_id = f'{visit}:{index}'
             deps = {producer(reg) for reg in _REGISTER.findall(rhs)}
             mnemonic = rhs.split()[0]
-            unit_match = re.search(r'\.mxu([01])$', mnemonic)
-            eup_unit = unit_match[1] if unit_match else 'core'
-            if mnemonic.startswith('vpop.eup'):
-                if eup[eup_unit]:
-                    deps.add(eup[eup_unit].popleft())
+            row = mapping.classify(ins)
+            fifo = result_fifo(ins, row)
+            if fifo and fifo[2] == 'pop':
+                family, unit, _ = fifo
+                queue = fifos[family, unit]
+                if queue:
+                    if deps.intersection(queue) - {queue[0]}:
+                        raise ValueError(f'{family} result operand contradicts FIFO order')
+                    fifo_producer = queue.popleft()
+                    deps.add(fifo_producer)
                 else:
-                    gaps.add('EUP result read without known producer')
-                gaps.add('EUP result queue modeled FIFO; capacity/backpressure not calibrated')
+                    gaps.add(f'{family} result read without known producer')
+                gaps.add(f'{family} result queue modeled FIFO; capacity/backpressure not calibrated')
             slot = re.search(r'\.mrb\[(\d+)\]\.mxu([01])$', mnemonic)
             if slot and mnemonic.startswith(('vmatmul.', 'vpop.')):
                 address, unit = int(slot[1]), int(slot[2])
@@ -405,8 +451,9 @@ def build_execution(program, mapping, *, branch_delay_slots=None, max_visits=1_0
             if isinstance(extra, bool) or not isinstance(extra, (int, float)) or not math.isfinite(extra) or extra < 0:
                 raise ValueError('invalid instruction_extra_cycles')
             extra_cycles = max(extra_cycles, extra)
-            if isinstance(performance_id, int) and 263 <= performance_id <= 277 and not (dest or '').startswith('%v'):
-                eup_writes.append((eup_unit, op_id))
+            if fifo and fifo[2] == 'push' and not (dest or '').startswith('%v'):
+                fifo_writes.append((fifo[:2], op_id))
+                gaps.add(f'{fifo[0]} result queue modeled FIFO; capacity/backpressure not calibrated')
             operations.append(op)
             gaps.update(missing)
             counts['instructions'] += 1
@@ -423,8 +470,8 @@ def build_execution(program, mapping, *, branch_delay_slots=None, max_visits=1_0
             del mrb[key]
             released[key] = reader
         mrb.update(mrb_writes)
-        for unit, op_id in eup_writes:
-            eup[unit].append(op_id)
+        for queue, op_id in fifo_writes:
+            fifos[queue].append(op_id)
         duration = issue_cycles + extra_cycles
         if calibration is not None:
             signature = '|'.join(sorted(op.name for op in operations))

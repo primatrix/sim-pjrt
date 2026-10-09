@@ -117,7 +117,9 @@ describes libtpu 0.0.40. We checked its constants against libtpu 0.0.46.1:
 `MatmulDataFormat` 1 is F32 and 2 is BF16, unlike the page's labels.
 The model does not add a result latency serially to every matmul. The pinned
 libtpu 0.0.48 GF table determines result readiness, and explicit consumers wait
-on those results. Full MXU sub-resource conflicts and some staging/latch rules
+on those results. The execution adapter reads matmul issue intervals from that
+same table's throughput cell, rather than copying the reference's constants.
+Full MXU sub-resource conflicts and some staging/latch rules
 remain gaps. Unsupported formats, modifiers or missing unit IDs remain gaps.
 The implementation is in `python/sim_pjrt/llo/`: `runtime.py` adapts whole
 programs, `execution.py` constructs dependencies, `pipeline.py` schedules them,
@@ -126,6 +128,34 @@ tables in `configs/` carry the libtpu 0.0.48 binary identity; supplying a differ
 compiler identity fails instead of falling back to the former estimator.
 These compiler-derived constants are not hardware calibration or independently
 validated hardware latency predictions.
+
+Scheduling rules use the libtpu **0.0.40** reference; dependencies, opcode
+classification and numeric costs remain pinned to **0.0.48**. In particular:
+
+- [XLU conflicts](https://gh.evko.io/crucible-notes/libtpu/cost/xlu-conflict-penalty.html)
+  depend on the producer kind, consumer kind and assigned unit. Reduce and
+  permute/rotate/broadcast pushes publish directional deadlines; independent
+  XLUs overlap, and a RAW consumer still waits for result readiness. The 56
+  charged conflict cells come from the archived 0.0.48 GF constructor, including
+  the setter's `+1` bias. Old reference cell values are not copied. Transpose
+  sequence geometry remains unsupported.
+- [EUP push/pop rules](https://gh.evko.io/crucible-notes/libtpu/cost/eup-latency-overview.html)
+  keep issue spacing separate from data latency. EUP and RPU result FIFOs add
+  implicit producer dependencies, scoped by family and unit. Co-issued pushes
+  become visible after the bundle; an explicit result operand cannot bypass
+  the FIFO head. BF16 EUP pushes use the current compiler's two-cycle issue
+  floor, including the sin/cos/erf tail of the opcode range. FIFO capacities and
+  backpressure remain gaps.
+- Performance columns skipped by the compiler's generic pair reducer are not
+  converted into exclusion holds. RPU/TRF drains have separate FIFO deadlines;
+  implicit vector-accumulator accesses wait for accumulator readiness. MXU
+  columns remain separate from the generic reducer: the full
+  [modifier/consumer-footprint model](https://gh.evko.io/crucible-notes/libtpu/cost/mxu-opholdissues-stall.html)
+  is not inferred from matching nonzero Performance columns.
+
+These rules are implemented in `gf_rules.py` and `execution.py`; using an older
+rule reference does not change the compiler binary identity check or establish
+hardware timing accuracy.
 
 For `dma.hbm_to_vmem` and `dma.vmem_to_hbm`, resolved granule counts and completion
 flags determine transfers. Each configured DMA resource serializes its work,

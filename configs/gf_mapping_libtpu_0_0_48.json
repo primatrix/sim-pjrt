@@ -1954,7 +1954,7 @@
     },
     {
       "resource": 2,
-      "rule": "specialized"
+      "rule": "accumulator_sequence"
     },
     {
       "resource": 3,
@@ -1962,55 +1962,55 @@
     },
     {
       "resource": 4,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 5,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 6,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 7,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 8,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 9,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 10,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 11,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 12,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 13,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 14,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 15,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 16,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 17,
@@ -2018,35 +2018,35 @@
     },
     {
       "resource": 18,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 19,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 20,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 21,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 22,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 23,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 24,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 25,
-      "rule": "specialized"
+      "rule": "not_an_issue_constraint"
     },
     {
       "resource": 26,
@@ -2054,11 +2054,11 @@
     },
     {
       "resource": 27,
-      "rule": "specialized"
+      "rule": "same_result_fifo"
     },
     {
       "resource": 28,
-      "rule": "specialized"
+      "rule": "mxu_separate"
     },
     {
       "resource": 29,
@@ -2075,6 +2075,6 @@
   ],
   "limitations": [
     "Direct classifier entries only; modifiers and pseudo-ops need separate handling.",
-    "Specialized resources, MXU modifier tables and runtime memory remain separate."
+    "MXU modifier/consumer footprints and runtime memory remain incomplete."
   ]
 }

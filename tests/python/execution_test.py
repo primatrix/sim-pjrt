@@ -220,7 +220,131 @@ class ExecutionTest(unittest.TestCase):
         self.assertEqual([e['start_cycle'] for e in report['events']], [0, 141])
         self.assertIn('xlu0.gf.resource.17', bundles[0].operations[0].issue_checks)
         self.assertIn('xlu1.gf.resource.17', bundles[0].operations[1].issue_checks)
-        self.assertTrue(any('specialized resource' in g for g in audit['gaps']))
+        self.assertFalse(any('specialized resource' in g for g in audit['gaps']))
+
+    def test_xlu_conflicts_depend_on_direction_and_unit(self):
+        for unit, forward, backward in [(0, 22, 31), (1, 17, 36)]:
+            reduce = f'vmax.xlane.f32.xlu{unit}'
+            permute = f'vperm.xlu{unit}'
+            for first, second, expected in [(reduce, permute, forward),
+                                             (permute, reduce, backward)]:
+                with self.subTest(first=first, second=second):
+                    _, _, report = self.run_llo(
+                        f'0: {{ %1 = {first} %input }}\n1: {{ %2 = {second} %other }}')
+                    self.assertEqual(report['events'][1]['start_cycle'], expected)
+
+    def test_xlu_conflicts_preserve_unit_overlap_and_raw_waits(self):
+        _, _, report = self.run_llo('''
+0: { %1 = vmax.xlane.f32.xlu0 %input }
+1: { %2 = vperm.xlu1 %other }
+2: { %3 = vperm.xlu0 %1 }
+''')
+        self.assertEqual([e['start_cycle'] for e in report['events']], [0, 1, 141])
+
+    def test_xlu_stage_columns_do_not_become_generic_exclusion_holds(self):
+        _, audit, report = self.run_llo('''
+0: { %1 = vmax.xlane.f32.xlu0 %input }
+1: { %2 = vmin.xlane.f32.xlu0 %other }
+''')
+        self.assertEqual(report['events'][1]['start_cycle'], 4)
+        self.assertFalse(any('specialized resource' in g for g in audit['gaps']))
+
+    def test_rpu_fifo_adds_implicit_producer_waits_and_pop_spacing(self):
+        bundles, _, report = self.run_llo('''
+0: { %1 = vmax.xlane.f32.xlu0 %input }
+1: { %2 = vmin.xlane.f32.xlu0 %other }
+2: { %v0 = vpop.xlane.xlu0 }
+3: { %v1 = vpop.permute.xlu0 }
+''')
+        self.assertEqual(bundles[2].operations[0].depends_on, ('0:0',))
+        self.assertEqual(bundles[3].operations[0].depends_on, ('1:0',))
+        self.assertEqual([e['start_cycle'] for e in report['events']], [0, 4, 141, 145])
+
+    def test_rpu_fifo_units_are_independent_and_unknown_producer_is_a_gap(self):
+        bundles, _, report = self.run_llo('''
+0: { %1 = vmax.xlane.f32.xlu0 %input ;; %2 = vmax.xlane.f32.xlu1 %other }
+1: { %v0 = vpop.xlane.xlu0 ;; %v1 = vpop.xlane.xlu1 }
+''')
+        self.assertEqual(bundles[1].operations[0].depends_on, ('0:0',))
+        self.assertEqual(bundles[1].operations[1].depends_on, ('0:1',))
+        self.assertEqual(report['events'][1]['start_cycle'], 141)
+        _, audit, _ = self.run_llo('0: { %v0 = vpop.xlane.xlu0 }')
+        self.assertIn('RPU result read without known producer', audit['gaps'])
+
+    def test_result_fifo_families_do_not_share_a_drain_deadline(self):
+        _, _, report = self.run_llo('''
+0: { %v0 = vpop.xlane.xlu0 }
+1: { %v1 = vpop.trf.xlu0 }
+''')
+        self.assertEqual(report['events'][1]['start_cycle'], 1)
+        self.assertIsNone(self.mapping.classify(dict(opcode='vadd.f32',
+                                                    text='vadd.f32.xlu0 %input, 1')))
+
+    def test_explicit_result_operand_cannot_bypass_fifo_head(self):
+        with self.assertRaisesRegex(ValueError, 'contradicts FIFO order'):
+            self.run_llo('''
+0: { %1 = vmax.xlane.f32.xlu0 %input }
+1: { %2 = vmin.xlane.f32.xlu0 %other }
+2: { %v0 = vpop.xlane.xlu0 %2 }
+''')
+
+    def test_eup_tail_opcodes_use_fifo_and_bf16_push_interval(self):
+        for name in ('vsinq.bf16', 'vcosq.bf16', 'verf.bf16'):
+            with self.subTest(name=name):
+                bundles, _, report = self.run_llo(
+                    f'0: {{ %1 = {name} %input }}\n1: {{ %2 = {name} %other }}\n'
+                    '2: { %v0 = vpop.eup }\n3: { %v1 = vpop.eup }')
+                self.assertEqual(bundles[2].operations[0].depends_on, ('0:0',))
+                self.assertEqual(bundles[3].operations[0].depends_on, ('1:0',))
+                self.assertEqual([e['start_cycle'] for e in report['events']], [0, 2, 11, 13])
+
+    def test_coissued_fifo_push_is_visible_only_to_later_bundles(self):
+        for instructions in ('%1 = vpow2.f32 %input ;; %v0 = vpop.eup',
+                             '%v0 = vpop.eup ;; %1 = vpow2.f32 %input'):
+            with self.subTest(instructions=instructions):
+                bundles, audit, report = self.run_llo(
+                    f'0: {{ {instructions} }}\n1: {{ %v1 = vpop.eup }}')
+                pop = next(op for op in bundles[0].operations if op.name == 'vpop.eup')
+                push = next(op for op in bundles[0].operations if op.name == 'vpow2.f32')
+                self.assertEqual(pop.depends_on, ())
+                self.assertEqual(bundles[1].operations[0].depends_on, (push.id,))
+                self.assertIn('EUP result read without known producer', audit['gaps'])
+                self.assertEqual([e['start_cycle'] for e in report['events']], [0, 10])
+
+    def test_implicit_accumulator_wait_does_not_serialize_other_work(self):
+        _, _, report = self.run_llo('''
+0: { %v0 = vmaxabs.f32 %input }
+1: { %v1 = vadd.f32 %other, 1.0 }
+2: { %v2 = vmovacc.add.high }
+''')
+        self.assertEqual([e['start_cycle'] for e in report['events']], [0, 1, 2])
+        _, _, report = self.run_llo(
+            '0: { %v0 = vmaxabs.f32 %input }\n1: { %v1 = vmovacc.add.high }')
+        self.assertEqual(report['events'][1]['start_cycle'], 2)
+
+    def test_current_table_drives_mxu_throughput_and_xlu_penalties(self):
+        table = json.loads(json.dumps(self.table))
+        table['rows'][295]['resource_values']['5'] = 13
+        table['xlu_conflict_cycles']['0:5:0'] = 70
+        mapping = GfMapping(self.data, CompilerCosts(table, binary_sha256=table['binary_sha256']))
+        bundles, audit = build_execution(parse_bundles('''
+0: { %1 = vmatmul.mubr.bf16.mrb[0].mxu0 %input }
+1: { %2 = vmatmul.mubr.bf16.mrb[4].mxu0 %other }
+2: { %3 = vmax.xlane.f32.xlu0 %input }
+3: { %4 = vperm.xlu0 %other }
+'''), mapping)
+        report = simulate(bundles, frequency_hz=1e9, gaps=audit['gaps'],
+                          initial_ready=audit['initial_ready'], model_provenance=mapping.provenance)
+        self.assertEqual([e['start_cycle'] for e in report['events']], [0, 13, 14, 84])
+
+    def test_missing_scheduling_costs_remain_explicit_gaps(self):
+        table = {k: v for k, v in self.table.items()
+                 if k not in ('xlu_conflict_cycles', 'bf16_eup_issue_cycles')}
+        mapping = GfMapping(self.data, CompilerCosts(table, binary_sha256=table['binary_sha256']))
+        for name, expected in [('vmax.xlane.f32.xlu0', 'XLU conflict cost table is missing'),
+                               ('vcosq.bf16', 'BF16 EUP issue cost missing')]:
+            _, gaps, _ = mapping.operation(dict(opcode=name, text=name + ' %input'), 'op', ())
+            self.assertIn(expected, gaps)
 
     def test_known_formats_and_comparisons_replace_placeholder_costs(self):
         expected = {'vpack.c.b16': 2, 'vpack.i.b16': 2,

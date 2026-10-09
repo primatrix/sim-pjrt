@@ -44,6 +44,21 @@ class CompilerCosts:
             self.rows[identity] = (latency, resources)
         if set(self.rows) != set(range(table['row_count'])):
             raise ValueError('incomplete compiler table')
+        self.xlu_conflicts = {}
+        conflicts = table.get('xlu_conflict_cycles', {})
+        if not isinstance(conflicts, dict):
+            raise ValueError('invalid XLU conflict table')
+        for key, cycles in conflicts.items():
+            if not isinstance(key, str) or not re.fullmatch(r'[0-5]:[0-5]:[01]', key):
+                raise ValueError('invalid XLU conflict key')
+            if type(cycles) is not int or not 0 <= cycles < 2**31:
+                raise ValueError('invalid XLU conflict cycles')
+            self.xlu_conflicts[tuple(map(int, key.split(':')))] = cycles
+        self.bf16_eup_issue_cycles = table.get('bf16_eup_issue_cycles')
+        if (self.bf16_eup_issue_cycles is not None
+                and (type(self.bf16_eup_issue_cycles) is not int
+                     or not 0 < self.bf16_eup_issue_cycles < 2**31)):
+            raise ValueError('invalid BF16 EUP issue cycles')
 
     @classmethod
     def read(cls, path, *, binary_sha256):
