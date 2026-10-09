@@ -1,0 +1,76 @@
+{
+  "planes": [
+    {
+      "name": "/device:TPU:0",
+      "clock_stats": {},
+      "lines": [
+        {
+          "name": "_counters_",
+          "events": 1
+        },
+        {
+          "name": "XLA Modules",
+          "events": 2
+        },
+        {
+          "name": "XLA Ops",
+          "events": 6
+        },
+        {
+          "name": "Async XLA Ops",
+          "events": 0
+        },
+        {
+          "name": "TC Overlay",
+          "events": 0
+        },
+        {
+          "name": "Pallas Primitives",
+          "events": 6817
+        },
+        {
+          "name": "SALU Instructions",
+          "events": 21095
+        },
+        {
+          "name": "VALU Instructions",
+          "events": 1317808
+        },
+        {
+          "name": "VLD Instructions",
+          "events": 626985
+        },
+        {
+          "name": "VST Instructions",
+          "events": 330969
+        },
+        {
+          "name": "MXU0 Instructions",
+          "events": 258802
+        },
+        {
+          "name": "MXU1 Instructions",
+          "events": 259127
+        },
+        {
+          "name": "XLU Instructions",
+          "events": 64937
+        },
+        {
+          "name": "EUP Instructions",
+          "events": 162221
+        },
+        {
+          "name": "_counters_",
+          "events": 0
+        },
+        {
+          "name": "counters_0",
+          "events": 94039
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

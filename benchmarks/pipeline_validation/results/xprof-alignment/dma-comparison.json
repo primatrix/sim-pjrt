@@ -1,0 +1,3949 @@
+{
+  "trace_sha256": "7b1da86771807334d4f84c39f613401d035f52ae0c0fe42d86099e729fa2a4f8",
+  "calls": [
+    {
+      "duration_us": 155.478841,
+      "phases": [
+        {
+          "name": "initial preparation",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.hbm_to_smem": 1,
+            "dma.done.wait": 9,
+            "vsyncadd": 9,
+            "sfence": 1,
+            "dma.general": 16
+          },
+          "model_counts": {
+            "dma.hbm_to_smem": 3,
+            "dma.done.wait": 7,
+            "vsyncadd": 7,
+            "sfence": 1,
+            "dma.general": 12
+          },
+          "wait_pairs": [
+            {
+              "start_us": 0.35579199995845556,
+              "following_us": 0.426244999980554,
+              "spacing_us": 0.07045300002209842,
+              "bundle_number": 25,
+              "flag_operand": "c:5"
+            },
+            {
+              "start_us": 0.7590029999846593,
+              "following_us": 0.7596029999549501,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 127,
+              "flag_operand": "c:62"
+            },
+            {
+              "start_us": 0.7735589999938384,
+              "following_us": 0.7740089999861084,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 154,
+              "flag_operand": "c:65"
+            },
+            {
+              "start_us": 1.734392999962438,
+              "following_us": 1.9486789999646135,
+              "spacing_us": 0.21428600000217557,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 2.162964999966789,
+              "following_us": 2.37724999996135,
+              "spacing_us": 0.21428499999456108,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 4.318501999950968,
+              "following_us": 4.327355999965221,
+              "spacing_us": 0.00885400001425296,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 4.336208999971859,
+              "following_us": 4.345062999986112,
+              "spacing_us": 0.00885400001425296,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 4.353990999981761,
+              "following_us": 4.362844999996014,
+              "spacing_us": 0.00885400001425296,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 4.371698000002652,
+              "following_us": 4.380551999958698,
+              "spacing_us": 0.0088539999560453,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.5354899999802001,
+          "wait_pair_spacing_max_us": 0.21428600000217557
+        },
+        {
+          "name": "head0 Q0 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 3,
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "model_counts": {
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "wait_pairs": [
+            {
+              "start_us": 7.4745639999746345,
+              "following_us": 7.475314999988768,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 7.475990000006277,
+              "following_us": 7.476739999954589,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 7.4774909999687225,
+              "following_us": 7.478165999986231,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 7.478915999992751,
+              "following_us": 7.479590999952052,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.0028509999392554164,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head0 Q0\u2192Q1",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "wait_pairs": [
+            {
+              "start_us": 9.402009999961592,
+              "following_us": 9.402460999961477,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 13.149383999989368,
+              "following_us": 13.149909999978263,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 13.150359999970533,
+              "following_us": 13.150809999962803,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 13.166490999981761,
+              "following_us": 13.167316999984905,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 14.449353999982122,
+              "following_us": 14.450104999996256,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 14.450779999955557,
+              "following_us": 14.451529999962077,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 14.45228099997621,
+              "following_us": 14.45295599999372,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 14.453706000000238,
+              "following_us": 14.45438099995954,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.005103999981656671,
+          "wait_pair_spacing_max_us": 0.000826000003144145
+        },
+        {
+          "name": "head0 Q1 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 8,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "model_counts": {
+            "dma.general": 4,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "wait_pairs": [
+            {
+              "start_us": 17.448153999983333,
+              "following_us": 17.448903999989852,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 17.44965399999637,
+              "following_us": 17.450329999963287,
+              "spacing_us": 0.0006759999669156969,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 17.451079999969807,
+              "following_us": 17.451829999976326,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 17.45250600000145,
+              "following_us": 17.45325599994976,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 20.47591499995906,
+              "following_us": 20.476589999976568,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 20.4773409999907,
+              "following_us": 20.478015999950003,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 20.478765999956522,
+              "following_us": 20.47944099997403,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 20.480116999999154,
+              "following_us": 20.480867000005674,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 23.517556999984663,
+              "following_us": 23.518081999965943,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 23.518531999958213,
+              "following_us": 23.5190569999977,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 23.51950699998997,
+              "following_us": 23.520032999978866,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 23.520482999971136,
+              "following_us": 23.521007999952417,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.00780199992004782,
+          "wait_pair_spacing_max_us": 0.000750000006519258
+        },
+        {
+          "name": "head0 Q1\u2192Q2",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 25.410338999994565,
+              "following_us": 25.411013999953866,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 29.093336999998428,
+              "following_us": 29.09393699996872,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 29.094536999997217,
+              "following_us": 29.095137999975123,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 29.109317999973428,
+              "following_us": 29.11006899998756,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 30.377401000005193,
+              "following_us": 30.378150999953505,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 30.378900999960024,
+              "following_us": 30.379575999977533,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 30.380326999991667,
+              "following_us": 30.381076999998186,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 30.381751999957487,
+              "following_us": 30.38250299997162,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.005552999908104539,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head0 Q2 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "model_counts": {
+            "dma.general": 12,
+            "dma.done.wait": 20,
+            "vsyncadd": 20
+          },
+          "wait_pairs": [
+            {
+              "start_us": 33.36652099998901,
+              "following_us": 33.36727200000314,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 33.36794699996244,
+              "following_us": 33.36869699996896,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 33.36944699997548,
+              "following_us": 33.3701230000006,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 33.370872999948915,
+              "following_us": 33.371547999966424,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 33.6489339999971,
+              "following_us": 33.64976000000024,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 33.65058499999577,
+              "following_us": 33.65148499998031,
+              "spacing_us": 0.0008999999845400453,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 33.652310999983456,
+              "following_us": 33.653135999978986,
+              "spacing_us": 0.0008249999955296516,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 33.654710999981035,
+              "following_us": 33.65546199999517,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 36.264254999987315,
+              "following_us": 36.26478099997621,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 36.26523099996848,
+              "following_us": 36.26575599994976,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 36.26620600000024,
+              "following_us": 36.26673099998152,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 36.26718099997379,
+              "following_us": 36.267706999962684,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 36.28728999994928,
+              "following_us": 36.2880399999558,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 36.28871499997331,
+              "following_us": 36.28946499997983,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 36.29021599999396,
+              "following_us": 36.29066599998623,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 36.29164099995978,
+              "following_us": 36.29216599999927,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 39.044716999982484,
+              "following_us": 39.04531799996039,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 39.04591799998889,
+              "following_us": 39.04651799995918,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 39.04711799998768,
+              "following_us": 39.04771899996558,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 39.04831899999408,
+              "following_us": 39.04891899996437,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 41.75427599996328,
+              "following_us": 41.7548769999994,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 41.75547699996969,
+              "following_us": 41.756076999998186,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 41.75667699996848,
+              "following_us": 41.75727800000459,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 41.75787799997488,
+              "following_us": 41.75847800000338,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 44.708807999966666,
+              "following_us": 44.709557999973185,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 44.71023399999831,
+              "following_us": 44.71098400000483,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 44.71165899996413,
+              "following_us": 44.71240999997826,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 44.71308499999577,
+              "following_us": 44.71383500000229,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.018536000105086714,
+          "wait_pair_spacing_max_us": 0.0008999999845400453
+        },
+        {
+          "name": "head0 Q2\u2192Q3",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "model_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 46.598138999950606,
+              "following_us": 46.598738999979105,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 50.25600199995097,
+              "following_us": 50.256601999979466,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 51.51530599995749,
+              "following_us": 51.51590599998599,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 51.51650599995628,
+              "following_us": 51.51710599998478,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 51.517706999962684,
+              "following_us": 51.51830699999118,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 51.51890699996147,
+              "following_us": 51.51950699998997,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.0036000001709908247,
+          "wait_pair_spacing_max_us": 0.0006000000284984708
+        },
+        {
+          "name": "head0 Q3 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 40,
+            "vsyncadd": 40
+          },
+          "model_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "wait_pairs": [
+            {
+              "start_us": 54.45288100000471,
+              "following_us": 54.453480999975,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 54.4540810000035,
+              "following_us": 54.45468099997379,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 54.455281999951694,
+              "following_us": 54.45588199998019,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 54.45648199995048,
+              "following_us": 54.45708199997898,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 54.73461799998768,
+              "following_us": 54.73559399996884,
+              "spacing_us": 0.0009759999811649323,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 54.7365690000006,
+              "following_us": 54.737469999992754,
+              "spacing_us": 0.0009009999921545386,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 54.738444999966305,
+              "following_us": 54.73941999999806,
+              "spacing_us": 0.0009750000317580998,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 54.7408459999715,
+              "following_us": 54.74129599996377,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 57.33628399996087,
+              "following_us": 57.33680900000036,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 57.33726000000024,
+              "following_us": 57.33778499998152,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 57.33823499997379,
+              "following_us": 57.33875999995507,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 57.33921000000555,
+              "following_us": 57.33973499998683,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 57.35826799995266,
+              "following_us": 57.35894299997017,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 57.35969299997669,
+              "following_us": 57.36036900000181,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 57.36111899995012,
+              "following_us": 57.36179399996763,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 57.363219999999274,
+              "following_us": 57.36397000000579,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 60.09296199999517,
+              "following_us": 60.09371200000169,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 60.09438699996099,
+              "following_us": 60.09513799997512,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 60.09588799998164,
+              "following_us": 60.09641299996292,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 60.097613999969326,
+              "following_us": 60.098213999997824,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 62.78413799998816,
+              "following_us": 62.78458799998043,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 62.785038999980316,
+              "following_us": 62.785563999961596,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 62.786013999953866,
+              "following_us": 62.786464000004344,
+              "spacing_us": 0.00045000005047768354,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 62.786988999985624,
+              "following_us": 62.78743999998551,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 62.80597200000193,
+              "following_us": 62.80672199995024,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 62.807397999975365,
+              "following_us": 62.808147999981884,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 62.8088979999884,
+              "following_us": 62.809422999969684,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 62.81062399997609,
+              "following_us": 62.811224000004586,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 65.47936599998502,
+              "following_us": 65.47996699996293,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 65.48056699999142,
+              "following_us": 65.48116699996172,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 65.48176699999021,
+              "following_us": 65.48236799996812,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 65.48296799999662,
+              "following_us": 65.48356799996691,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 68.16341499995906,
+              "following_us": 68.16393999999855,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 68.16438999999082,
+              "following_us": 68.16491599997971,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 68.16536599997198,
+              "following_us": 68.16589099995326,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 68.16634100000374,
+              "following_us": 68.16686599998502,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 71.1023409999907,
+              "following_us": 71.10294099996099,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 71.10354099998949,
+              "following_us": 71.10414099995978,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 71.10474099998828,
+              "following_us": 71.10534199996619,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 71.10594199999468,
+              "following_us": 71.10654199996497,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.02460899983998388,
+          "wait_pair_spacing_max_us": 0.0009759999811649323
+        },
+        {
+          "name": "head0\u2192head1",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 16,
+            "dma.done.wait": 9,
+            "vsyncadd": 9
+          },
+          "model_counts": {
+            "dma.done.wait": 8,
+            "vsyncadd": 8,
+            "dma.general": 13
+          },
+          "wait_pairs": [
+            {
+              "start_us": 72.93307299999287,
+              "following_us": 72.93367299996316,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 76.42354399996111,
+              "following_us": 76.42414399998961,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 74684,
+              "flag_operand": "c:62"
+            },
+            {
+              "start_us": 77.81790199998068,
+              "following_us": 78.01575599994976,
+              "spacing_us": 0.19785399996908382,
+              "bundle_number": 74711,
+              "flag_operand": "c:65"
+            },
+            {
+              "start_us": 79.44192599999951,
+              "following_us": 79.67376899998635,
+              "spacing_us": 0.23184299998683855,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 79.90553699998418,
+              "following_us": 80.13737999997102,
+              "spacing_us": 0.23184299998683855,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 82.08305799996015,
+              "following_us": 82.09311199997319,
+              "spacing_us": 0.010054000013042241,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 82.10316599998623,
+              "following_us": 82.11329499998828,
+              "spacing_us": 0.010129000002052635,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 82.12334900000133,
+              "following_us": 82.13340299995616,
+              "spacing_us": 0.01005399995483458,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 82.14353199995821,
+              "following_us": 82.15358599997126,
+              "spacing_us": 0.010054000013042241,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.7030309999245219,
+          "wait_pair_spacing_max_us": 0.23184299998683855
+        },
+        {
+          "name": "head1 Q0 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 3,
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "model_counts": {
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "wait_pairs": [
+            {
+              "start_us": 85.12522499996703,
+              "following_us": 85.12582499999553,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 85.12642499996582,
+              "following_us": 85.12702499999432,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 85.12762599997222,
+              "following_us": 85.12822600000072,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 85.12882599997101,
+              "following_us": 85.12942599999951,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.002400000113993883,
+          "wait_pair_spacing_max_us": 0.0006000000284984708
+        },
+        {
+          "name": "head1 Q0\u2192Q1",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 22,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "wait_pairs": [
+            {
+              "start_us": 87.05432100000326,
+              "following_us": 87.05492199998116,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 90.72201299999142,
+              "following_us": 90.7224639999913,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 90.72291399998358,
+              "following_us": 90.72343899996486,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 90.73716899997089,
+              "following_us": 90.73791999998502,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 91.99587299994892,
+              "following_us": 91.99669800000265,
+              "spacing_us": 0.0008250000537373126,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 91.9975240000058,
+              "following_us": 91.99834900000133,
+              "spacing_us": 0.0008249999955296516,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 91.99917399999686,
+              "following_us": 92.0,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 92.00082499999553,
+              "following_us": 92.00164999999106,
+              "spacing_us": 0.0008249999955296516,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.005629000021144748,
+          "wait_pair_spacing_max_us": 0.000826000003144145
+        },
+        {
+          "name": "head1 Q1 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 9,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "model_counts": {
+            "dma.general": 4,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "wait_pairs": [
+            {
+              "start_us": 94.91521599999396,
+              "following_us": 94.91596600000048,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 94.91664099995978,
+              "following_us": 94.91739199997392,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 94.91814199998043,
+              "following_us": 94.91881699999794,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 94.91956700000446,
+              "following_us": 94.92024299997138,
+              "spacing_us": 0.0006759999669156969,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 97.87575000000652,
+              "following_us": 97.87642499996582,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 97.87709999998333,
+              "following_us": 97.87785099999746,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 97.87852599995676,
+              "following_us": 97.87920099997427,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 97.8799519999884,
+              "following_us": 97.88062700000592,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 100.85526699997718,
+              "following_us": 100.8560169999837,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 100.8566920000012,
+              "following_us": 100.85744299995713,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 100.85811799997464,
+              "following_us": 100.85886799998116,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 100.85954299999867,
+              "following_us": 100.86029399995459,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.008629999938420951,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head1 Q1\u2192Q2",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 22,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 102.74099599994952,
+              "following_us": 102.74159599997802,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 106.3713979999884,
+              "following_us": 106.37192299996968,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 106.37237399996957,
+              "following_us": 106.37289899995085,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 106.38655399996787,
+              "following_us": 106.38722899998538,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 107.63797999999952,
+              "following_us": 107.63873000000603,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 107.63940499996534,
+              "following_us": 107.64015599997947,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 107.64083099999698,
+              "following_us": 107.6415810000035,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 107.64225699997041,
+              "following_us": 107.64300699997693,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.005326000042259693,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head1 Q2 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 14,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "model_counts": {
+            "dma.general": 12,
+            "dma.done.wait": 20,
+            "vsyncadd": 20
+          },
+          "wait_pairs": [
+            {
+              "start_us": 110.59356199996546,
+              "following_us": 110.59431199997198,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 110.5949879999971,
+              "following_us": 110.59573800000362,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 110.59648799995193,
+              "following_us": 110.59716299996944,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 110.59791399998358,
+              "following_us": 110.59858900000108,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 110.87589999998454,
+              "following_us": 110.87672499998007,
+              "spacing_us": 0.0008249999955296516,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 110.87755099998321,
+              "following_us": 110.87845099996775,
+              "spacing_us": 0.0008999999845400453,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 110.87927599996328,
+              "following_us": 110.88010199996643,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 110.88167699996848,
+              "following_us": 110.8823529999936,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 113.46481099998346,
+              "following_us": 113.46533599996474,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 113.465785999957,
+              "following_us": 113.4663109999965,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 113.46683599997777,
+              "following_us": 113.46728699997766,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 113.46781199995894,
+              "following_us": 113.46826199995121,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 113.48709399998188,
+              "following_us": 113.48769499995979,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 113.48829499998828,
+              "following_us": 113.48889499995857,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 113.48949499998707,
+              "following_us": 113.49009599996498,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 113.49129599996377,
+              "following_us": 113.49189599999227,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 116.18397299997741,
+              "following_us": 116.18457300000591,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 116.18517399998382,
+              "following_us": 116.18577399995411,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 116.1863739999826,
+              "following_us": 116.1869739999529,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 116.18757499998901,
+              "following_us": 116.1881749999593,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 118.8647199999541,
+              "following_us": 118.86547099996824,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 118.86614599998575,
+              "following_us": 118.86689599999227,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 118.8676470000064,
+              "following_us": 118.8683219999657,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 118.86907199997222,
+              "following_us": 118.86974699998973,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 121.78428799996618,
+              "following_us": 121.7848890000023,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 121.78548899997259,
+              "following_us": 121.78608900000108,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 121.78668899997137,
+              "following_us": 121.78728999994928,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 121.78788999997778,
+              "following_us": 121.78849000000628,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.01808300003176555,
+          "wait_pair_spacing_max_us": 0.0008999999845400453
+        },
+        {
+          "name": "head1 Q2\u2192Q3",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "model_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 123.65943800000241,
+              "following_us": 123.6599639999913,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 127.29081599996425,
+              "following_us": 127.29141599999275,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 128.53091199998744,
+              "following_us": 128.53151199995773,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 128.53211199998623,
+              "following_us": 128.53271299996413,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 128.53331299999263,
+              "following_us": 128.53391299996292,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 128.53451299999142,
+              "following_us": 128.53511399996933,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.0035279999137856066,
+          "wait_pair_spacing_max_us": 0.0006009999779053032
+        },
+        {
+          "name": "head1 Q3 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 19,
+            "dma.done.wait": 44,
+            "vsyncadd": 44
+          },
+          "model_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "wait_pairs": [
+            {
+              "start_us": 131.44695299997693,
+              "following_us": 131.44755399995483,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 131.44815399998333,
+              "following_us": 131.44882900000084,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 131.44942899997113,
+              "following_us": 131.45002999994904,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 131.45070499996655,
+              "following_us": 131.45130499999505,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 131.72816599998623,
+              "following_us": 131.72899099998176,
+              "spacing_us": 0.0008249999955296516,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 131.7298169999849,
+              "following_us": 131.73071699996945,
+              "spacing_us": 0.0008999999845400453,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 131.73154199996497,
+              "following_us": 131.73236799996812,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 131.73386799998116,
+              "following_us": 131.73446799995145,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 134.300344999996,
+              "following_us": 134.3008699999773,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 134.30131999996956,
+              "following_us": 134.30184499995084,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 134.30229599995073,
+              "following_us": 134.30282099999022,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 134.3032709999825,
+              "following_us": 134.30379599996377,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 134.32262900000205,
+              "following_us": 134.32322899997234,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 134.32382900000084,
+              "following_us": 134.32442899997113,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 134.32502999994904,
+              "following_us": 134.32570499996655,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 134.32720499997959,
+              "following_us": 134.3278810000047,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 137.01342999999179,
+              "following_us": 137.01387999998406,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 137.01440499996534,
+              "following_us": 137.01485599996522,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 137.0153810000047,
+              "following_us": 137.01583099999698,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 137.01628099998925,
+              "following_us": 137.01680599997053,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 137.03511399996933,
+              "following_us": 137.0355639999616,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 137.03608900000108,
+              "following_us": 137.03661399998236,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 137.03713899996364,
+              "following_us": 137.03788999997778,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 137.03953999996884,
+              "following_us": 137.04036599997198,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 139.62920099997427,
+              "following_us": 139.62972599995555,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 139.63017699995544,
+              "following_us": 139.63070199999493,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 139.6311519999872,
+              "following_us": 139.63167699996848,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 139.63212699996075,
+              "following_us": 139.63265299994964,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 139.65043499995954,
+              "following_us": 139.65103499998804,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 139.65163499995833,
+              "following_us": 139.65223499998683,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 139.65283599996474,
+              "following_us": 139.65351099998225,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 139.65493699995568,
+              "following_us": 139.6556869999622,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 142.31842699996196,
+              "following_us": 142.31902699999046,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 142.31962699996075,
+              "following_us": 142.32022799999686,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 142.32082799996715,
+              "following_us": 142.32142799999565,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 142.32202799996594,
+              "following_us": 142.32262900000205,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 145.09063599997899,
+              "following_us": 145.0913109999965,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 145.0919859999558,
+              "following_us": 145.09273699996993,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 145.09341199998744,
+              "following_us": 145.09408700000495,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 145.09483799996087,
+              "following_us": 145.09551299997838,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 148.02175799995894,
+              "following_us": 148.02228400000604,
+              "spacing_us": 0.0005260000471025705,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 148.02280899998732,
+              "following_us": 148.0232589999796,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 148.02378399996087,
+              "following_us": 148.02430900000036,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 148.02476000000024,
+              "following_us": 148.02528499998152,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.02663700020639226,
+          "wait_pair_spacing_max_us": 0.0008999999845400453
+        },
+        {
+          "name": "final drain",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 4,
+            "dma.done.wait": 3,
+            "vsyncadd": 3,
+            "vsyncmov": 20
+          },
+          "model_counts": {
+            "dma.done.wait": 2,
+            "vsyncadd": 2,
+            "dma.general": 1,
+            "vsyncmov": 21
+          },
+          "wait_pairs": [
+            {
+              "start_us": 149.8431119999732,
+              "following_us": 149.8437120000017,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 153.32998199999565,
+              "following_us": 153.33065699995495,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 74684,
+              "flag_operand": "c:62"
+            },
+            {
+              "start_us": 154.71068399999058,
+              "following_us": 154.90673699998297,
+              "spacing_us": 0.19605299999238923,
+              "bundle_number": 74711,
+              "flag_operand": "c:65"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.1973279999801889,
+          "wait_pair_spacing_max_us": 0.19605299999238923
+        }
+      ],
+      "unmatched_waits": [],
+      "q_internal_pair_spacing_sum_us": 0.10954800009494647
+    },
+    {
+      "duration_us": 155.466986,
+      "phases": [
+        {
+          "name": "initial preparation",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.hbm_to_smem": 1,
+            "dma.done.wait": 9,
+            "vsyncadd": 9,
+            "sfence": 1,
+            "dma.general": 16
+          },
+          "model_counts": {
+            "dma.hbm_to_smem": 3,
+            "dma.done.wait": 7,
+            "vsyncadd": 7,
+            "sfence": 1,
+            "dma.general": 12
+          },
+          "wait_pairs": [
+            {
+              "start_us": 0.3494139999966137,
+              "following_us": 0.4185169999836944,
+              "spacing_us": 0.0691029999870807,
+              "bundle_number": 25,
+              "flag_operand": "c:5"
+            },
+            {
+              "start_us": 0.7457229999708943,
+              "following_us": 0.7464729999774136,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 127,
+              "flag_operand": "c:62"
+            },
+            {
+              "start_us": 0.7596029999549501,
+              "following_us": 0.7601290000020526,
+              "spacing_us": 0.0005260000471025705,
+              "bundle_number": 154,
+              "flag_operand": "c:65"
+            },
+            {
+              "start_us": 1.7232139999978244,
+              "following_us": 1.9382500000065193,
+              "spacing_us": 0.21503600000869483,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 2.153210999967996,
+              "following_us": 2.368246999976691,
+              "spacing_us": 0.21503600000869483,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 4.325929999991786,
+              "following_us": 4.3265299999620765,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 4.327129999990575,
+              "following_us": 4.32773099996848,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 4.328330999996979,
+              "following_us": 4.32893099996727,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 4.329530999995768,
+              "following_us": 4.330131999973673,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.5028529999544844,
+          "wait_pair_spacing_max_us": 0.21503600000869483
+        },
+        {
+          "name": "head0 Q0 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 3,
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "model_counts": {
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "wait_pairs": [
+            {
+              "start_us": 7.451979999954347,
+              "following_us": 7.4525809999904595,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 7.45318099996075,
+              "following_us": 7.453780999989249,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 7.45438099995954,
+              "following_us": 7.454981999995653,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 7.455581999965943,
+              "following_us": 7.456181999994442,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.00240200012922287,
+          "wait_pair_spacing_max_us": 0.0006010000361129642
+        },
+        {
+          "name": "head0 Q0\u2192Q1",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 22,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "wait_pairs": [
+            {
+              "start_us": 9.385353999969084,
+              "following_us": 9.385879000008572,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 13.131751999957487,
+              "following_us": 13.132202999957372,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 13.13272799999686,
+              "following_us": 13.13317799998913,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 13.149083999975119,
+              "following_us": 13.149834999989253,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 14.430371999973431,
+              "following_us": 14.43097200000193,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 14.431646999961231,
+              "following_us": 14.432247999997344,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 14.432922999956645,
+              "following_us": 14.433522999985144,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 14.434122999955434,
+              "following_us": 14.434798999980558,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.004654000164009631,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head0 Q1 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 8,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "model_counts": {
+            "dma.general": 4,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "wait_pairs": [
+            {
+              "start_us": 17.395707999996375,
+              "following_us": 17.396458000002895,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 17.397132999962196,
+              "following_us": 17.39788399997633,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 17.39855899999384,
+              "following_us": 17.399309000000358,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 17.399984999967273,
+              "following_us": 17.400734999973793,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 20.43044699996244,
+              "following_us": 20.43119699996896,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 20.43187199998647,
+              "following_us": 20.432623000000603,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 20.433373000007123,
+              "following_us": 20.434047999966424,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 20.434798999980558,
+              "following_us": 20.435473999998067,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 23.420992999977898,
+              "following_us": 23.421742999984417,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 23.42249399999855,
+              "following_us": 23.423168999957852,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 23.42391899996437,
+              "following_us": 23.424669999978505,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 23.425344999996014,
+              "following_us": 23.426095000002533,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.008778000017628074,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head0 Q1\u2192Q2",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 25.323528999986593,
+              "following_us": 25.324128999956883,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 29.003150999953505,
+              "following_us": 29.003601000003982,
+              "spacing_us": 0.00045000005047768354,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 29.004125999985263,
+              "following_us": 29.004575999977533,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 29.01950699998997,
+              "following_us": 29.020258000004105,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 30.285264000005554,
+              "following_us": 30.286013999953866,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 30.286688999971375,
+              "following_us": 30.28743999998551,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 30.288115000003017,
+              "following_us": 30.28886499995133,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 30.289539999968838,
+              "following_us": 30.29029099998297,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.0052529999520629644,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head0 Q2 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 24,
+            "vsyncadd": 24
+          },
+          "model_counts": {
+            "dma.general": 12,
+            "dma.done.wait": 20,
+            "vsyncadd": 20
+          },
+          "wait_pairs": [
+            {
+              "start_us": 33.27558499999577,
+              "following_us": 33.27633500000229,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 33.27700999996159,
+              "following_us": 33.277760999975726,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 33.278510999982245,
+              "following_us": 33.279185999999754,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 33.27993699995568,
+              "following_us": 33.28061199997319,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 33.56039899995085,
+              "following_us": 33.561224000004586,
+              "spacing_us": 0.0008250000537373126,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 33.562049000000115,
+              "following_us": 33.56287500000326,
+              "spacing_us": 0.000826000003144145,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 33.56369999999879,
+              "following_us": 33.56452499999432,
+              "spacing_us": 0.0008249999955296516,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 33.566025999956764,
+              "following_us": 33.56662599998526,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 36.19770399999106,
+              "following_us": 36.19845399999758,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 36.19912899995688,
+              "following_us": 36.19987999997102,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 36.20062999997754,
+              "following_us": 36.201304999995045,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 36.20273099996848,
+              "following_us": 36.20340599998599,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 38.93802499998128,
+              "following_us": 38.93847499997355,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 38.93899999995483,
+              "following_us": 38.93945000000531,
+              "spacing_us": 0.00045000005047768354,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 38.9399759999942,
+              "following_us": 38.94042599998647,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 38.94087599997874,
+              "following_us": 38.941400999960024,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 41.668141999980435,
+              "following_us": 41.668891999986954,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 41.66956700000446,
+              "following_us": 41.67031799996039,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 41.67106799996691,
+              "following_us": 41.67174299998442,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 41.67249399999855,
+              "following_us": 41.67316899995785,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 44.65621200000169,
+              "following_us": 44.65696200000821,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 44.65763799997512,
+              "following_us": 44.65838799998164,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 44.65906299999915,
+              "following_us": 44.65981399995508,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 44.660488999972586,
+              "following_us": 44.661238999979105,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.016505000123288482,
+          "wait_pair_spacing_max_us": 0.000826000003144145
+        },
+        {
+          "name": "head0 Q2\u2192Q3",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 46.54636799998116,
+              "following_us": 46.54689299996244,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 50.18922499998007,
+              "following_us": 50.189675999979954,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 50.190200999961235,
+              "following_us": 50.190650999953505,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 50.20550699997693,
+              "following_us": 50.20618199999444,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 51.4699879999971,
+              "following_us": 51.47058799996739,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 51.47118799999589,
+              "following_us": 51.47178799996618,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 51.472389000002295,
+              "following_us": 51.472988999972586,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 51.473589000001084,
+              "following_us": 51.474188999971375,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.004500999872107059,
+          "wait_pair_spacing_max_us": 0.0006750000175088644
+        },
+        {
+          "name": "head0 Q3 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 40,
+            "vsyncadd": 40
+          },
+          "model_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "wait_pairs": [
+            {
+              "start_us": 54.41266499995254,
+              "following_us": 54.41333999997005,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 54.41401499998756,
+              "following_us": 54.41476600000169,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 54.41544099996099,
+              "following_us": 54.4161159999785,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 54.41686599998502,
+              "following_us": 54.417541999951936,
+              "spacing_us": 0.0006759999669156969,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 54.69567799998913,
+              "following_us": 54.69642799999565,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 54.697178999951575,
+              "following_us": 54.697928999958094,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 54.69867899996461,
+              "following_us": 54.69942899997113,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 54.70070499996655,
+              "following_us": 54.701304999995045,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 57.31414999999106,
+              "following_us": 57.31490100000519,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 57.315575999964494,
+              "following_us": 57.31632599997101,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 57.31707599997753,
+              "following_us": 57.31760199996643,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 57.31880199996522,
+              "following_us": 57.319401999993715,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 59.92977200000314,
+              "following_us": 59.93029699998442,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 59.93074699997669,
+              "following_us": 59.93127199995797,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 59.93179699999746,
+              "following_us": 59.932247999997344,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 59.932772999978624,
+              "following_us": 59.933222999970894,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 59.95197999995435,
+              "following_us": 59.95258099999046,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 59.95318099996075,
+              "following_us": 59.95378099998925,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 59.95438099995954,
+              "following_us": 59.95498199999565,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 59.95618199999444,
+              "following_us": 59.95678199996473,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 62.64765899995109,
+              "following_us": 62.64810900000157,
+              "spacing_us": 0.00045000005047768354,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 62.64855899999384,
+              "following_us": 62.64908399997512,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 62.64953399996739,
+              "following_us": 62.64998499996727,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 62.65051000000676,
+              "following_us": 62.65095999999903,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 62.668816999997944,
+              "following_us": 62.669491999957245,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 62.67009299999336,
+              "following_us": 62.67069299996365,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 62.67136799998116,
+              "following_us": 62.672042999998666,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 62.67339399998309,
+              "following_us": 62.67414399998961,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 65.3487389999791,
+              "following_us": 65.34918899997137,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 65.34963899996364,
+              "following_us": 65.35016499995254,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 65.35061500000302,
+              "following_us": 65.35106499999529,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 65.35158999997657,
+              "following_us": 65.35203999996884,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 68.13422799995169,
+              "following_us": 68.13490399997681,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 68.13557899999432,
+              "following_us": 68.13632900000084,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 68.13700399996014,
+              "following_us": 68.13767999998527,
+              "spacing_us": 0.0006760000251233578,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 68.13842999999179,
+              "following_us": 68.13910499995109,
+              "spacing_us": 0.0006749999593012035,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 71.05942299996968,
+              "following_us": 71.0600240000058,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 71.06062399997609,
+              "following_us": 71.06122400000459,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 71.06182399997488,
+              "following_us": 71.06242499995278,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 71.06302499998128,
+              "following_us": 71.06362499995157,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.02423800010001287,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head0\u2192head1",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 17,
+            "dma.done.wait": 9,
+            "vsyncadd": 9
+          },
+          "model_counts": {
+            "dma.done.wait": 8,
+            "vsyncadd": 8,
+            "dma.general": 13
+          },
+          "wait_pairs": [
+            {
+              "start_us": 72.92436899995664,
+              "following_us": 72.92481999995653,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 76.42144299997017,
+              "following_us": 76.42204299999867,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 74684,
+              "flag_operand": "c:62"
+            },
+            {
+              "start_us": 77.81302499998128,
+              "following_us": 78.01057899999432,
+              "spacing_us": 0.19755400001304224,
+              "bundle_number": 74711,
+              "flag_operand": "c:65"
+            },
+            {
+              "start_us": 79.44560300000012,
+              "following_us": 79.67947099998128,
+              "spacing_us": 0.23386799998115748,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 79.91333999997005,
+              "following_us": 80.14720899995882,
+              "spacing_us": 0.23386899998877198,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 82.07998199999565,
+              "following_us": 82.08073200000217,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 82.08140699996147,
+              "following_us": 82.0821579999756,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 82.08283299999312,
+              "following_us": 82.08358299999963,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 82.08425799995894,
+              "following_us": 82.08500899997307,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.6693440000526607,
+          "wait_pair_spacing_max_us": 0.23386899998877198
+        },
+        {
+          "name": "head1 Q0 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 2,
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "model_counts": {
+            "dma.done.wait": 4,
+            "vsyncadd": 4
+          },
+          "wait_pairs": [
+            {
+              "start_us": 85.11119399999734,
+              "following_us": 85.11194400000386,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 85.11261999997078,
+              "following_us": 85.1133699999773,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 85.1140449999948,
+              "following_us": 85.11479599995073,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 85.11547099996824,
+              "following_us": 85.11622099997476,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.0030009999754838645,
+          "wait_pair_spacing_max_us": 0.0007509999559260905
+        },
+        {
+          "name": "head1 Q0\u2192Q1",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 6,
+            "vsyncadd": 6
+          },
+          "wait_pairs": [
+            {
+              "start_us": 87.02663499995833,
+              "following_us": 87.02708500000881,
+              "spacing_us": 0.00045000005047768354,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 90.70730799995363,
+              "following_us": 90.70805799996015,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 91.96338499995181,
+              "following_us": 91.96398499998031,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 91.96458500000881,
+              "following_us": 91.96518599998672,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 91.965785999957,
+              "following_us": 91.9663859999855,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 91.9669859999558,
+              "following_us": 91.96758699999191,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.0036020001280121505,
+          "wait_pair_spacing_max_us": 0.000750000006519258
+        },
+        {
+          "name": "head1 Q1 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 9,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "model_counts": {
+            "dma.general": 4,
+            "dma.done.wait": 12,
+            "vsyncadd": 12
+          },
+          "wait_pairs": [
+            {
+              "start_us": 94.90336100000422,
+              "following_us": 94.90396099997452,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 94.90456100000301,
+              "following_us": 94.90516199998092,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 94.90576199995121,
+              "following_us": 94.90636199997971,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 94.9069620000082,
+              "following_us": 94.90756299998611,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 97.87469999998575,
+              "following_us": 97.87544999999227,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 97.87612499995157,
+              "following_us": 97.87687499995809,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 97.87762599997222,
+              "following_us": 97.87830099998973,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 97.87905099999625,
+              "following_us": 97.87972699996317,
+              "spacing_us": 0.0006759999669156969,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 100.84453699999722,
+              "following_us": 100.84513799997512,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 100.84573800000362,
+              "following_us": 100.84633799997391,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 100.84693800000241,
+              "following_us": 100.84753899998032,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 100.84813900000881,
+              "following_us": 100.8487389999791,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.007654999848455191,
+          "wait_pair_spacing_max_us": 0.000750000006519258
+        },
+        {
+          "name": "head1 Q1\u2192Q2",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 15,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 102.69282699999167,
+              "following_us": 102.69335199997295,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 106.32247899996582,
+              "following_us": 106.32300400000531,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 106.32345399999758,
+              "following_us": 106.32390399998985,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 106.3376350000035,
+              "following_us": 106.33838499995181,
+              "spacing_us": 0.0007499999483115971,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 107.58898499998031,
+              "following_us": 107.58973599999445,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 107.59041099995375,
+              "following_us": 107.59116099996027,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 107.59183599997777,
+              "following_us": 107.59258699999191,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 107.59326199995121,
+              "following_us": 107.59401199995773,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.005252000002656132,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head1 Q2 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "model_counts": {
+            "dma.general": 12,
+            "dma.done.wait": 20,
+            "vsyncadd": 20
+          },
+          "wait_pairs": [
+            {
+              "start_us": 110.52040799998213,
+              "following_us": 110.52100799995242,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 110.52160799998092,
+              "following_us": 110.52220899995882,
+              "spacing_us": 0.0006009999779053032,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 110.52280899998732,
+              "following_us": 110.52340899995761,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 110.52400899998611,
+              "following_us": 110.5246089999564,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 110.80124499998055,
+              "following_us": 110.80199499998707,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 110.80267099995399,
+              "following_us": 110.80342099996051,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 110.80409599997802,
+              "following_us": 110.80484699999215,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 110.80612199997995,
+              "following_us": 110.80672200000845,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 113.39803399995435,
+              "following_us": 113.39863399998285,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 113.39923399995314,
+              "following_us": 113.39983499998925,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 113.40043499995954,
+              "following_us": 113.40103499998804,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 113.40163499995833,
+              "following_us": 113.40223599999445,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 113.42016799998237,
+              "following_us": 113.42076799995266,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 113.42136799998116,
+              "following_us": 113.42196799995145,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 113.42264399997657,
+              "following_us": 113.42331899999408,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 113.42474499996752,
+              "following_us": 113.42549499997403,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 116.12409900000785,
+              "following_us": 116.12462399998913,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 116.12507499998901,
+              "following_us": 116.12559999997029,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 116.12612499995157,
+              "following_us": 116.12657500000205,
+              "spacing_us": 0.00045000005047768354,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 116.12709999998333,
+              "following_us": 116.12755099998321,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 118.82037799997488,
+              "following_us": 118.82090299995616,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 118.82142799999565,
+              "following_us": 118.82187799998792,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 118.82240399997681,
+              "following_us": 118.8229289999581,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 118.82337900000857,
+              "following_us": 118.82390399998985,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 121.77625999995507,
+              "following_us": 121.77700999996159,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 121.77768599998672,
+              "following_us": 121.77843599999323,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 121.77918599999975,
+              "following_us": 121.77986199996667,
+              "spacing_us": 0.0006759999669156969,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 121.78061199997319,
+              "following_us": 121.7812869999907,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.017105999984778464,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "head1 Q2\u2192Q3",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 21,
+            "dma.done.wait": 8,
+            "vsyncadd": 8
+          },
+          "model_counts": {
+            "dma.general": 13,
+            "dma.done.wait": 7,
+            "vsyncadd": 7
+          },
+          "wait_pairs": [
+            {
+              "start_us": 123.62920099997427,
+              "following_us": 123.62972699996317,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 127.2384449999663,
+              "following_us": 127.23897000000579,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 354,
+              "flag_operand": "%390610"
+            },
+            {
+              "start_us": 127.23941999999806,
+              "following_us": 127.23987099999795,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 356,
+              "flag_operand": "%390612"
+            },
+            {
+              "start_us": 127.25480199995218,
+              "following_us": 127.2555519999587,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 387,
+              "flag_operand": "%390614"
+            },
+            {
+              "start_us": 128.5025509999832,
+              "following_us": 128.50330099998973,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 128.50397600000724,
+              "following_us": 128.50472699996317,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 128.50540199998068,
+              "following_us": 128.5061519999872,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 128.5068270000047,
+              "following_us": 128.50757799996063,
+              "spacing_us": 0.0007509999559260905,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.005253999959677458,
+          "wait_pair_spacing_max_us": 0.0007509999559260905
+        },
+        {
+          "name": "head1 Q3 MXU issue span",
+          "kind": "mxu_span",
+          "observed_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 44,
+            "vsyncadd": 44
+          },
+          "model_counts": {
+            "dma.general": 20,
+            "dma.done.wait": 28,
+            "vsyncadd": 28
+          },
+          "wait_pairs": [
+            {
+              "start_us": 131.4135649999953,
+              "following_us": 131.41416499996558,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 131.4147660000017,
+              "following_us": 131.41536599997198,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 131.41596600000048,
+              "following_us": 131.41656599997077,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 131.41716700000688,
+              "following_us": 131.41776699997718,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 131.69440199999372,
+              "following_us": 131.69515300000785,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 27684,
+              "flag_operand": "%162638"
+            },
+            {
+              "start_us": 131.69590299995616,
+              "following_us": 131.69665299996268,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27686,
+              "flag_operand": "%396419"
+            },
+            {
+              "start_us": 131.6974039999768,
+              "following_us": 131.69815399998333,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 27688,
+              "flag_operand": "%396421"
+            },
+            {
+              "start_us": 131.69942899997113,
+              "following_us": 131.70003000000725,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 27691,
+              "flag_operand": "%396423"
+            },
+            {
+              "start_us": 134.26935699995374,
+              "following_us": 134.26988300000085,
+              "spacing_us": 0.0005260000471025705,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 134.27033299999312,
+              "following_us": 134.2708579999744,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 134.27130799996667,
+              "following_us": 134.27183300000615,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 134.27228400000604,
+              "following_us": 134.27280899998732,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 134.29126599995652,
+              "following_us": 134.29194099997403,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 134.29269199998816,
+              "following_us": 134.29336700000567,
+              "spacing_us": 0.0006750000175088644,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 134.29411699995399,
+              "following_us": 134.2947179999901,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 134.2959179999889,
+              "following_us": 134.29651799995918,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 136.97891599999275,
+              "following_us": 136.97936599998502,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 136.97989199997392,
+              "following_us": 136.98034199996619,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 136.98086700000567,
+              "following_us": 136.98131699999794,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 136.9817669999902,
+              "following_us": 136.9822929999791,
+              "spacing_us": 0.0005259999888949096,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 137.0011999999988,
+              "following_us": 137.00179999996908,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 137.0024010000052,
+              "following_us": 137.00300099997548,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 137.003675999993,
+              "following_us": 137.00427599996328,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 137.0054769999697,
+              "following_us": 137.00607699999819,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 139.59588799998164,
+              "following_us": 139.5963379999739,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 139.5968629999552,
+              "following_us": 139.59731399995508,
+              "spacing_us": 0.000450999999884516,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 139.59783899999456,
+              "following_us": 139.59828899998683,
+              "spacing_us": 0.00044999999227002263,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 139.5987389999791,
+              "following_us": 139.59926399996039,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 139.6177219999954,
+              "following_us": 139.61847200000193,
+              "spacing_us": 0.000750000006519258,
+              "bundle_number": 18266,
+              "flag_operand": "%100244"
+            },
+            {
+              "start_us": 139.61914699996123,
+              "following_us": 139.61989799997536,
+              "spacing_us": 0.0007510000141337514,
+              "bundle_number": 18268,
+              "flag_operand": "%394638"
+            },
+            {
+              "start_us": 139.62064799998188,
+              "following_us": 139.62124799995217,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 18270,
+              "flag_operand": "%394640"
+            },
+            {
+              "start_us": 139.62244899995858,
+              "following_us": 139.62304899998708,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 18273,
+              "flag_operand": "%394642"
+            },
+            {
+              "start_us": 142.28999099996872,
+              "following_us": 142.29059099999722,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 142.2911909999675,
+              "following_us": 142.291790999996,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 142.29239199997392,
+              "following_us": 142.2929169999552,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 142.2935169999837,
+              "following_us": 142.29411699995399,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 145.06054899998708,
+              "following_us": 145.06107399996836,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 145.06152399996063,
+              "following_us": 145.06204900000012,
+              "spacing_us": 0.0005250000394880772,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 145.0625,
+              "following_us": 145.06302499998128,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 145.06347499997355,
+              "following_us": 145.06399999995483,
+              "spacing_us": 0.0005249999812804163,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            },
+            {
+              "start_us": 147.9730639999616,
+              "following_us": 147.9736639999901,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2581,
+              "flag_operand": "%13261"
+            },
+            {
+              "start_us": 147.97426399996039,
+              "following_us": 147.9748649999965,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2583,
+              "flag_operand": "%391152"
+            },
+            {
+              "start_us": 147.9754649999668,
+              "following_us": 147.9760649999953,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 2585,
+              "flag_operand": "%391154"
+            },
+            {
+              "start_us": 147.97666499996558,
+              "following_us": 147.9772660000017,
+              "spacing_us": 0.0006010000361129642,
+              "bundle_number": 2587,
+              "flag_operand": "%391156"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.025584000046364963,
+          "wait_pair_spacing_max_us": 0.0007510000141337514
+        },
+        {
+          "name": "final drain",
+          "kind": "between_mxu",
+          "observed_counts": {
+            "dma.general": 4,
+            "dma.done.wait": 3,
+            "vsyncadd": 3,
+            "vsyncmov": 20
+          },
+          "model_counts": {
+            "dma.done.wait": 2,
+            "vsyncadd": 2,
+            "dma.general": 1,
+            "vsyncmov": 21
+          },
+          "wait_pairs": [
+            {
+              "start_us": 149.83373299997766,
+              "following_us": 149.83433300000615,
+              "spacing_us": 0.0006000000284984708,
+              "bundle_number": 47330,
+              "flag_operand": "%630698"
+            },
+            {
+              "start_us": 153.31572600000072,
+              "following_us": 153.316325999971,
+              "spacing_us": 0.0005999999702908099,
+              "bundle_number": 74684,
+              "flag_operand": "c:62"
+            },
+            {
+              "start_us": 154.69807899999432,
+              "following_us": 154.89435699995374,
+              "spacing_us": 0.1962779999594204,
+              "bundle_number": 74711,
+              "flag_operand": "c:65"
+            }
+          ],
+          "wait_pair_spacing_sum_us": 0.1974779999582097,
+          "wait_pair_spacing_max_us": 0.1962779999594204
+        }
+      ],
+      "unmatched_waits": [],
+      "q_internal_pair_spacing_sum_us": 0.10526900022523478
+    }
+  ],
+  "method": "Pair dma.done.wait with next vsyncadd of same flag AND next bundle number, within 1 us.",
+  "limitations": [
+    "Spacing is between reconstructed instruction timestamps, not independently measured wait/stall cycles.",
+    "Q2/Q3 observed dynamic wait counts differ from model; ordinal DMA matching is invalid.",
+    "No explicit DMA-engine completion lane in this profile; sync points only constrain completion indirectly."
+  ]
+}

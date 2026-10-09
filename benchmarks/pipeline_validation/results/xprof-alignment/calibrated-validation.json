@@ -1,0 +1,711 @@
+{
+  "baseline_kernel_us": 119.766,
+  "calibrated_kernel_us": 153.335,
+  "baseline_full_program_us": 120.05114500454548,
+  "calibrated_full_program_us": 153.63986512117646,
+  "ordinary_hardware_reference_us": 149.81437549999828,
+  "phases": [
+    {
+      "call": 0,
+      "name": "initial preparation",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 1411,
+        "mae_us": 1.535112772328203,
+        "signed_mean_us": -1.5351054161616886,
+        "p95_abs_us": 2.072372662704206,
+        "max_abs_us": 2.136063662729925
+      },
+      "calibrated": {
+        "count": 1411,
+        "mae_us": 1.4750252945816154,
+        "signed_mean_us": -1.4750162117222338,
+        "p95_abs_us": 1.8228414354273768,
+        "max_abs_us": 1.8355650717997918
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q0 MXU issue span",
+      "group": "training_head0_Q_interiors",
+      "baseline": {
+        "count": 28389,
+        "mae_us": 2.5506692365825585,
+        "signed_mean_us": -2.5506692365825585,
+        "p95_abs_us": 3.0852074481634597,
+        "max_abs_us": 3.132756266337913
+      },
+      "calibrated": {
+        "count": 28389,
+        "mae_us": 1.9410845773380916,
+        "signed_mean_us": -1.9410845773380916,
+        "p95_abs_us": 2.0009328900072427,
+        "max_abs_us": 2.004500890017863
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q0\u2192Q1",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 25017,
+        "mae_us": 3.5267582188826694,
+        "signed_mean_us": -3.5267582188826694,
+        "p95_abs_us": 3.902736629949638,
+        "max_abs_us": 4.2384973572646345
+      },
+      "calibrated": {
+        "count": 25017,
+        "mae_us": 1.950455144285255,
+        "signed_mean_us": -1.950455144285255,
+        "p95_abs_us": 2.0037731627108393,
+        "max_abs_us": 2.007409162718586
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q1 MXU issue span",
+      "group": "training_head0_Q_interiors",
+      "baseline": {
+        "count": 49022,
+        "mae_us": 5.536247116910969,
+        "signed_mean_us": -5.536247116910969,
+        "p95_abs_us": 6.616957266312188,
+        "max_abs_us": 6.698652448187975
+      },
+      "calibrated": {
+        "count": 49022,
+        "mae_us": 1.9086277433381347,
+        "signed_mean_us": -1.9086277433381347,
+        "p95_abs_us": 1.953018526360463,
+        "max_abs_us": 1.9591705264014827
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q1\u2192Q2",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 25015,
+        "mae_us": 7.0531074989179725,
+        "signed_mean_us": -7.0531074989179725,
+        "p95_abs_us": 7.421722539044293,
+        "max_abs_us": 7.7215650845256505
+      },
+      "calibrated": {
+        "count": 25015,
+        "mae_us": 1.8365137560412228,
+        "signed_mean_us": -1.8365137560412228,
+        "p95_abs_us": 1.9201998445787538,
+        "max_abs_us": 1.9295431172696098
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q2 MXU issue span",
+      "group": "training_head0_Q_interiors",
+      "baseline": {
+        "count": 59511,
+        "mae_us": 9.678550236548343,
+        "signed_mean_us": -9.678550236548343,
+        "p95_abs_us": 11.276634811782792,
+        "max_abs_us": 11.370438539083416
+      },
+      "calibrated": {
+        "count": 59511,
+        "mae_us": 1.7301257002810135,
+        "signed_mean_us": -1.7301257002810135,
+        "p95_abs_us": 1.8257501627753214,
+        "max_abs_us": 1.8423847082262839
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q2\u2192Q3",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 24882,
+        "mae_us": 11.70170366501568,
+        "signed_mean_us": -11.70170366501568,
+        "p95_abs_us": 12.02974008454315,
+        "max_abs_us": 12.341575629989364
+      },
+      "calibrated": {
+        "count": 24882,
+        "mae_us": 1.5715119742113914,
+        "signed_mean_us": -1.5715119742113914,
+        "p95_abs_us": 1.6738846628344888,
+        "max_abs_us": 1.6860139355273773
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0 Q3 MXU issue span",
+      "group": "training_head0_Q_interiors",
+      "baseline": {
+        "count": 70997,
+        "mae_us": 14.911357633471747,
+        "signed_mean_us": -14.911357633471747,
+        "p95_abs_us": 17.008356993635992,
+        "max_abs_us": 17.120426539080526
+      },
+      "calibrated": {
+        "count": 70997,
+        "mae_us": 1.3921021800873914,
+        "signed_mean_us": -1.3921021800873914,
+        "p95_abs_us": 1.5163781174407447,
+        "max_abs_us": 1.5623917083288106
+      }
+    },
+    {
+      "call": 0,
+      "name": "head0\u2192head1",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 24782,
+        "mae_us": 17.50348289335506,
+        "signed_mean_us": -17.50348289335506,
+        "p95_abs_us": 18.509345882725334,
+        "max_abs_us": 20.064880775412753
+      },
+      "calibrated": {
+        "count": 24782,
+        "mae_us": 1.188532675315674,
+        "signed_mean_us": -1.188532675315674,
+        "p95_abs_us": 1.700871642801772,
+        "max_abs_us": 2.9880991264639363
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q0 MXU issue span",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 28309,
+        "mae_us": 20.390739797486386,
+        "signed_mean_us": -20.390739797486386,
+        "p95_abs_us": 20.891871015439662,
+        "max_abs_us": 20.945201379060336
+      },
+      "calibrated": {
+        "count": 28309,
+        "mae_us": 3.0006840376974635,
+        "signed_mean_us": -3.0006840376974635,
+        "p95_abs_us": 3.028698944610568,
+        "max_abs_us": 3.030070944623205
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q0\u2192Q1",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 25030,
+        "mae_us": 21.298456522532554,
+        "signed_mean_us": -21.298456522532554,
+        "p95_abs_us": 21.634859379094152,
+        "max_abs_us": 21.941504288139896
+      },
+      "calibrated": {
+        "count": 25030,
+        "mae_us": 2.9420207165149006,
+        "signed_mean_us": -2.9420207165149006,
+        "p95_abs_us": 3.031457217341597,
+        "max_abs_us": 3.0370644900586825
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q1 MXU issue span",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 48814,
+        "mae_us": 23.10906215536954,
+        "signed_mean_us": -23.10906215536954,
+        "p95_abs_us": 24.11614428816935,
+        "max_abs_us": 24.190569560899277
+      },
+      "calibrated": {
+        "count": 48814,
+        "mae_us": 2.701686940261841,
+        "signed_mean_us": -2.701686940261841,
+        "p95_abs_us": 2.7798146264076564,
+        "max_abs_us": 2.7833566264043412
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q1\u2192Q2",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 25151,
+        "mae_us": 24.51611271743545,
+        "signed_mean_us": -24.51611271743545,
+        "p95_abs_us": 24.840365560908225,
+        "max_abs_us": 25.137066833620523
+      },
+      "calibrated": {
+        "count": 25151,
+        "mae_us": 2.519855132304629,
+        "signed_mean_us": -2.519855132304629,
+        "p95_abs_us": 2.624925899090613,
+        "max_abs_us": 2.6384301717886416
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q2 MXU issue span",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 59399,
+        "mae_us": 26.990714402518435,
+        "signed_mean_us": -26.990714402518435,
+        "p95_abs_us": 28.49924192454435,
+        "max_abs_us": 28.590732288149795
+      },
+      "calibrated": {
+        "count": 59399,
+        "mae_us": 2.2598751063221947,
+        "signed_mean_us": -2.2598751063221947,
+        "p95_abs_us": 2.3636553081436773,
+        "max_abs_us": 2.405637217189849
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q2\u2192Q3",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 25016,
+        "mae_us": 28.908914425820477,
+        "signed_mean_us": -28.908914425820477,
+        "p95_abs_us": 29.223500106348027,
+        "max_abs_us": 29.513899106357087
+      },
+      "calibrated": {
+        "count": 25016,
+        "mae_us": 2.0016784103729766,
+        "signed_mean_us": -2.0016784103729766,
+        "p95_abs_us": 2.115481717122833,
+        "max_abs_us": 2.126208989872609
+      }
+    },
+    {
+      "call": 0,
+      "name": "head1 Q3 MXU issue span",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 71620,
+        "mae_us": 32.00712567217874,
+        "signed_mean_us": -32.00712567217874,
+        "p95_abs_us": 34.08121392453323,
+        "max_abs_us": 34.190135288151126
+      },
+      "calibrated": {
+        "count": 71620,
+        "mae_us": 1.7036405693345715,
+        "signed_mean_us": -1.7036405693345715,
+        "p95_abs_us": 1.8149876716832551,
+        "max_abs_us": 1.8259246716377504
+      }
+    },
+    {
+      "call": 0,
+      "name": "final drain",
+      "group": "held_out_call0_other",
+      "baseline": {
+        "count": 23379,
+        "mae_us": 34.45878815478773,
+        "signed_mean_us": -34.45878815478773,
+        "p95_abs_us": 34.7182497427293,
+        "max_abs_us": 34.790440651790504
+      },
+      "calibrated": {
+        "count": 23379,
+        "mae_us": 1.3917840328482416,
+        "signed_mean_us": -1.3917840328482416,
+        "p95_abs_us": 1.5180582624792862,
+        "max_abs_us": 1.5412195351620426
+      }
+    },
+    {
+      "call": 1,
+      "name": "initial preparation",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 1412,
+        "mae_us": 1.5417500260222194,
+        "signed_mean_us": -1.5417430999946535,
+        "p95_abs_us": 2.0863960263467276,
+        "max_abs_us": 2.093896662723041
+      },
+      "calibrated": {
+        "count": 1412,
+        "mae_us": 1.4816389938895886,
+        "signed_mean_us": -1.4816303423920256,
+        "p95_abs_us": 1.7742934354190418,
+        "max_abs_us": 1.7802101627330673
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q0 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 28359,
+        "mae_us": 2.525739693124711,
+        "signed_mean_us": -2.525739693124711,
+        "p95_abs_us": 3.0665027209158486,
+        "max_abs_us": 3.1149255390468316
+      },
+      "calibrated": {
+        "count": 28359,
+        "mae_us": 1.9164108001598141,
+        "signed_mean_us": -1.9164108001598141,
+        "p95_abs_us": 1.982184889992455,
+        "max_abs_us": 1.9844748900159832
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q0\u2192Q1",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 24944,
+        "mae_us": 3.507288539008351,
+        "signed_mean_us": -3.507288539008351,
+        "p95_abs_us": 3.904710266322457,
+        "max_abs_us": 4.219739357273568
+      },
+      "calibrated": {
+        "count": 24944,
+        "mae_us": 1.9316844270264657,
+        "signed_mean_us": -1.9316844270264657,
+        "p95_abs_us": 1.986816162695261,
+        "max_abs_us": 1.9897771627449128
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q1 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 48937,
+        "mae_us": 5.470924443483863,
+        "signed_mean_us": -5.470924443483863,
+        "p95_abs_us": 6.527093993592889,
+        "max_abs_us": 6.611317448140515
+      },
+      "calibrated": {
+        "count": 48937,
+        "mae_us": 1.843699833328696,
+        "signed_mean_us": -1.843699833328696,
+        "p95_abs_us": 1.8739895263763557,
+        "max_abs_us": 1.8827958900374746
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q1\u2192Q2",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 25045,
+        "mae_us": 6.965192230342348,
+        "signed_mean_us": -6.965192230342348,
+        "p95_abs_us": 7.331245629967878,
+        "max_abs_us": 7.628417720861872
+      },
+      "calibrated": {
+        "count": 25045,
+        "mae_us": 1.7490573426533929,
+        "signed_mean_us": -1.7490573426533929,
+        "p95_abs_us": 1.8340688445829905,
+        "max_abs_us": 1.8419861173010936
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q2 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 59478,
+        "mae_us": 9.603341726132912,
+        "signed_mean_us": -9.603341726132912,
+        "p95_abs_us": 11.225022902715914,
+        "max_abs_us": 11.319241266318222
+      },
+      "calibrated": {
+        "count": 59478,
+        "mae_us": 1.652235971787953,
+        "signed_mean_us": -1.652235971787953,
+        "p95_abs_us": 1.7263831627582746,
+        "max_abs_us": 1.745394708233384
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q2\u2192Q3",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 24989,
+        "mae_us": 11.65210357740048,
+        "signed_mean_us": -11.65210357740048,
+        "p95_abs_us": 11.999425175447662,
+        "max_abs_us": 12.295131629953374
+      },
+      "calibrated": {
+        "count": 24989,
+        "mae_us": 1.5200126667549565,
+        "signed_mean_us": -1.5200126667549565,
+        "p95_abs_us": 1.622715662819651,
+        "max_abs_us": 1.6355209355644291
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0 Q3 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 71254,
+        "mae_us": 14.849315651733956,
+        "signed_mean_us": -14.849315651733956,
+        "p95_abs_us": 17.002615084546413,
+        "max_abs_us": 17.112759175416258
+      },
+      "calibrated": {
+        "count": 71254,
+        "mae_us": 1.3316785775012563,
+        "signed_mean_us": -1.3316785775012563,
+        "p95_abs_us": 1.3918782537702867,
+        "max_abs_us": 1.41863170832859
+      }
+    },
+    {
+      "call": 1,
+      "name": "head0\u2192head1",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 24699,
+        "mae_us": 17.499273797588632,
+        "signed_mean_us": -17.499273797588632,
+        "p95_abs_us": 18.504464337263663,
+        "max_abs_us": 20.005606775413476
+      },
+      "calibrated": {
+        "count": 24699,
+        "mae_us": 1.1822340775024331,
+        "signed_mean_us": -1.1822340775024331,
+        "p95_abs_us": 1.6959156428496414,
+        "max_abs_us": 2.97896053554679
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q0 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 28211,
+        "mae_us": 20.36777396258549,
+        "signed_mean_us": -20.36777396258549,
+        "p95_abs_us": 20.875421833623292,
+        "max_abs_us": 20.918966651805476
+      },
+      "calibrated": {
+        "count": 28211,
+        "mae_us": 2.9785151236004728,
+        "signed_mean_us": -2.9785151236004728,
+        "p95_abs_us": 3.009796944596843,
+        "max_abs_us": 3.0133589446242866
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q0\u2192Q1",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 24936,
+        "mae_us": 21.26601321363627,
+        "signed_mean_us": -21.26601321363627,
+        "p95_abs_us": 21.602595651794488,
+        "max_abs_us": 21.90838092454011
+      },
+      "calibrated": {
+        "count": 24936,
+        "mae_us": 2.9104575949265823,
+        "signed_mean_us": -2.9104575949265823,
+        "p95_abs_us": 3.0005572173556914,
+        "max_abs_us": 3.0097474900564265
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q1 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 49166,
+        "mae_us": 23.088713015177373,
+        "signed_mean_us": -23.088713015177373,
+        "p95_abs_us": 24.065639470001187,
+        "max_abs_us": 24.142537197270656
+      },
+      "calibrated": {
+        "count": 49166,
+        "mae_us": 2.6799670006322143,
+        "signed_mean_us": -2.6799670006322143,
+        "p95_abs_us": 2.7603069445816715,
+        "max_abs_us": 2.7669506263718375
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q1\u2192Q2",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 24882,
+        "mae_us": 24.46558704588365,
+        "signed_mean_us": -24.46558704588365,
+        "p95_abs_us": 24.78934483362511,
+        "max_abs_us": 25.087926379085573
+      },
+      "calibrated": {
+        "count": 24882,
+        "mae_us": 2.4697691392003316,
+        "signed_mean_us": -2.4697691392003316,
+        "p95_abs_us": 2.5771488990470175,
+        "max_abs_us": 2.591463171784156
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q2 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 59182,
+        "mae_us": 26.94480275601405,
+        "signed_mean_us": -26.94480275601405,
+        "p95_abs_us": 28.456622106360115,
+        "max_abs_us": 28.56094628817975
+      },
+      "calibrated": {
+        "count": 59182,
+        "mae_us": 2.2176642976999523,
+        "signed_mean_us": -2.2176642976999523,
+        "p95_abs_us": 2.3038263081574826,
+        "max_abs_us": 2.3363082171711227
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q2\u2192Q3",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 24742,
+        "mae_us": 28.876417826627357,
+        "signed_mean_us": -28.876417826627357,
+        "p95_abs_us": 29.188551197224513,
+        "max_abs_us": 29.48557874271711
+      },
+      "calibrated": {
+        "count": 24742,
+        "mae_us": 1.9649014108759353,
+        "signed_mean_us": -1.9649014108759353,
+        "p95_abs_us": 2.080440717132163,
+        "max_abs_us": 2.0968819898451585
+      }
+    },
+    {
+      "call": 1,
+      "name": "head1 Q3 MXU issue span",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 70797,
+        "mae_us": 31.976439992768963,
+        "signed_mean_us": -31.976439992768963,
+        "p95_abs_us": 34.07154928817987,
+        "max_abs_us": 34.17839592451463
+      },
+      "calibrated": {
+        "count": 70797,
+        "mae_us": 1.6696818009984231,
+        "signed_mean_us": -1.6696818009984231,
+        "p95_abs_us": 1.7792906716718875,
+        "max_abs_us": 1.7902086716889727
+      }
+    },
+    {
+      "call": 1,
+      "name": "final drain",
+      "group": "held_out_call1",
+      "baseline": {
+        "count": 23411,
+        "mae_us": 34.4478359468648,
+        "signed_mean_us": -34.4478359468648,
+        "p95_abs_us": 34.70412128813905,
+        "max_abs_us": 34.77711547000844
+      },
+      "calibrated": {
+        "count": 23411,
+        "mae_us": 1.3819755538906262,
+        "signed_mean_us": -1.3819755538906262,
+        "p95_abs_us": 1.5090452624725685,
+        "max_abs_us": 1.5302685351645096
+      }
+    }
+  ],
+  "groups": {
+    "held_out_call0_other": {
+      "baseline": {
+        "count": 407825,
+        "mae_us": 22.73309157090228,
+        "signed_mean_us": -22.733091545451288,
+        "p95_abs_us": 34.26615765181815,
+        "max_abs_us": 34.790440651790504
+      },
+      "calibrated": {
+        "count": 407825,
+        "mae_us": 2.1040311336252437,
+        "signed_mean_us": -2.1040311022002096,
+        "p95_abs_us": 2.9980284445963576,
+        "max_abs_us": 3.0370644900586825
+      }
+    },
+    "training_head0_Q_interiors": {
+      "baseline": {
+        "count": 207919,
+        "mae_us": 9.515487839751893,
+        "signed_mean_us": -9.515487839751893,
+        "p95_abs_us": 16.76521353905818,
+        "max_abs_us": 17.120426539080526
+      },
+      "calibrated": {
+        "count": 207919,
+        "mae_us": 1.6855928911213551,
+        "signed_mean_us": -1.6855928911213551,
+        "p95_abs_us": 1.958366526370856,
+        "max_abs_us": 2.004500890017863
+      }
+    },
+    "held_out_call1": {
+      "baseline": {
+        "count": 614444,
+        "mae_us": 18.202362928916624,
+        "signed_mean_us": -18.202362913000528,
+        "p95_abs_us": 33.93183265177747,
+        "max_abs_us": 34.77711547000844
+      },
+      "calibrated": {
+        "count": 614444,
+        "mae_us": 1.9191950807977647,
+        "signed_mean_us": -1.919195060916515,
+        "p95_abs_us": 2.964556217334305,
+        "max_abs_us": 3.0133589446242866
+      }
+    }
+  },
+  "validation": "Fixed instruction correspondences; exact same model addresses/opcodes/path; unchanged frequency and DMA; kernel origins only.",
+  "limitation": "Held-out head/call from SAME capture, not an independent hardware experiment. Empirical issue floor, not causal attribution.",
+  "kernel_error_us": [
+    -2.1438409999999806,
+    -2.1319859999999835
+  ]
+}

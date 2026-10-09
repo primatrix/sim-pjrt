@@ -1,0 +1,86 @@
+{
+  "profile_sha256": "c9367225ca7246bba8c0a7188009b656909ed6a3478dd3fdd88e1df0326cc584",
+  "manifest_sha256": "a47d2f7c3ecea068c34a751c83938ef90c339a882af5cdf723cfc6728cdd7b0f",
+  "profile": "benchmarks/pipeline_validation/best-kernel-xprof-calibrated-profile.json",
+  "manifest": "/home/yanko/lab/tpu-kernel-lab/runs/vmem-prefetch-output-h8-2k-01/dump/process-1672214-qzMe0B/1791475661633290799-<late-finalization>-01-final_bundles.txt.manifest.json",
+  "frequency_hz": 2200000000.0,
+  "kernel_origin_us": 0.301,
+  "kernel_duration_us": 153.335,
+  "full_program_duration_us": 153.63986512117646,
+  "mxu_issue_bundle_count": 35132,
+  "mxu_gaps_over_1us": [
+    {
+      "start_us": 0,
+      "end_us": 2.6464848372694654,
+      "duration_us": 2.6464848372694654,
+      "left_address": null,
+      "right_address": "0:0x97/0:0x279a"
+    },
+    {
+      "start_us": 7.206501564530358,
+      "end_us": 12.685823064515022,
+      "duration_us": 5.479321499984664,
+      "left_address": "0:0x97/0:0x9206",
+      "right_address": "0:0x97/0:0xa26"
+    },
+    {
+      "start_us": 23.29255788268969,
+      "end_us": 28.771879382688734,
+      "duration_us": 5.479321499999045,
+      "left_address": "0:0x97/0:0x9206@1",
+      "right_address": "0:0x97/0:0xa26@1"
+    },
+    {
+      "start_us": 44.724714064426415,
+      "end_us": 50.2015810189422,
+      "duration_us": 5.476866954515785,
+      "left_address": "0:0x97/0:0x9206@2",
+      "right_address": "0:0x97/0:0xa26@2"
+    },
+    {
+      "start_us": 71.50306051895585,
+      "end_us": 79.26946178261989,
+      "duration_us": 7.7664012636640365,
+      "left_address": "0:0x97/0:0x9206@3",
+      "right_address": "0:0x97/0:0x279a@1"
+    },
+    {
+      "start_us": 83.82947850991518,
+      "end_us": 89.30880000994317,
+      "duration_us": 5.479321500027993,
+      "left_address": "0:0x97/0:0x9206@4",
+      "right_address": "0:0x97/0:0xa26@3"
+    },
+    {
+      "start_us": 99.91553482817744,
+      "end_us": 105.39485632820544,
+      "duration_us": 5.479321500027993,
+      "left_address": "0:0x97/0:0x9206@5",
+      "right_address": "0:0x97/0:0xa26@4"
+    },
+    {
+      "start_us": 121.34769101010545,
+      "end_us": 126.82455796467924,
+      "duration_us": 5.476866954573794,
+      "left_address": "0:0x97/0:0x9206@6",
+      "right_address": "0:0x97/0:0xa26@5"
+    },
+    {
+      "start_us": 148.1260374647923,
+      "end_us": 153.335,
+      "duration_us": 5.208962535207718,
+      "left_address": "0:0x97/0:0x9206@7",
+      "right_address": null
+    }
+  ],
+  "cost_table": "configs/tpu7x_xprof_issue_calibration.json",
+  "cost_table_sha256": "aa44aef52d6f17a1652c382a447f95fa97ecd3eeb96b6d1bb55b3573dfb97faf",
+  "empirical_calibration": true,
+  "independent_hardware_validation": false,
+  "default_profile_unchanged": true,
+  "scope": "kernel timings compared with instrumented XProf calls; full program adds modeled wrapper",
+  "kernel_error_percent": [
+    1.3788635072215265,
+    1.3713432381071462
+  ]
+}

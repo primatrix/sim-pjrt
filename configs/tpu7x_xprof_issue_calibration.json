@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "kind": "empirical_bundle_issue_floor",
+  "frequency_hz": 2200000000.0,
+  "default_floor_cycles": 1.3199999999969236,
+  "compiler_binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "cycles_by_signature": {
+    "vadd.f32|vadd.f32|vld|vpack.c.bf16|vpop.f32.mrb|vpop.f32.mrb|vsub.f32": 1.3199999999969236,
+    "vadd.f32|vld|vpop.f32.mrb": 1.1572000000015237,
+    "vadd.f32|vld|vpop.f32.mrb|vpop.f32.mrb|vsub.f32": 1.3199999999969236,
+    "vadd.f32|vpop.eup|vpop.f32.mrb|vpow2.f32|vst": 1.3199999999969236,
+    "vadd.f32|vpop.eup|vst": 1.3199999999812917,
+    "vld": 1.1550000000070781,
+    "vld|vld|vmatprep.mubr.bf16.mxu1|vpop.f32.mrb|vpow2.f32|vst|vsub.f32": 1.3199999999969236,
+    "vld|vmatmul.mubr.bf16.gmra.mrb": 1.3199999999969236,
+    "vld|vmatprep.mubr.bf16.mxu0|vpop.eup|vpow2.f32": 1.3199999999969236,
+    "vld|vmatpush1.bf16.xpose.msra.mxu0": 1.3199999999969236,
+    "vld|vpack.c.b16": 1.156099999996485,
+    "vld|vpack.c.b16|vpack.c.b16|vshrl.u32": 1.1549999999992622,
+    "vld|vpack.c.b16|vpack.c.bf16|vpop.eup|vpop.f32.mrb|vst": 1.3199999999969236,
+    "vld|vshrl.u32": 1.1550000000070781,
+    "vld|vst": 1.3199999999969236,
+    "vpop.eup|vpop.f32.mrb|vpow2.f32|vst": 1.3199999999969236,
+    "vpop.f32.mrb|vst": 1.1572000000015237,
+    "vst": 1.15500000002271
+  },
+  "support": {
+    "vadd.f32|vadd.f32|vld|vpack.c.bf16|vpop.f32.mrb|vpop.f32.mrb|vsub.f32": {
+      "samples": 162,
+      "static_positions": 47,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.45100000000530827,
+      "p90_ns": 0.7499999999964757
+    },
+    "vadd.f32|vld|vpop.f32.mrb": {
+      "samples": 105,
+      "static_positions": 52,
+      "median_ns": 0.5260000000006926,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6010000000031823
+    },
+    "vadd.f32|vld|vpop.f32.mrb|vpop.f32.mrb|vsub.f32": {
+      "samples": 171,
+      "static_positions": 57,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.7499999999964757
+    },
+    "vadd.f32|vpop.eup|vpop.f32.mrb|vpow2.f32|vst": {
+      "samples": 78,
+      "static_positions": 29,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.45099999999820284,
+      "p90_ns": 0.6750000000010914
+    },
+    "vadd.f32|vpop.eup|vst": {
+      "samples": 85,
+      "static_positions": 30,
+      "median_ns": 0.5999999999914962,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6750000000010914
+    },
+    "vld": {
+      "samples": 246,
+      "static_positions": 90,
+      "median_ns": 0.5250000000032173,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6759999999985666
+    },
+    "vld|vld|vmatprep.mubr.bf16.mxu1|vpop.f32.mrb|vpow2.f32|vst|vsub.f32": {
+      "samples": 123,
+      "static_positions": 36,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.7500000000035811
+    },
+    "vld|vmatmul.mubr.bf16.gmra.mrb": {
+      "samples": 129,
+      "static_positions": 48,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.75099999999928
+    },
+    "vld|vmatprep.mubr.bf16.mxu0|vpop.eup|vpow2.f32": {
+      "samples": 82,
+      "static_positions": 28,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.7500000000035811
+    },
+    "vld|vmatpush1.bf16.xpose.msra.mxu0": {
+      "samples": 102,
+      "static_positions": 38,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6759999999985666
+    },
+    "vld|vpack.c.b16": {
+      "samples": 90,
+      "static_positions": 32,
+      "median_ns": 0.5254999999984022,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.7499999999964757
+    },
+    "vld|vpack.c.b16|vpack.c.b16|vshrl.u32": {
+      "samples": 66,
+      "static_positions": 25,
+      "median_ns": 0.5249999999996646,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6010000000031823
+    },
+    "vld|vpack.c.b16|vpack.c.bf16|vpop.eup|vpop.f32.mrb|vst": {
+      "samples": 65,
+      "static_positions": 24,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.5249999999961119,
+      "p90_ns": 0.7499999999964757
+    },
+    "vld|vshrl.u32": {
+      "samples": 166,
+      "static_positions": 61,
+      "median_ns": 0.5250000000032173,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6750000000010914
+    },
+    "vld|vst": {
+      "samples": 94,
+      "static_positions": 46,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.8250000000007418
+    },
+    "vpop.eup|vpop.f32.mrb|vpow2.f32|vst": {
+      "samples": 85,
+      "static_positions": 38,
+      "median_ns": 0.5999999999986017,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6750000000010914
+    },
+    "vpop.f32.mrb|vst": {
+      "samples": 233,
+      "static_positions": 89,
+      "median_ns": 0.5260000000006926,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6759999999985666
+    },
+    "vst": {
+      "samples": 76,
+      "static_positions": 39,
+      "median_ns": 0.5250000000103228,
+      "p10_ns": 0.4500000000007276,
+      "p90_ns": 0.6009999999960769
+    }
+  },
+  "provenance": {
+    "pairs_sha256": "5cca453b99d6976375790128925c47b7beafc68e6eb3ff2382c00eb55cb9a6ac",
+    "training": "XProf call0 head0 Q0-Q3 only; consecutive model/hardware bundle IDs, same VLD/VST family, one modeled issue cycle",
+    "held_out": "All call1; call0 head1",
+    "scope": "best kernel 2K BF16 MHA32 D256; interpolated instruction trace. Not a hardware clock or causal stall model. Unseen signatures use pooled training median: empirical generalization, not measured per-signature costs.",
+    "minimum_samples": 64,
+    "minimum_static_positions": 8,
+    "rejected_interval_samples": 0
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "files": [
+    {
+      "path": "plugins/profile/2026_10_08_16_33_19/falcon-job-0ezvialgnd-workers-0-0.trace.json.gz",
+      "bytes": 70180623,
+      "sha256": "7b1da86771807334d4f84c39f613401d035f52ae0c0fe42d86099e729fa2a4f8"
+    },
+    {
+      "path": "plugins/profile/2026_10_08_16_33_19/falcon-job-0ezvialgnd-workers-0-0.xplane.pb",
+      "bytes": 259378825,
+      "sha256": "a768ed7ca4f315648e6785ef2810692964aeeb91c4f5dbd31dd46b2434ad3dac"
+    }
+  ],
+  "analysis_id": "an-t0xq2ncarc",
+  "experiment_id": "exp-1u7fcp3z1s",
+  "local_root": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/hardware",
+  "hashes_verified": true
+}

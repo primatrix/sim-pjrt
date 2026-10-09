@@ -1,0 +1,483 @@
+{
+  "trace_sha256": "7b1da86771807334d4f84c39f613401d035f52ae0c0fe42d86099e729fa2a4f8",
+  "model_manifest_sha256": "a47d2f7c3ecea068c34a751c83938ef90c339a882af5cdf723cfc6728cdd7b0f",
+  "unique_context_seed_count": 20883,
+  "static_model_bundles": 44007,
+  "static_hardware_bundles": 43921,
+  "static_matched_bundles": 28899,
+  "method": "Unique 11-bundle common-vocabulary opcode-set contexts, monotone ordering, unique bounded gap sequences; phase-local family occurrence matching only with equal multiplicities. No time fitting.",
+  "limitations": [
+    "Cross-binary inferred correspondence, not exact instruction identity.",
+    "Opcode normalization discards operand types and some unit selectors; context and dynamic checks constrain but cannot prove identity.",
+    "Unmapped contexts, unequal occurrence counts, and same-family coissue multiplicity >1 are excluded.",
+    "Time deltas include interpolation/instrumentation differences and are not causal stall measurements."
+  ],
+  "ordering_validation": "Reject entire phase/bundle/opcode keys on VLD-anchor and representative chronological conflicts (both endpoints); tolerate 10 ns reconstruction jitter. Time never selects replacement matches.",
+  "calls": [
+    {
+      "duration_us": 155.478841,
+      "matched_instructions": 615744,
+      "phases": [
+        {
+          "name": "initial preparation",
+          "model_eligible_instructions": 11072,
+          "hardware_eligible_instructions": 10947,
+          "matched_instructions": 1411,
+          "represented_dynamic_bundles": 694,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 5143,
+            "no_static_mapping": 4462,
+            "unequal_dynamic_counts": 56
+          }
+        },
+        {
+          "name": "head0 Q0 MXU issue span",
+          "model_eligible_instructions": 48176,
+          "hardware_eligible_instructions": 47999,
+          "matched_instructions": 28389,
+          "represented_dynamic_bundles": 7200,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 19375,
+            "unequal_dynamic_counts": 127,
+            "no_static_mapping": 285
+          }
+        },
+        {
+          "name": "head0 Q0\u2192Q1",
+          "model_eligible_instructions": 51502,
+          "hardware_eligible_instructions": 50816,
+          "matched_instructions": 25017,
+          "represented_dynamic_bundles": 6633,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 345,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head0 Q1 MXU issue span",
+          "model_eligible_instructions": 110041,
+          "hardware_eligible_instructions": 108998,
+          "matched_instructions": 49022,
+          "represented_dynamic_bundles": 13215,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 47096,
+            "unequal_dynamic_counts": 646,
+            "no_static_mapping": 13277
+          }
+        },
+        {
+          "name": "head0 Q1\u2192Q2",
+          "model_eligible_instructions": 51505,
+          "hardware_eligible_instructions": 50886,
+          "matched_instructions": 25015,
+          "represented_dynamic_bundles": 6632,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 350,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head0 Q2 MXU issue span",
+          "model_eligible_instructions": 171919,
+          "hardware_eligible_instructions": 170342,
+          "matched_instructions": 59511,
+          "represented_dynamic_bundles": 16104,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 77012,
+            "unequal_dynamic_counts": 961,
+            "no_static_mapping": 34435
+          }
+        },
+        {
+          "name": "head0 Q2\u2192Q3",
+          "model_eligible_instructions": 51490,
+          "hardware_eligible_instructions": 50649,
+          "matched_instructions": 24882,
+          "represented_dynamic_bundles": 6592,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 470,
+            "no_static_mapping": 4466
+          }
+        },
+        {
+          "name": "head0 Q3 MXU issue span",
+          "model_eligible_instructions": 233825,
+          "hardware_eligible_instructions": 230593,
+          "matched_instructions": 70997,
+          "represented_dynamic_bundles": 19429,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 107102,
+            "no_static_mapping": 53667,
+            "unequal_dynamic_counts": 2059
+          }
+        },
+        {
+          "name": "head0\u2192head1",
+          "model_eligible_instructions": 51692,
+          "hardware_eligible_instructions": 50437,
+          "matched_instructions": 24782,
+          "represented_dynamic_bundles": 6531,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21692,
+            "unequal_dynamic_counts": 704,
+            "no_static_mapping": 4514
+          }
+        },
+        {
+          "name": "head1 Q0 MXU issue span",
+          "model_eligible_instructions": 48176,
+          "hardware_eligible_instructions": 47883,
+          "matched_instructions": 28309,
+          "represented_dynamic_bundles": 7185,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 19375,
+            "unequal_dynamic_counts": 207,
+            "no_static_mapping": 285
+          }
+        },
+        {
+          "name": "head1 Q0\u2192Q1",
+          "model_eligible_instructions": 51502,
+          "hardware_eligible_instructions": 50876,
+          "matched_instructions": 25030,
+          "represented_dynamic_bundles": 6630,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 332,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head1 Q1 MXU issue span",
+          "model_eligible_instructions": 110041,
+          "hardware_eligible_instructions": 108549,
+          "matched_instructions": 48814,
+          "represented_dynamic_bundles": 13142,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 47096,
+            "unequal_dynamic_counts": 854,
+            "no_static_mapping": 13277
+          }
+        },
+        {
+          "name": "head1 Q1\u2192Q2",
+          "model_eligible_instructions": 51505,
+          "hardware_eligible_instructions": 51021,
+          "matched_instructions": 25151,
+          "represented_dynamic_bundles": 6674,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 214,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head1 Q2 MXU issue span",
+          "model_eligible_instructions": 171919,
+          "hardware_eligible_instructions": 169885,
+          "matched_instructions": 59399,
+          "represented_dynamic_bundles": 16081,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 77012,
+            "no_static_mapping": 34435,
+            "unequal_dynamic_counts": 1034,
+            "cross_family_order_conflict": 39
+          }
+        },
+        {
+          "name": "head1 Q2\u2192Q3",
+          "model_eligible_instructions": 51490,
+          "hardware_eligible_instructions": 50829,
+          "matched_instructions": 25016,
+          "represented_dynamic_bundles": 6601,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 336,
+            "no_static_mapping": 4466
+          }
+        },
+        {
+          "name": "head1 Q3 MXU issue span",
+          "model_eligible_instructions": 233825,
+          "hardware_eligible_instructions": 231117,
+          "matched_instructions": 71620,
+          "represented_dynamic_bundles": 19594,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 107102,
+            "unequal_dynamic_counts": 1417,
+            "no_static_mapping": 53667,
+            "cross_family_order_conflict": 19
+          }
+        },
+        {
+          "name": "final drain",
+          "model_eligible_instructions": 40731,
+          "hardware_eligible_instructions": 39592,
+          "matched_instructions": 23379,
+          "represented_dynamic_bundles": 5921,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 16553,
+            "unequal_dynamic_counts": 648,
+            "no_static_mapping": 151
+          }
+        }
+      ]
+    },
+    {
+      "duration_us": 155.466986,
+      "matched_instructions": 614444,
+      "phases": [
+        {
+          "name": "initial preparation",
+          "model_eligible_instructions": 11072,
+          "hardware_eligible_instructions": 11005,
+          "matched_instructions": 1412,
+          "represented_dynamic_bundles": 687,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 5143,
+            "no_static_mapping": 4462,
+            "unequal_dynamic_counts": 55
+          }
+        },
+        {
+          "name": "head0 Q0 MXU issue span",
+          "model_eligible_instructions": 48176,
+          "hardware_eligible_instructions": 48013,
+          "matched_instructions": 28359,
+          "represented_dynamic_bundles": 7184,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 19375,
+            "unequal_dynamic_counts": 157,
+            "no_static_mapping": 285
+          }
+        },
+        {
+          "name": "head0 Q0\u2192Q1",
+          "model_eligible_instructions": 51502,
+          "hardware_eligible_instructions": 50692,
+          "matched_instructions": 24944,
+          "represented_dynamic_bundles": 6621,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 418,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head0 Q1 MXU issue span",
+          "model_eligible_instructions": 110041,
+          "hardware_eligible_instructions": 108996,
+          "matched_instructions": 48937,
+          "represented_dynamic_bundles": 13173,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 47096,
+            "unequal_dynamic_counts": 731,
+            "no_static_mapping": 13277
+          }
+        },
+        {
+          "name": "head0 Q1\u2192Q2",
+          "model_eligible_instructions": 51505,
+          "hardware_eligible_instructions": 50707,
+          "matched_instructions": 25045,
+          "represented_dynamic_bundles": 6624,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 320,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head0 Q2 MXU issue span",
+          "model_eligible_instructions": 171919,
+          "hardware_eligible_instructions": 170155,
+          "matched_instructions": 59478,
+          "represented_dynamic_bundles": 16097,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 77012,
+            "unequal_dynamic_counts": 979,
+            "no_static_mapping": 34435,
+            "cross_family_order_conflict": 15
+          }
+        },
+        {
+          "name": "head0 Q2\u2192Q3",
+          "model_eligible_instructions": 51490,
+          "hardware_eligible_instructions": 50980,
+          "matched_instructions": 24989,
+          "represented_dynamic_bundles": 6629,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 363,
+            "no_static_mapping": 4466
+          }
+        },
+        {
+          "name": "head0 Q3 MXU issue span",
+          "model_eligible_instructions": 233825,
+          "hardware_eligible_instructions": 231068,
+          "matched_instructions": 71254,
+          "represented_dynamic_bundles": 19413,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 107102,
+            "unequal_dynamic_counts": 1802,
+            "no_static_mapping": 53667
+          }
+        },
+        {
+          "name": "head0\u2192head1",
+          "model_eligible_instructions": 51692,
+          "hardware_eligible_instructions": 50424,
+          "matched_instructions": 24699,
+          "represented_dynamic_bundles": 6532,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21692,
+            "unequal_dynamic_counts": 787,
+            "no_static_mapping": 4514
+          }
+        },
+        {
+          "name": "head1 Q0 MXU issue span",
+          "model_eligible_instructions": 48176,
+          "hardware_eligible_instructions": 47669,
+          "matched_instructions": 28211,
+          "represented_dynamic_bundles": 7143,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 19375,
+            "unequal_dynamic_counts": 305,
+            "no_static_mapping": 285
+          }
+        },
+        {
+          "name": "head1 Q0\u2192Q1",
+          "model_eligible_instructions": 51502,
+          "hardware_eligible_instructions": 50628,
+          "matched_instructions": 24936,
+          "represented_dynamic_bundles": 6586,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 426,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head1 Q1 MXU issue span",
+          "model_eligible_instructions": 110041,
+          "hardware_eligible_instructions": 109213,
+          "matched_instructions": 49166,
+          "represented_dynamic_bundles": 13244,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 47096,
+            "no_static_mapping": 13277,
+            "unequal_dynamic_counts": 502
+          }
+        },
+        {
+          "name": "head1 Q1\u2192Q2",
+          "model_eligible_instructions": 51505,
+          "hardware_eligible_instructions": 50662,
+          "matched_instructions": 24882,
+          "represented_dynamic_bundles": 6586,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 483,
+            "no_static_mapping": 4468
+          }
+        },
+        {
+          "name": "head1 Q2 MXU issue span",
+          "model_eligible_instructions": 171919,
+          "hardware_eligible_instructions": 169330,
+          "matched_instructions": 59182,
+          "represented_dynamic_bundles": 16011,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 77012,
+            "unequal_dynamic_counts": 1290,
+            "no_static_mapping": 34435
+          }
+        },
+        {
+          "name": "head1 Q2\u2192Q3",
+          "model_eligible_instructions": 51490,
+          "hardware_eligible_instructions": 50556,
+          "matched_instructions": 24742,
+          "represented_dynamic_bundles": 6555,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 21672,
+            "unequal_dynamic_counts": 610,
+            "no_static_mapping": 4466
+          }
+        },
+        {
+          "name": "head1 Q3 MXU issue span",
+          "model_eligible_instructions": 233825,
+          "hardware_eligible_instructions": 230353,
+          "matched_instructions": 70797,
+          "represented_dynamic_bundles": 19244,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 107102,
+            "unequal_dynamic_counts": 2259,
+            "no_static_mapping": 53667
+          }
+        },
+        {
+          "name": "final drain",
+          "model_eligible_instructions": 40731,
+          "hardware_eligible_instructions": 39594,
+          "matched_instructions": 23411,
+          "represented_dynamic_bundles": 5938,
+          "excluded_model": {
+            "model_coissue_family_multiplicity": 16553,
+            "unequal_dynamic_counts": 616,
+            "no_static_mapping": 151
+          }
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "model.trace.json.gz": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/model.trace.json.gz",
+    "timeline.html": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/timeline.html",
+    "summary.json": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/summary.json",
+    "unmatched-events.jsonl.gz": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/unmatched-events.jsonl.gz",
+    "instruction-pairs.jsonl.gz": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/instruction-pairs.jsonl.gz",
+    "bundle-pairs.json.gz": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/bundle-pairs.json.gz",
+    "static-map.json": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/xprof-alignment/matched/static-map.json"
+  },
+  "represented_dynamic_bundles_total": 329125,
+  "q0_progress_samples": [
+    {
+      "model_bundle": "0x279a",
+      "hardware_bundle": 10739,
+      "model_elapsed_us": 0.0,
+      "hardware_elapsed_us": 0.0
+    },
+    {
+      "model_bundle": "0x2ebe",
+      "hardware_bundle": 12648,
+      "model_elapsed_us": 0.8700000000000001,
+      "hardware_elapsed_us": 1.2036309999999997
+    },
+    {
+      "model_bundle": "0x35ca",
+      "hardware_bundle": 14452,
+      "model_elapsed_us": 1.69,
+      "hardware_elapsed_us": 2.3174519999999994
+    },
+    {
+      "model_bundle": "0x8adb",
+      "hardware_bundle": 37548,
+      "model_elapsed_us": 2.690909,
+      "hardware_elapsed_us": 3.6099939999999995
+    },
+    {
+      "model_bundle": "0x9205",
+      "hardware_bundle": 39387,
+      "model_elapsed_us": 3.526818,
+      "hardware_elapsed_us": 4.723214
+    }
+  ]
+}
