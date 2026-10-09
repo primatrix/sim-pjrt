@@ -1,0 +1,75 @@
+{
+  "source_sha256": "9cc5da3be6c569af9e07f064471d41fadcf7a51b051ad877e744b2c614e204ec",
+  "compiler_binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "mapping_sha256": "a258bccd669abae712d157f7af0631b5e29458b644746d1c883333a539eb65d4",
+  "profile_sha256": "0c5eb70d3c64c54e153433e82a558ea18f24ffe8a425131eee293815dcfacc8a",
+  "profile_changed": false,
+  "dynamic_instruction_count": 1540924,
+  "unmapped_before": {
+    "scalar_parameter_address": 5,
+    "scalar_select": 371,
+    "scmp.ne.f32.partialorder": 8,
+    "sfence": 3,
+    "vadd.xlane.f32.xlu0": 4096,
+    "vadd.xlane.f32.xlu1": 4096,
+    "vcmp.eq.f32.partialorder": 8192,
+    "vcmp.eq.s32.totalorder": 4,
+    "vcmp.le.f32.partialorder": 8192,
+    "vcmp.le.s32.totalorder": 512,
+    "vcmp.lt.s32.totalorder": 512,
+    "vmatpush1.bf16.xpose.msra.mxu0": 9952,
+    "vmatpush1.bf16.xpose.msrb.mxu0": 288,
+    "vmax.xlane.f32.xlu0": 4104,
+    "vmax.xlane.f32.xlu1": 4096,
+    "vpack.c.b16": 49152,
+    "vpack.i.b16": 8192,
+    "vpop.xlane.xlu0": 8200,
+    "vpop.xlane.xlu1": 8192,
+    "vsetiar.raw.iar0": 1,
+    "vsetiar.raw.iar1": 1,
+    "vsyncmov": 21,
+    "vunpack.c.0.s8": 16,
+    "vunpack.c.h.bf16": 8192,
+    "vunpack.c.l.bf16": 8192,
+    "vunpack.c.l.s4": 16,
+    "vweird.f32": 16384
+  },
+  "unmapped_after": {
+    "sfence": 3
+  },
+  "unmapped_before_count": 150990,
+  "unmapped_after_count": 3,
+  "mapped_dynamic_percent": 99.99980531161822,
+  "before_microseconds": 116.70584841000002,
+  "after_microseconds": 118.08403022818183,
+  "increase_microseconds": 1.3781818181818204,
+  "modeled_cycles": 259784.86650200002,
+  "measured_microseconds": 149.81437549999828,
+  "remaining_difference_microseconds": 31.730345271816446,
+  "status": "partial",
+  "estimated_seconds": null,
+  "full_report": ".build/pipeline-validation/current-best-gap/mapping-complete-report.json",
+  "changes": [
+    "Explicit binary-verified pack/unpack and weird opcode aliases.",
+    "XLU unit suffix classification and same-unit resource namespace.",
+    "BF16 transpose matpush table latency 8 and issue interval 8; nontranspose remains 4.",
+    "Verified vector compare cost equivalence, scalar partial-order comparisons and raw IAR classifiers.",
+    "GF pseudo latency rules for scalar_parameter_address and scalar_select.",
+    "SSA consumer disambiguation for vsyncmov: spop vs vpop.sfrf."
+  ],
+  "remaining_limitations": [
+    "sfence has no mapped fixed cost; completion model required.",
+    "Mapping coverage does not establish complete resource/dependency modeling.",
+    "scalar_select result latency is mapped but assembly issue expansion remains incomplete.",
+    "Unknown formats and ambiguous or missing FIFO consumers still fail closed."
+  ],
+  "validation": {
+    "unittest_passed": 107,
+    "bazel_targets_passed": [
+      "//tests/python:execution_test",
+      "//tests/python:llo_program_test"
+    ],
+    "full_run_seconds": 78.0,
+    "memory_peak": "3.9G"
+  }
+}

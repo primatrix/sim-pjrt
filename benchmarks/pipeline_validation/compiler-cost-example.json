@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "frequency_hz": 1000000000,
+  "compiler_binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "model_provenance": "Compiler constants with illustrative explicit resource scopes and footprints",
+  "gaps": ["This is a scheduling demonstration, not a classified real kernel"],
+  "bundles": [
+    {"address": "0", "operations": [
+      {"id": "first", "performance_id": 295, "issue_footprint": [5],
+       "resource_namespace": "unit0", "classification_source": "illustrative footprint for table row 295"}
+    ]},
+    {"address": "1", "operations": [
+      {"id": "independent", "performance_id": 295, "issue_footprint": [5],
+       "resource_namespace": "unit1", "classification_source": "illustrative footprint for table row 295"}
+    ]},
+    {"address": "2", "operations": [
+      {"id": "next", "performance_id": 295, "issue_footprint": [5],
+       "resource_namespace": "unit0", "classification_source": "illustrative footprint for table row 295"}
+    ]},
+    {"address": "3", "operations": [
+      {"id": "consumer", "name": "Illustrative result consumer", "latency": 1,
+       "depends_on": ["first"]}
+    ]}
+  ]
+}

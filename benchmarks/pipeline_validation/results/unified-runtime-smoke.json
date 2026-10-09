@@ -1,0 +1,55 @@
+{
+  "validation": "PJRT simulated TPU: ones, add, matmul; not numerical TPU emulation or hardware timing validation",
+  "cgroup": {
+    "memory_max_gib": 128,
+    "memory_high_gib": 96,
+    "swap_bytes": 0,
+    "runtime_limit_seconds": 900,
+    "global_lock": true
+  },
+  "elapsed_seconds": 5.446,
+  "memory_peak_mib": 246.6,
+  "platform": "tpu",
+  "add_shape": [
+    8,
+    128
+  ],
+  "matmul_shape": [
+    8,
+    8
+  ],
+  "reports": [
+    {
+      "execution_engine": "gf_instruction_pipeline",
+      "status": "partial",
+      "scheduled_bundle_count": 205,
+      "modeled_cycles": 486.260062,
+      "modeled_seconds": 2.210273009090909e-07,
+      "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951"
+    },
+    {
+      "execution_engine": "gf_instruction_pipeline",
+      "status": "partial",
+      "scheduled_bundle_count": 201,
+      "modeled_cycles": 494.260062,
+      "modeled_seconds": 2.2466366454545455e-07,
+      "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951"
+    },
+    {
+      "execution_engine": "gf_instruction_pipeline",
+      "status": "partial",
+      "scheduled_bundle_count": 184,
+      "modeled_cycles": 431.260062,
+      "modeled_seconds": 1.960273009090909e-07,
+      "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951"
+    },
+    {
+      "execution_engine": "gf_instruction_pipeline",
+      "status": "partial",
+      "scheduled_bundle_count": 204,
+      "modeled_cycles": 534,
+      "modeled_seconds": 2.427272727272727e-07,
+      "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951"
+    }
+  ]
+}

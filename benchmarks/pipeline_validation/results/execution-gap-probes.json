@@ -1,0 +1,106 @@
+[
+  {
+    "case": "vdelay_operand_not_charged",
+    "synthetic_llo": "0: { vdelay 100 }\n1: { %v0 = vadd.f32 %input, 1.0 }",
+    "kwargs": {},
+    "start_cycles": [
+      0,
+      100
+    ],
+    "status": "partial",
+    "gaps": [
+      {
+        "address": "Final LLO",
+        "reason": "GF entry latencies used; consumer-specific latency adjustments incomplete"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "IMEM, runtime memory service and specialized execution units are not calibrated"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "compiler identity not supplied; bundled GF table is an explicit target assumption"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "undeclared live-ins assumed ready at entry: %input"
+      }
+    ],
+    "interpretation": "regression fixed under supplied semantics; remaining hardware/model gaps stay partial",
+    "previous_start_cycles": [
+      0,
+      1
+    ],
+    "profile": {
+      "frequency_hz": 1000000000.0,
+      "vdelay_semantics": "total_cycles"
+    }
+  },
+  {
+    "case": "wait_flag_not_bound",
+    "synthetic_llo": "0: { dma.hbm_to_vmem %src, 32, %dst, [#allocation0] }\n1: { dma.done.wait [#allocation9], 32 }",
+    "kwargs": {
+      "memory_profile": {
+        "frequency_hz": 1000000000.0,
+        "dma_granule_bytes": 32,
+        "dma": {
+          "hbm_to_vmem": {
+            "bytes_per_second": 128000000000.0,
+            "latency_cycles": 20
+          }
+        }
+      }
+    },
+    "start_cycles": [
+      0,
+      1
+    ],
+    "status": "partial",
+    "gaps": [
+      {
+        "address": "Final LLO",
+        "reason": "0:0x1: DMA wait has unknown or partial completion credits: [#allocation9]"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "DMA uses supplied profile and aligned contiguous payload assumption; not hardware calibrated"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "GF entry latencies used; consumer-specific latency adjustments incomplete"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "IMEM, runtime memory service and specialized execution units are not calibrated"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "compiler identity not supplied; bundled GF table is an explicit target assumption"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "memory alias/bank hazards not reconstructed; DMA synchronization uses explicit credits"
+      },
+      {
+        "address": "Final LLO",
+        "reason": "undeclared live-ins assumed ready at entry: %dst, %src"
+      }
+    ],
+    "interpretation": "regression fixed under supplied semantics; remaining hardware/model gaps stay partial",
+    "previous_start_cycles": [
+      0,
+      28
+    ],
+    "profile": {
+      "frequency_hz": 1000000000.0,
+      "dma_granule_bytes": 32,
+      "dma": {
+        "hbm_to_vmem": {
+          "bytes_per_second": 128000000000.0,
+          "latency_cycles": 20
+        }
+      },
+      "vdelay_semantics": "total_cycles"
+    }
+  }
+]

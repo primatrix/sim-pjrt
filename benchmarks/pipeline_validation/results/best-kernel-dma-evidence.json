@@ -1,0 +1,112 @@
+{
+  "source_sha256": "9cc5da3be6c569af9e07f064471d41fadcf7a51b051ad877e744b2c614e204ec",
+  "experiment": "exp-1u7fcp3z1s",
+  "counter_source": "/home/yanko/lab/tpu-kernel-lab/evidence/best-vmem-overlap/counters.json",
+  "diagnosis_source": "/home/yanko/lab/tpu-kernel-lab/evidence/best-vmem-overlap/diagnosis.json",
+  "instrumented_call_count": 2,
+  "instrumented_microseconds": [
+    155.478841,
+    155.466986
+  ],
+  "selected_counters": {
+    "VF_CHIP_DIE0_CMN_DE_0_OCI_FIXED_STATS_CNT_UNPRIVILEGED_DMA_REQUEST_POPPED_BYTES_VC_0": [
+      {
+        "ts": 0,
+        "value": "33312768",
+        "description": "Increments by number of bytes in a rd/wr request pair popped from the DMA engine for a ceratin OutputVc."
+      }
+    ],
+    "VF_CHIP_DIE0_CMN_DE_0_OCI_FIXED_STATS_CNT_UNPRIVILEGED_DMA_REQUEST_POPPED_BYTES_VC_2": [
+      {
+        "ts": 0,
+        "value": "199848000",
+        "description": "Increments by number of bytes in a rd/wr request pair popped from the DMA engine for a ceratin OutputVc."
+      }
+    ],
+    "VF_CHIP_DIE0_CMN_DE_0_CMN_FIXED_STATS_CNT_UNPRIVILEGED_VMEM2HBM_DMA_REQUEST_STALLED": [
+      {
+        "ts": 0,
+        "value": "53242",
+        "description": "Number of DMA Request Stalled in Vmem2Hbm Output VC."
+      }
+    ],
+    "VF_CHIP_DIE0_CMN_DE_1_OCI_FIXED_STATS_CNT_UNPRIVILEGED_DMA_REQUEST_POPPED_BYTES_VC_0": [
+      {
+        "ts": 0,
+        "value": "33798144",
+        "description": "Increments by number of bytes in a rd/wr request pair popped from the DMA engine for a ceratin OutputVc."
+      }
+    ],
+    "VF_CHIP_DIE0_CMN_DE_1_OCI_FIXED_STATS_CNT_UNPRIVILEGED_DMA_REQUEST_POPPED_BYTES_VC_2": [
+      {
+        "ts": 0,
+        "value": "202805248",
+        "description": "Increments by number of bytes in a rd/wr request pair popped from the DMA engine for a ceratin OutputVc."
+      }
+    ],
+    "VF_CHIP_DIE0_CMN_DE_1_CMN_FIXED_STATS_CNT_UNPRIVILEGED_VMEM2HBM_DMA_REQUEST_STALLED": [
+      {
+        "ts": 0,
+        "value": "55178",
+        "description": "Number of DMA Request Stalled in Vmem2Hbm Output VC."
+      }
+    ]
+  },
+  "counter_scope_limitation": "Counters are capture-wide, not per-op latency; VC direction not inferred from VC number alone. Compare with source-derived payload and descriptor inventory.",
+  "aggregate_vc0_vc2_bytes_per_call": 234882080.0,
+  "source_expected_q_bytes": 33554432,
+  "source_expected_kv_bytes": 167772160,
+  "source_expected_output_bytes": 33554432,
+  "model_bytes_before": 184550432,
+  "official_architecture": "https://docs.cloud.google.com/tpu/docs/tpu7x",
+  "bandwidth_scope_note": "7.38 TB/s per chip, two independent chiplets. Configured 3.7 TB/s is approximately half chip peak, not an extra full-chip factor of two.",
+  "unmodeled_general_dma_count": 48,
+  "unmodeled_general_dma_payload_bytes": 50331648,
+  "unmodeled_general_dma_example": {
+    "address": "0:0x97/0:0xad5e",
+    "opcode": "dma.general",
+    "text": "%4_call4_44013 = dma.general (!%p_call4_630345_p11), %s_call4_284337_s25, 32768, %s_call4_727751_s17, [#allocation45], [#allocation196], [#allocation195], %s_call4_630326_s10, 0",
+    "resolved_predicate": true,
+    "timing_operand_text": "%4_call4_44013 = dma.general (!%p_call4_630345_p11), %s_call4_284337_s25, %s_call4_630328_s0, %s_call4_727751_s17, %s_call4_484222_s5, %s_call4_484223_s22, [#allocation195], %s_call4_630326_s10, 0",
+    "scalar_operands_resolved": true
+  },
+  "root_cause": "Parser discarded explicit compiler hbm-to-vmem comments before inference. Arithmetic/phi pointer types were not recovered, leaving 48 prefetch DMAs without direction, service or completion credits.",
+  "before_audit": ".build/pipeline-validation/current-best-gap/dma-audit-before.json",
+  "model_bytes_after": 234882080,
+  "model_microseconds_before": 118.08403022818183,
+  "model_microseconds_after": 118.08403022818183,
+  "missing_credit_sites_before": 15,
+  "missing_credit_sites_after": 3,
+  "fixed_report": ".build/pipeline-validation/current-best-gap/dma-fixed-report.json",
+  "tests": {
+    "unittest_passed": 110,
+    "bazel_targets_passed": 3
+  },
+  "interpretation": "A confirmed byte/credit omission, but zero wall-time change at configured 3.7 TB/s: these prefetched transfers fit under modeled compute. Does not causally explain the 31.73 us residual.",
+  "corrected_bandwidth_sensitivity": {
+    "status": "completed",
+    "baseline_bytes_per_second": 3700000000000.0,
+    "experimental_bytes_per_second": 1850000000000.0,
+    "baseline_microseconds": 120.05114500454548,
+    "experimental_microseconds": 155.28358351000023,
+    "increase_microseconds": 35.23243850545476,
+    "measured_microseconds": 149.81437549999828,
+    "baseline_underprediction_microseconds": 29.763230495452802,
+    "experimental_overprediction_microseconds": 5.46920801000195,
+    "report": ".build/pipeline-validation/current-best-gap/dma-flags-fixed-half-bandwidth-report.json",
+    "interpretation": "Sensitivity, not a measured/calibrated effective DMA rate. Default bandwidth unchanged. The remaining gap is sensitive to DMA service parameters, not uniquely attributed.",
+    "supersedes": ".build/pipeline-validation/current-best-gap/half-bandwidth-report.json"
+  },
+  "output_flag_fix": {
+    "cause": "scalar_lea.sflag annotation parsed as displacement; composing offsets on nonzero allocation-relative flags unsupported",
+    "example": "scalar_lea.sflag %s_base, 6 [#allocation6], then SMEM spill/reload",
+    "resolved_output_dma_count": 8,
+    "modeled_cycles": 264112.51901000005,
+    "modeled_microseconds": 120.05114500454548,
+    "increase_microseconds": 1.967114776363644,
+    "remaining_missing_credit_sites": 1,
+    "remaining_gap": "HBM-to-SMEM initialization completion model absent",
+    "report": ".build/pipeline-validation/current-best-gap/dma-flags-fixed-report.json",
+    "profile_sha256": "0c5eb70d3c64c54e153433e82a558ea18f24ffe8a425131eee293815dcfacc8a"
+  }
+}

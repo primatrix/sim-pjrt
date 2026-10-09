@@ -1,0 +1,69 @@
+{
+  "source_sha256": "9cc5da3be6c569af9e07f064471d41fadcf7a51b051ad877e744b2c614e204ec",
+  "hardware_evidence": "/home/yanko/lab/tpu-kernel-lab/evidence/falcon-vmem-prefetch-output-h8/result.json",
+  "measurement_metric": "XProf XLA Ops kernel latency; median of three interleaved round medians, 10 calls per round; fine instruction tracing disabled",
+  "measured_microseconds": 149.81437549999828,
+  "modeled_microseconds": 116.70584841000002,
+  "underprediction_microseconds": 33.10852708999826,
+  "underprediction_percent": 22.09969969804309,
+  "configured_frequency_hz": 2200000000.0,
+  "decomposition_microseconds": {
+    "issue_cycles": 110.97090909090909,
+    "wait_stall_cycles": 4.651309935454549,
+    "completion_cycles": 1.0836293836363686
+  },
+  "unmapped_instruction_counts": {
+    "scalar_parameter_address": 5,
+    "scalar_select": 371,
+    "scmp.ne.f32.partialorder": 8,
+    "sfence": 3,
+    "vadd.xlane.f32.xlu0": 4096,
+    "vadd.xlane.f32.xlu1": 4096,
+    "vcmp.eq.f32.partialorder": 8192,
+    "vcmp.eq.s32.totalorder": 4,
+    "vcmp.le.f32.partialorder": 8192,
+    "vcmp.le.s32.totalorder": 512,
+    "vcmp.lt.s32.totalorder": 512,
+    "vmatpush1.bf16.xpose.msra.mxu0": 9952,
+    "vmatpush1.bf16.xpose.msrb.mxu0": 288,
+    "vmax.xlane.f32.xlu0": 4104,
+    "vmax.xlane.f32.xlu1": 4096,
+    "vpack.c.b16": 49152,
+    "vpack.i.b16": 8192,
+    "vpop.xlane.xlu0": 8200,
+    "vpop.xlane.xlu1": 8192,
+    "vsetiar.raw.iar0": 1,
+    "vsetiar.raw.iar1": 1,
+    "vsyncmov": 21,
+    "vunpack.c.0.s8": 16,
+    "vunpack.c.h.bf16": 8192,
+    "vunpack.c.l.bf16": 8192,
+    "vunpack.c.l.s4": 16,
+    "vweird.f32": 16384
+  },
+  "unmapped_dynamic_count": 150990,
+  "total_dynamic_instruction_count": 1540924,
+  "gap_count": 139,
+  "bandwidth_sensitivity": {
+    "baseline_bytes_per_second": 3700000000000.0,
+    "experimental_bytes_per_second": 1850000000000.0,
+    "modeled_microseconds": 137.89086794454562,
+    "increase_microseconds": 21.18501953454562,
+    "remaining_gap_microseconds": 11.923507555452659,
+    "interpretation": "Sensitivity only; no evidence that actual effective bandwidth is half. Production profile unchanged.",
+    "report": ".build/pipeline-validation/current-best-gap/half-bandwidth-report.json"
+  },
+  "confirmed_model_gaps": [
+    "Unmapped opcodes use placeholder costs without specialized resource reservations.",
+    "Some DMA waits have unknown/partial completion credits and credit underflows.",
+    "Implicit MSR/GMR, XLU producer/pop dependencies and VMEM bank contention are incomplete."
+  ],
+  "attribution_limits": [
+    "No fine instruction timeline for this measured capture.",
+    "Same source SHA and libtpu version; exact producing compiler binary/LLO identity not verified.",
+    "2.2 GHz is a profile assumption, not independently measured here.",
+    "Instruction counts times latency cannot be summed into wall time because instructions overlap.",
+    "Model covers full compiled program; hardware metric is XProf kernel time. No host launch overhead attributed."
+  ],
+  "status": "partial; residual not causally apportioned"
+}

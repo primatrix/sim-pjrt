@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "exp_id": "exp-hma5k01rvt",
+  "spec": {
+    "name": "pipeline-matching-compiler-inventory",
+    "command": "python3 \"$FALCON_SCRIPT_PATH\"",
+    "script_content": "import os,json,hashlib\nfrom pathlib import Path\nroot=Path(os.environ['ARTIFACT_LOCAL_DIR']);out=Path(os.environ['RESULT_LOCAL_DIR'])\nfiles=[]\nfor p in root.rglob('*'):\n if p.is_file() and ('llo' in str(p).lower() or 'manifest' in p.name):\n  files.append({'path':str(p.relative_to(root)),'bytes':p.stat().st_size})\n(out/'files.json').write_text(json.dumps(files))\n",
+    "outputs": [
+      {
+        "path": "files.json",
+        "type": "json",
+        "required": true,
+        "description": "Matching capture compiler inventory"
+      }
+    ],
+    "resources": {
+      "memory_limit": "1Gi"
+    }
+  }
+}

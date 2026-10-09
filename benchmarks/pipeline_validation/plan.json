@@ -1,0 +1,40 @@
+{
+  "objective": "Validate and improve LLO pipeline simulation against matching TPU7x profiles",
+  "steps": [
+    {
+      "task": "Copy and verify raw captures and source identities",
+      "status": "complete"
+    },
+    {
+      "task": "Audit hardware anchors versus reconstructed instruction events",
+      "status": "complete"
+    },
+    {
+      "task": "Quantify baseline timing and pipeline errors",
+      "status": "complete"
+    },
+    {
+      "task": "Implement supported scheduling and trace alignment improvements",
+      "status": "implemented_partial"
+    },
+    {
+      "task": "Validate on held-out calls and variants; publish reproducible evidence",
+      "status": "profile_audit_complete_independent_prediction_pending"
+    }
+  ],
+  "scope": "2K MHA32 D256 BF16 Q512 KV256; no kernel changes or new hardware jobs",
+  "acceptance": "Report total, per-stage and held-out errors; never count replay/interpolation as independent hardware prediction",
+  "limitations": [
+    "Independent hardware prediction not yet validated; model costs and matching backend schedule missing.",
+    "Remote LLO export awaiting explicit authorization after automatic approval rejection."
+  ],
+  "hardware_accuracy_accepted": false,
+  "local_cost_model_progress": {
+    "binary_table_extraction": "complete_for_pinned_0.0.48",
+    "asymmetric_resource_checks": "implemented_and_tested",
+    "automatic_gf_instruction_classification": "274 direct mappings plus explicit limited modifier/cost-equivalence rules",
+    "full_hardware_accuracy": "not_validated",
+    "dynamic_execution": "implemented scalar-resolved loops, phi, RAW/WAW, MRB and EUP FIFO; memory conservative",
+    "pack_matpush_dma": "pack and BF16 nontranspose matpush verified on 0.0.48; configured DMA service integrated"
+  }
+}

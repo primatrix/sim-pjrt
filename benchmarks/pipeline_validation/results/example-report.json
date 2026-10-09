@@ -1,0 +1,147 @@
+{
+  "status": "partial",
+  "modeled_cycles": 213,
+  "modeled_seconds": 2.13e-07,
+  "estimated_seconds": null,
+  "frequency_hz": 1000000000,
+  "completion_tail_cycles": 0,
+  "wait_stall_cycles": 209,
+  "gaps": [
+    "Synthetic example does not model a real kernel"
+  ],
+  "model_provenance": "Synthetic scheduling example; costs are illustrative, not TPU calibration",
+  "events": [
+    {
+      "visit": 0,
+      "address": "0",
+      "start_cycle": 0,
+      "issue_end_cycle": 1,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 1,
+      "address": "1",
+      "start_cycle": 1,
+      "issue_end_cycle": 2,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 2,
+      "address": "2",
+      "start_cycle": 100,
+      "issue_end_cycle": 101,
+      "stall_cycles": 98,
+      "blockers": [
+        "dependency:load"
+      ]
+    },
+    {
+      "visit": 3,
+      "address": "3",
+      "start_cycle": 212,
+      "issue_end_cycle": 213,
+      "stall_cycles": 111,
+      "blockers": [
+        "dependency:matmul0"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "track": "Results",
+      "name": "Async input DMA",
+      "operation_id": "load",
+      "start_cycle": 0,
+      "end_cycle": 100,
+      "address": "0"
+    },
+    {
+      "track": "DMA HBM-VMEM",
+      "name": "load",
+      "start_cycle": 0,
+      "end_cycle": 80,
+      "address": "0"
+    },
+    {
+      "track": "Results",
+      "name": "Independent MXU0 matmul",
+      "operation_id": "matmul0",
+      "start_cycle": 1,
+      "end_cycle": 212,
+      "address": "1"
+    },
+    {
+      "track": "Results",
+      "name": "Independent MXU1 matmul",
+      "operation_id": "matmul1",
+      "start_cycle": 1,
+      "end_cycle": 212,
+      "address": "1"
+    },
+    {
+      "track": "MXU0 matmul issue",
+      "name": "matmul0",
+      "start_cycle": 1,
+      "end_cycle": 9,
+      "address": "1"
+    },
+    {
+      "track": "MXU1 matmul issue",
+      "name": "matmul1",
+      "start_cycle": 1,
+      "end_cycle": 9,
+      "address": "1"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:load",
+      "start_cycle": 2,
+      "end_cycle": 100,
+      "address": "2"
+    },
+    {
+      "track": "Results",
+      "name": "Consume DMA input",
+      "operation_id": "consume",
+      "start_cycle": 100,
+      "end_cycle": 105,
+      "address": "2"
+    },
+    {
+      "track": "VALU",
+      "name": "consume",
+      "start_cycle": 100,
+      "end_cycle": 101,
+      "address": "2"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:matmul0",
+      "start_cycle": 101,
+      "end_cycle": 212,
+      "address": "3"
+    },
+    {
+      "track": "Results",
+      "name": "Read MXU0 result",
+      "operation_id": "pop",
+      "start_cycle": 212,
+      "end_cycle": 213,
+      "address": "3"
+    },
+    {
+      "track": "MXU0 pop",
+      "name": "pop",
+      "start_cycle": 212,
+      "end_cycle": 213,
+      "address": "3"
+    }
+  ],
+  "assumptions": [
+    "Resolved dynamic path and versioned producer dependencies supplied.",
+    "Reservation durations and result latencies are distinct inputs.",
+    "No measured timestamps are consumed; no accuracy claim without validation."
+  ]
+}

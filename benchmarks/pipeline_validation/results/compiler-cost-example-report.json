@@ -1,0 +1,189 @@
+{
+  "status": "partial",
+  "modeled_cycles": 219,
+  "modeled_seconds": 2.19e-07,
+  "estimated_seconds": null,
+  "frequency_hz": 1000000000,
+  "completion_tail_cycles": 7,
+  "wait_stall_cycles": 208,
+  "gaps": [
+    "This is a scheduling demonstration, not a classified real kernel",
+    "Compiler table values are not hardware calibration; instruction classification and issue footprints are supplied by the caller."
+  ],
+  "model_provenance": "Compiler constants with illustrative explicit resource scopes and footprints; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "events": [
+    {
+      "visit": 0,
+      "address": "0",
+      "start_cycle": 0,
+      "issue_end_cycle": 1,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 1,
+      "address": "1",
+      "start_cycle": 1,
+      "issue_end_cycle": 2,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 2,
+      "address": "2",
+      "start_cycle": 8,
+      "issue_end_cycle": 9,
+      "stall_cycles": 6,
+      "blockers": [
+        "structural:unit0.gf.resource.5"
+      ]
+    },
+    {
+      "visit": 3,
+      "address": "3",
+      "start_cycle": 211,
+      "issue_end_cycle": 212,
+      "stall_cycles": 202,
+      "blockers": [
+        "dependency:first"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "track": "Results",
+      "name": "GF performance ID 295 [illustrative footprint for table row 295]",
+      "operation_id": "first",
+      "start_cycle": 0,
+      "end_cycle": 211,
+      "address": "0"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.4",
+      "name": "first",
+      "start_cycle": 0,
+      "end_cycle": 20,
+      "address": "0"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.5",
+      "name": "first",
+      "start_cycle": 0,
+      "end_cycle": 8,
+      "address": "0"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.6",
+      "name": "first",
+      "start_cycle": 0,
+      "end_cycle": 13,
+      "address": "0"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.7",
+      "name": "first",
+      "start_cycle": 0,
+      "end_cycle": 7,
+      "address": "0"
+    },
+    {
+      "track": "Results",
+      "name": "GF performance ID 295 [illustrative footprint for table row 295]",
+      "operation_id": "independent",
+      "start_cycle": 1,
+      "end_cycle": 212,
+      "address": "1"
+    },
+    {
+      "track": "Hold: unit1.gf.resource.4",
+      "name": "independent",
+      "start_cycle": 1,
+      "end_cycle": 21,
+      "address": "1"
+    },
+    {
+      "track": "Hold: unit1.gf.resource.5",
+      "name": "independent",
+      "start_cycle": 1,
+      "end_cycle": 9,
+      "address": "1"
+    },
+    {
+      "track": "Hold: unit1.gf.resource.6",
+      "name": "independent",
+      "start_cycle": 1,
+      "end_cycle": 14,
+      "address": "1"
+    },
+    {
+      "track": "Hold: unit1.gf.resource.7",
+      "name": "independent",
+      "start_cycle": 1,
+      "end_cycle": 8,
+      "address": "1"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "structural:unit0.gf.resource.5",
+      "start_cycle": 2,
+      "end_cycle": 8,
+      "address": "2"
+    },
+    {
+      "track": "Results",
+      "name": "GF performance ID 295 [illustrative footprint for table row 295]",
+      "operation_id": "next",
+      "start_cycle": 8,
+      "end_cycle": 219,
+      "address": "2"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.4",
+      "name": "next",
+      "start_cycle": 8,
+      "end_cycle": 28,
+      "address": "2"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.5",
+      "name": "next",
+      "start_cycle": 8,
+      "end_cycle": 16,
+      "address": "2"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.6",
+      "name": "next",
+      "start_cycle": 8,
+      "end_cycle": 21,
+      "address": "2"
+    },
+    {
+      "track": "Hold: unit0.gf.resource.7",
+      "name": "next",
+      "start_cycle": 8,
+      "end_cycle": 15,
+      "address": "2"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:first",
+      "start_cycle": 9,
+      "end_cycle": 211,
+      "address": "3"
+    },
+    {
+      "track": "Results",
+      "name": "Illustrative result consumer",
+      "operation_id": "consumer",
+      "start_cycle": 211,
+      "end_cycle": 212,
+      "address": "3"
+    }
+  ],
+  "assumptions": [
+    "Resolved dynamic path and versioned producer dependencies supplied.",
+    "Reservation durations and result latencies are distinct inputs.",
+    "No measured timestamps are consumed; no accuracy claim without validation."
+  ]
+}

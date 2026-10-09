@@ -1,0 +1,629 @@
+{
+  "traceEvents": [
+    {
+      "ph": "M",
+      "name": "thread_name",
+      "pid": 1,
+      "tid": 0,
+      "args": {
+        "name": "Bundle stalls"
+      }
+    },
+    {
+      "ph": "M",
+      "name": "thread_name",
+      "pid": 1,
+      "tid": 1,
+      "args": {
+        "name": "Results"
+      }
+    },
+    {
+      "ph": "M",
+      "name": "thread_name",
+      "pid": 1,
+      "tid": 2,
+      "args": {
+        "name": "mxu0.matmul"
+      }
+    },
+    {
+      "ph": "M",
+      "name": "thread_name",
+      "pid": 1,
+      "tid": 3,
+      "args": {
+        "name": "mxu1.matmul"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "smov",
+      "ts": 0.0,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x0",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.0009090909090909091,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0x2",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.0009090909090909091,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0x2",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 0,
+      "name": "dependency:2:1",
+      "ts": 0.0013636363636363637,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x3",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vmatmul.mubr.bf16.mrb",
+      "ts": 0.0018181818181818182,
+      "dur": 0.0959090909090909,
+      "args": {
+        "address": "0:0x3",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vmatmul.mubr.bf16.mrb",
+      "ts": 0.0018181818181818182,
+      "dur": 0.0959090909090909,
+      "args": {
+        "address": "0:0x3",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 2,
+      "name": "3:0",
+      "ts": 0.0018181818181818182,
+      "dur": 0.0036363636363636364,
+      "args": {
+        "address": "0:0x3",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 3,
+      "name": "3:1",
+      "ts": 0.0018181818181818182,
+      "dur": 0.0036363636363636364,
+      "args": {
+        "address": "0:0x3",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 0,
+      "name": "dependency:3:1",
+      "ts": 0.0022727272727272726,
+      "dur": 0.09545454545454546,
+      "args": {
+        "address": "0:0x4",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09772727272727273,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x4",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09772727272727273,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x4",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09818181818181818,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x5",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09818181818181818,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x5",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09863636363636365,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x6",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09863636363636365,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x6",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09909090909090909,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x7",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.09909090909090909,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x7",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.09954545454545455,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0x8",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "sadd.s32",
+      "ts": 0.09999999999999999,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x9",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "scmp.lt.s32.totalorder",
+      "ts": 0.10045454545454546,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0xa",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 0,
+      "name": "dependency:10:0",
+      "ts": 0.1009090909090909,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0xb",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "sbr.rel",
+      "ts": 0.10136363636363636,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0xb",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.10227272727272728,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0x2@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.10227272727272728,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0x2@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 0,
+      "name": "dependency:13:1",
+      "ts": 0.10272727272727274,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x3@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vmatmul.mubr.bf16.mrb",
+      "ts": 0.10318181818181818,
+      "dur": 0.0959090909090909,
+      "args": {
+        "address": "0:0x3@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vmatmul.mubr.bf16.mrb",
+      "ts": 0.10318181818181818,
+      "dur": 0.0959090909090909,
+      "args": {
+        "address": "0:0x3@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 2,
+      "name": "14:0",
+      "ts": 0.10318181818181818,
+      "dur": 0.0036363636363636364,
+      "args": {
+        "address": "0:0x3@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 3,
+      "name": "14:1",
+      "ts": 0.10318181818181818,
+      "dur": 0.0036363636363636364,
+      "args": {
+        "address": "0:0x3@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 0,
+      "name": "dependency:14:1",
+      "ts": 0.10363636363636364,
+      "dur": 0.09545454545454546,
+      "args": {
+        "address": "0:0x4@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.1990909090909091,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x4@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.1990909090909091,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x4@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.19954545454545455,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x5@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.19954545454545455,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x5@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.19999999999999998,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x6@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.19999999999999998,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x6@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.20045454545454547,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x7@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vpop.f32.mrb",
+      "ts": 0.20045454545454547,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x7@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.20090909090909093,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0x8@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "sadd.s32",
+      "ts": 0.20136363636363636,
+      "dur": 0.00045454545454545455,
+      "args": {
+        "address": "0:0x9@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "scmp.lt.s32.totalorder",
+      "ts": 0.2018181818181818,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0xa@1",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "name": "vadd.f32",
+      "ts": 0.20272727272727273,
+      "dur": 0.0009090909090909091,
+      "args": {
+        "address": "0:0xc",
+        "provenance": "modeled",
+        "model": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+        "status": "partial"
+      }
+    }
+  ],
+  "displayTimeUnit": "ns"
+}

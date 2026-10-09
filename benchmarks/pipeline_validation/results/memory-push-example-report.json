@@ -1,0 +1,305 @@
+{
+  "final_credits": {
+    "[#allocation0]": 32
+  },
+  "status": "partial",
+  "modeled_cycles": 61.275418,
+  "modeled_seconds": 2.7852462727272728e-08,
+  "estimated_seconds": null,
+  "frequency_hz": 2200000000.0,
+  "completion_tail_cycles": 0.0,
+  "wait_stall_cycles": 57.275418,
+  "gaps": [
+    "DMA uses supplied profile and aligned contiguous payload assumption; not hardware calibrated",
+    "GF entry latencies used; consumer-specific latency adjustments incomplete",
+    "IMEM, runtime memory service and specialized execution units are not calibrated",
+    "memory alias/bank hazards not reconstructed; DMA synchronization uses explicit credits",
+    "modifier-specific latency/occupancy: vmatpush1.bf16.msra.mxu0",
+    "modifier-specific latency/occupancy: vmatpush1.bf16.msra.mxu1",
+    "specialized resource rule missing: 10 (vmatpush1.bf16.msra.mxu0)",
+    "specialized resource rule missing: 10 (vmatpush1.bf16.msra.mxu1)",
+    "specialized resource rule missing: 11 (vmatpush1.bf16.msra.mxu0)",
+    "specialized resource rule missing: 11 (vmatpush1.bf16.msra.mxu1)",
+    "specialized resource rule missing: 12 (vmatpush1.bf16.msra.mxu0)",
+    "specialized resource rule missing: 12 (vmatpush1.bf16.msra.mxu1)",
+    "specialized resource rule missing: 9 (vmatpush1.bf16.msra.mxu0)",
+    "specialized resource rule missing: 9 (vmatpush1.bf16.msra.mxu1)"
+  ],
+  "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "events": [
+    {
+      "visit": 0,
+      "address": "0:0x0",
+      "start_cycle": 0,
+      "issue_end_cycle": 1,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 1,
+      "address": "0:0x1",
+      "start_cycle": 1,
+      "issue_end_cycle": 2,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 2,
+      "address": "0:0x2",
+      "start_cycle": 3,
+      "issue_end_cycle": 4,
+      "issue_stall_cycles": 1,
+      "stall_cycles": 1,
+      "blockers": [
+        "dependency:1:0"
+      ]
+    },
+    {
+      "visit": 3,
+      "address": "0:0x3",
+      "start_cycle": 4,
+      "issue_end_cycle": 61.275418,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 56.275418,
+      "blockers": [
+        "credit:[#allocation0]"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "track": "dma.hbm",
+      "name": "dma.hbm_to_vmem",
+      "operation_id": "0:0",
+      "start_cycle": 0,
+      "end_cycle": 61.275418,
+      "address": "0:0x0"
+    },
+    {
+      "track": "Results",
+      "name": "dma.hbm_to_vmem",
+      "operation_id": "0:0",
+      "start_cycle": 0,
+      "end_cycle": 61.275418,
+      "address": "0:0x0"
+    },
+    {
+      "track": "Hold: core.gf.resource.1",
+      "name": "0:0",
+      "start_cycle": 0,
+      "end_cycle": 2,
+      "address": "0:0x0"
+    },
+    {
+      "track": "Results",
+      "name": "vpack.c.bf16",
+      "operation_id": "1:0",
+      "start_cycle": 1,
+      "end_cycle": 3,
+      "address": "0:0x1"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:1:0",
+      "start_cycle": 2,
+      "end_cycle": 3,
+      "address": "0:0x2"
+    },
+    {
+      "track": "Results",
+      "name": "vmatpush1.bf16.msra.mxu0",
+      "operation_id": "2:0",
+      "start_cycle": 3,
+      "end_cycle": 7,
+      "address": "0:0x2"
+    },
+    {
+      "track": "Results",
+      "name": "vmatpush1.bf16.msra.mxu1",
+      "operation_id": "2:1",
+      "start_cycle": 3,
+      "end_cycle": 7,
+      "address": "0:0x2"
+    },
+    {
+      "track": "mxu0.matpush",
+      "name": "2:0",
+      "start_cycle": 3,
+      "end_cycle": 7,
+      "address": "0:0x2"
+    },
+    {
+      "track": "mxu1.matpush",
+      "name": "2:1",
+      "start_cycle": 3,
+      "end_cycle": 7,
+      "address": "0:0x2"
+    },
+    {
+      "track": "Results",
+      "name": "dma.done.wait",
+      "operation_id": "3:0",
+      "start_cycle": 4,
+      "end_cycle": 61.275418,
+      "address": "0:0x3"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "credit:[#allocation0]",
+      "start_cycle": 5,
+      "end_cycle": 61.275418,
+      "address": "0:0x3"
+    }
+  ],
+  "assumptions": [
+    "Resolved dynamic path and versioned producer dependencies supplied.",
+    "Reservation durations and result latencies are distinct inputs.",
+    "No measured timestamps are consumed; no accuracy claim without validation."
+  ],
+  "execution": {
+    "initial_ready": {
+      "input:%input0": 0,
+      "input:%input1": 0,
+      "input:%hbm": 0,
+      "input:%vmem": 0
+    },
+    "gaps": [
+      "DMA uses supplied profile and aligned contiguous payload assumption; not hardware calibrated",
+      "GF entry latencies used; consumer-specific latency adjustments incomplete",
+      "IMEM, runtime memory service and specialized execution units are not calibrated",
+      "memory alias/bank hazards not reconstructed; DMA synchronization uses explicit credits",
+      "modifier-specific latency/occupancy: vmatpush1.bf16.msra.mxu0",
+      "modifier-specific latency/occupancy: vmatpush1.bf16.msra.mxu1",
+      "specialized resource rule missing: 10 (vmatpush1.bf16.msra.mxu0)",
+      "specialized resource rule missing: 10 (vmatpush1.bf16.msra.mxu1)",
+      "specialized resource rule missing: 11 (vmatpush1.bf16.msra.mxu0)",
+      "specialized resource rule missing: 11 (vmatpush1.bf16.msra.mxu1)",
+      "specialized resource rule missing: 12 (vmatpush1.bf16.msra.mxu0)",
+      "specialized resource rule missing: 12 (vmatpush1.bf16.msra.mxu1)",
+      "specialized resource rule missing: 9 (vmatpush1.bf16.msra.mxu0)",
+      "specialized resource rule missing: 9 (vmatpush1.bf16.msra.mxu1)"
+    ],
+    "counts": {
+      "dma_profile_costs": 1,
+      "instructions": 5,
+      "mapped": 5
+    },
+    "dependencies": [
+      {
+        "id": "0:0",
+        "address": "0:0x0",
+        "opcode": "dma.hbm_to_vmem",
+        "performance_id": 48,
+        "reads": [
+          "%hbm",
+          "%vmem"
+        ],
+        "writes": null,
+        "depends_on": [
+          "input:%hbm",
+          "input:%vmem"
+        ]
+      },
+      {
+        "id": "1:0",
+        "address": "0:0x1",
+        "opcode": "vpack.c.bf16",
+        "performance_id": 136,
+        "reads": [
+          "%input0",
+          "%input1"
+        ],
+        "writes": "%v0",
+        "depends_on": [
+          "input:%input0",
+          "input:%input1"
+        ]
+      },
+      {
+        "id": "2:0",
+        "address": "0:0x2",
+        "opcode": "vmatpush1.bf16.msra.mxu0",
+        "performance_id": 326,
+        "reads": [
+          "%v0"
+        ],
+        "writes": "%1",
+        "depends_on": [
+          "1:0"
+        ]
+      },
+      {
+        "id": "2:1",
+        "address": "0:0x2",
+        "opcode": "vmatpush1.bf16.msra.mxu1",
+        "performance_id": 326,
+        "reads": [
+          "%v0"
+        ],
+        "writes": "%2",
+        "depends_on": [
+          "1:0"
+        ]
+      },
+      {
+        "id": "3:0",
+        "address": "0:0x3",
+        "opcode": "dma.done.wait",
+        "performance_id": 392,
+        "reads": [],
+        "writes": null,
+        "depends_on": []
+      }
+    ],
+    "dynamic_bundle_visits": 4,
+    "memory_profile": {
+      "description": "TPU7x approximate timing: GF matmul throughput checked against libtpu 0.0.46.1, 2.2 GHz, theoretical HBM bandwidth 3.70 TB/s, and per-direction latency inferred from a 1 MiB effective-bandwidth measurement. The residual is applied per DMA as an approximation, not an independently measured fixed latency. Bundle issue and runtime parameters remain uncalibrated.",
+      "allow_partial": true,
+      "assume_peers_ready": true,
+      "frequency_hz": 2200000000.0,
+      "bundle_issue_cycles": 1,
+      "mxu_model": "gf",
+      "completion_tail_cycles": 0,
+      "dma_granule_bytes": 32,
+      "dma_transaction_bytes": 512,
+      "dma": {
+        "hbm_to_vmem": {
+          "bytes_per_second": 3700000000000,
+          "latency_cycles": 60.275418,
+          "resource": "hbm"
+        },
+        "vmem_to_hbm": {
+          "bytes_per_second": 3700000000000,
+          "latency_cycles": 74.984644,
+          "resource": "hbm"
+        }
+      },
+      "runtime": {
+        "hbm_capacity_bytes": 103079215104,
+        "hbm_reserved_bytes": 0,
+        "launch_ns": 1000,
+        "transfer_ns": 2000,
+        "link_ns": 1000,
+        "host_bytes_per_second": 32000000000.0,
+        "link_bytes_per_second": 100000000000.0,
+        "communication_scale": 1
+      }
+    },
+    "dma_events": [
+      {
+        "kind": "dma",
+        "operation_id": "0:0",
+        "address": "0:0x0",
+        "direction": "hbm_to_vmem",
+        "resource": "dma.hbm",
+        "bytes": 1024,
+        "bus_bytes": 1024,
+        "destination_flag": "[#allocation0]",
+        "latency_cycles": 60.275418,
+        "bandwidth_cycles": 1
+      }
+    ]
+  }
+}

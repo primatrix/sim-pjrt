@@ -1,0 +1,287 @@
+{
+  "baseline": {
+    "planes": [
+      {
+        "name": "/device:TPU:0",
+        "id": 2,
+        "lines": [
+          {
+            "name": "_counters_",
+            "events": 1,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLA Modules",
+            "events": 2,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLA Ops",
+            "events": 6,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "Async XLA Ops",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "TC Overlay",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "Pallas Primitives",
+            "events": 6554,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "SALU Instructions",
+            "events": 17840,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VALU Instructions",
+            "events": 1284195,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VLD Instructions",
+            "events": 654884,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VST Instructions",
+            "events": 342342,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "MXU0 Instructions",
+            "events": 259316,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "MXU1 Instructions",
+            "events": 259507,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLU Instructions",
+            "events": 64830,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "EUP Instructions",
+            "events": 162386,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "_counters_",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "counters_0",
+            "events": 94039,
+            "timestamp_ns": 0
+          }
+        ],
+        "plane_clock_stats": {},
+        "clock_stat_names": [],
+        "has_instruction_lanes": true
+      }
+    ],
+    "warnings": [],
+    "errors": []
+  },
+  "single_raw": {
+    "planes": [
+      {
+        "name": "/device:TPU:0",
+        "id": 2,
+        "lines": [
+          {
+            "name": "_counters_",
+            "events": 1,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLA Modules",
+            "events": 2,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLA Ops",
+            "events": 6,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "Async XLA Ops",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "TC Overlay",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "Pallas Primitives",
+            "events": 6971,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "SALU Instructions",
+            "events": 19089,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VALU Instructions",
+            "events": 1292635,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VLD Instructions",
+            "events": 658711,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VST Instructions",
+            "events": 344673,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "MXU0 Instructions",
+            "events": 260170,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "MXU1 Instructions",
+            "events": 260599,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLU Instructions",
+            "events": 65010,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "EUP Instructions",
+            "events": 163040,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "_counters_",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "counters_0",
+            "events": 94039,
+            "timestamp_ns": 0
+          }
+        ],
+        "plane_clock_stats": {},
+        "clock_stat_names": [],
+        "has_instruction_lanes": true
+      }
+    ],
+    "warnings": [],
+    "errors": []
+  },
+  "dual_acc": {
+    "planes": [
+      {
+        "name": "/device:TPU:0",
+        "id": 2,
+        "lines": [
+          {
+            "name": "_counters_",
+            "events": 1,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLA Modules",
+            "events": 2,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLA Ops",
+            "events": 6,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "Async XLA Ops",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "TC Overlay",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "Pallas Primitives",
+            "events": 11122,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "SALU Instructions",
+            "events": 45967,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VALU Instructions",
+            "events": 1303125,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VLD Instructions",
+            "events": 614542,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "VST Instructions",
+            "events": 288921,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "MXU0 Instructions",
+            "events": 259071,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "MXU1 Instructions",
+            "events": 260141,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "XLU Instructions",
+            "events": 130840,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "EUP Instructions",
+            "events": 148557,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "_counters_",
+            "events": 0,
+            "timestamp_ns": 0
+          },
+          {
+            "name": "counters_0",
+            "events": 94039,
+            "timestamp_ns": 0
+          }
+        ],
+        "plane_clock_stats": {},
+        "clock_stat_names": [],
+        "has_instruction_lanes": true
+      }
+    ],
+    "warnings": [],
+    "errors": []
+  }
+}

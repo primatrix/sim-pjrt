@@ -1,0 +1,21 @@
+{
+  "execution_engine": "gf_instruction_pipeline",
+  "status": "partial",
+  "modeled_cycles": 298561.9094780003,
+  "modeled_seconds": 0.00013570995885363652,
+  "estimated_seconds": null,
+  "scheduled_bundle_count": 59877,
+  "modeled_bundle_visits": 248604,
+  "dma_bytes": 234882080,
+  "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "source_sha256": "e6cf6adfe4814e7888de852dc527e33e480c0c4c5a60947a0b203061402af4fa",
+  "scope": "Full compiled program of the previous best, 2K causal BF16 MHA32 D256; two 16-head iterations; Q512 KV256; includes initialization and modeled resource completion",
+  "scenario": "cu_seqlens=[0,2048], num_seqs=1; guard-pass; explicit aligned virtual HBM addresses",
+  "frequency_hz": 2200000000.0,
+  "modeled_microseconds": 135.70995885363652,
+  "hardware_validation": false,
+  "unresolved_gap_count": 114,
+  "full_report": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/best-kernel/direct-report.json",
+  "analysis_wall_seconds": 77.377,
+  "analysis_memory_peak": "3.8G"
+}

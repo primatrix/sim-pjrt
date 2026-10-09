@@ -1,0 +1,95 @@
+{
+  "scope": "Single GF execution engine integration audit; not exhaustive ISA or hardware validation",
+  "items": [
+    {
+      "id": "runtime_entry",
+      "priority": "P0",
+      "status": "connected",
+      "feature": "主估时路径接入",
+      "evidence": "python/bundle_timing.py; python/sim_pjrt/llo/runtime.py",
+      "detail": "原生入口调用统一 execution + pipeline；旧 cost.py 与 mxu_path 已删除，不保留旧估时回退。"
+    },
+    {
+      "id": "dma_credits",
+      "priority": "P0",
+      "status": "connected",
+      "feature": "DMA 完成计数与按 flag 等待",
+      "evidence": "python/sim_pjrt/llo/pipeline.py; tests/python/pipeline_test.py",
+      "detail": "DMA 服务排队与发射分离；完成事件更新指定 flag；阈值等待、部分 credit、signed vsyncadd、underflow 已接。容量/跨核协议仍待建模。"
+    },
+    {
+      "id": "vdelay",
+      "priority": "P0",
+      "status": "connected",
+      "feature": "显式延迟指令",
+      "evidence": "python/sim_pjrt/llo/execution.py; tests/python/execution_test.py",
+      "detail": "按显式 total_cycles / additional_cycles 语义推进发射游标；未知语义继续报告 gap。"
+    },
+    {
+      "id": "whole_program",
+      "priority": "P0",
+      "status": "connected_with_gaps",
+      "feature": "多模块调用与参数绑定",
+      "evidence": "python/sim_pjrt/llo/program.py; python/sim_pjrt/llo/runtime.py",
+      "detail": "manifest、模块别名、标量实参及按调用隔离 SSA/flag 已接；跨调用缓冲区绑定仍不完整。"
+    },
+    {
+      "id": "branch_metadata",
+      "priority": "P1",
+      "status": "connected_with_gaps",
+      "feature": "分支延迟槽与大循环元数据",
+      "evidence": "python/sim_pjrt/llo/program.py; python/sim_pjrt/llo/runtime.py",
+      "detail": "assembly 延迟槽、HLO 循环界、分支局部最大段和大循环摘要已接；边界排空资源，SSA/MRB 等跨段绑定缺口明确报告。"
+    },
+    {
+      "id": "sparsecore",
+      "priority": "P2",
+      "status": "connected_with_gaps",
+      "feature": "SparseCore 标注与校准接口",
+      "evidence": "python/bundle_timing.py; python/sim_pjrt/llo/sparsecore.py",
+      "detail": "沿用统一入口的 offload 标注和可选保守校准；并非 SparseCore 指令级模拟。"
+    },
+    {
+      "id": "mxu_staging",
+      "priority": "P0",
+      "status": "rules_partially_integrated",
+      "feature": "MSR/GMR 权重暂存与 latch 生命周期",
+      "evidence": "python/sim_pjrt/llo/execution.py:91",
+      "detail": "matpush 的延迟/发射间隔已接；没有完整的 matpush 到权重 latch 到 matmul 隐式状态和所有专用资源规则。"
+    },
+    {
+      "id": "xlu_trf",
+      "priority": "P1",
+      "status": "rules_partially_integrated",
+      "feature": "XLU/TRF 与专用资源",
+      "evidence": "python/sim_pjrt/llo/execution.py:102",
+      "detail": "部分操作有分类和表值，尚无完整转置/重排到 vpop.trf 的生产消费及冲突分派。"
+    },
+    {
+      "id": "queue_capacity",
+      "priority": "P1",
+      "status": "implementation_and_target_validation",
+      "feature": "MRB/EUP 容量及反压",
+      "evidence": "python/sim_pjrt/llo/execution.py:142",
+      "detail": "已有生产消费依赖，但 BF16 MRB 宽度仍为假设；队列深度、反压和其余格式未完整建模。"
+    },
+    {
+      "id": "memory_imem",
+      "priority": "P1",
+      "status": "implementation_and_target_validation",
+      "feature": "VMEM bank、DMA 队列、IMEM refill",
+      "evidence": "python/sim_pjrt/llo/execution.py:141",
+      "detail": "已有 DMA 近似服务成本；bank 仲裁、真实地址别名、队列重叠、IMEM refill 尚未建模。"
+    },
+    {
+      "id": "external_sync",
+      "priority": "P1",
+      "status": "connected_with_gaps",
+      "feature": "跨核与外部同步",
+      "evidence": "python/sim_pjrt/llo/execution.py",
+      "detail": "wait_until_cycles 和明确标注的 peer-ready 假设已接；没有真实跨核事件模型的等待仍为 gap。"
+    }
+  ],
+  "semantic_gap_probes": "results/execution-gap-probes.json",
+  "hardware_accuracy_accepted": false
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "frequency_hz": 1000000000,
+  "model_provenance": "Synthetic scheduling example; costs are illustrative, not TPU calibration",
+  "gaps": ["Synthetic example does not model a real kernel"],
+  "bundles": [
+    {"address": "0", "operations": [
+      {"id": "load", "name": "Async input DMA", "latency": 100,
+       "reservations": [{"resource": "DMA HBM-VMEM", "duration": 80}]}
+    ]},
+    {"address": "1", "operations": [
+      {"id": "matmul0", "name": "Independent MXU0 matmul", "latency": 211,
+       "reservations": [{"resource": "MXU0 matmul issue", "duration": 8}]},
+      {"id": "matmul1", "name": "Independent MXU1 matmul", "latency": 211,
+       "reservations": [{"resource": "MXU1 matmul issue", "duration": 8}]}
+    ]},
+    {"address": "2", "operations": [
+      {"id": "consume", "name": "Consume DMA input", "latency": 5,
+       "depends_on": ["load"], "reservations": [{"resource": "VALU", "duration": 1}]}
+    ]},
+    {"address": "3", "operations": [
+      {"id": "pop", "name": "Read MXU0 result", "latency": 1,
+       "depends_on": ["matmul0"], "reservations": [{"resource": "MXU0 pop", "duration": 1}]}
+    ]}
+  ]
+}

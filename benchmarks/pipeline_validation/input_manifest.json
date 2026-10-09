@@ -1,0 +1,119 @@
+{
+  "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap",
+  "files": [
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/baseline/capture/source.py",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/baseline/capture/source.py",
+      "bytes": 65006,
+      "sha256": "e6cf6adfe4814e7888de852dc527e33e480c0c4c5a60947a0b203061402af4fa"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/baseline/capture/manifest.json",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/baseline/capture/manifest.json",
+      "bytes": 788,
+      "sha256": "26146ca0e403cdb81a853f084339f7e2403c9563ee7cc90a7014eb4898ab3f7a"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/baseline/capture/profile/plugins/profile/2026_10_08_13_02_06/falcon-job-6i73j9t25g-workers-0-0.trace.json.gz",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/baseline/capture/profile/plugins/profile/2026_10_08_13_02_06/falcon-job-6i73j9t25g-workers-0-0.trace.json.gz",
+      "bytes": 70167311,
+      "sha256": "3d773f0cc9fc89e35ceec5be20ebffeaee651ebfaaa91053f1319d8a40434824"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/baseline/capture/profile/plugins/profile/2026_10_08_13_02_06/falcon-job-6i73j9t25g-workers-0-0.xplane.pb",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/baseline/capture/profile/plugins/profile/2026_10_08_13_02_06/falcon-job-6i73j9t25g-workers-0-0.xplane.pb",
+      "bytes": 258765163,
+      "sha256": "f018ea87adbec947b91f126d2b60b59d9395348b031ec313c9ad079080b4a340"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/single_raw/capture/source.py",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/single_raw/capture/source.py",
+      "bytes": 65978,
+      "sha256": "8c93c52c2dca50214f3c6c40e75c444e9d5d03150a51cb4712039da85d13d4ab"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/single_raw/capture/manifest.json",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/single_raw/capture/manifest.json",
+      "bytes": 792,
+      "sha256": "4baf96761230062ae34c6b90913d1d5d7136cef75d6efbf54bc3b5f1d490016c"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/single_raw/capture/profile/plugins/profile/2026_10_08_13_04_56/falcon-job-6i73j9t25g-workers-0-0.trace.json.gz",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/single_raw/capture/profile/plugins/profile/2026_10_08_13_04_56/falcon-job-6i73j9t25g-workers-0-0.trace.json.gz",
+      "bytes": 70575742,
+      "sha256": "83c73c41e421a9f8b046f35ba7b303614a84d9694285b16d5d2a39d2aef026e4"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/single_raw/capture/profile/plugins/profile/2026_10_08_13_04_56/falcon-job-6i73j9t25g-workers-0-0.xplane.pb",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/single_raw/capture/profile/plugins/profile/2026_10_08_13_04_56/falcon-job-6i73j9t25g-workers-0-0.xplane.pb",
+      "bytes": 259959294,
+      "sha256": "ed08c25454d769967d29fd268d943bf823a332ca03dad6db1260752d975e924d"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/source.py",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/source.py",
+      "bytes": 69238,
+      "sha256": "e456ce0f05142064c1c23a16fa31856bc7394d89283fb7665188cc385e024814"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/manifest.json",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/manifest.json",
+      "bytes": 788,
+      "sha256": "15acf80371519474d99643d686fccded5213a63a7685ab1dfbcf7ab641fb93e3"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.SSTABLE",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.SSTABLE",
+      "bytes": 35435313,
+      "sha256": "472430acf80cc4d65eea8d824fd0fcdb9159dda2c65f6365288185d046a645e8"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.trace.json.gz",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.trace.json.gz",
+      "bytes": 69038663,
+      "sha256": "bc05f9f794d88acdc5e76eda6d3cfea341fd04cb033bad8fb33955b24c99fa62"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.xplane.pb",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.xplane.pb",
+      "bytes": 260387608,
+      "sha256": "1cfededffb8c8c68f9141f8e8facb38a20c62e2edaa5f28831553ec25ef80065"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.metadata.SSTABLE",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.metadata.SSTABLE",
+      "bytes": 100897389,
+      "sha256": "25a12b2af63d86d3cf40e191d26a352d37d1fac20dd10cb4ca3b58038588cca1"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.trie.SSTABLE",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/falcon-job-6i73j9t25g-workers-0-0.trie.SSTABLE",
+      "bytes": 21283157,
+      "sha256": "f74c6398698772b05f507e148937b47ddcc703817e4f33d2c71a23bbbff75118"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/cache_version.txt",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/cache_version.txt",
+      "bytes": 15,
+      "sha256": "ca1f3909282d3d1d81b8afd2dc25bb896c487b7bf4d059eb377af2245000fc5a"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/.cached_tools.json",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/.cached_tools.json",
+      "bytes": 419,
+      "sha256": "fe8a4ec2456c830b92a8f0f0cbe2da1210ac490fe1bede426340ce93b08f1be3"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/ALL_HOSTS.op_stats_v2.pb",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/ALL_HOSTS.op_stats_v2.pb",
+      "bytes": 2320,
+      "sha256": "cce25e4c35e2a278b8a120a7c9c45f5ba96d894f19577dc2c49ed164fd3b679d"
+    },
+    {
+      "source": "/home/yanko/lab/tpu-kernel-lab/evidence/dual-acc-overlap/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/jit_attention(14099436895525604910).hlo_proto.pb",
+      "copy": "/home/yanko/lab/sim-pjrt/.build/pipeline-validation/inputs/dual_acc/capture/profile/plugins/profile/2026_10_08_13_07_43/jit_attention(14099436895525604910).hlo_proto.pb",
+      "bytes": 5607529,
+      "sha256": "4add7b06f1f32da9f34774604bb7e270d7215839a76495c3f930f128de05486e"
+    }
+  ]
+}

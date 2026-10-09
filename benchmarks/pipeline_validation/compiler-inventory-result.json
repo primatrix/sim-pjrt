@@ -1,0 +1,306 @@
+[
+  {
+    "path": "manifest.json",
+    "bytes": 788
+  },
+  {
+    "path": "captures/baseline/manifest.json",
+    "bytes": 788
+  },
+  {
+    "path": "captures/dual_acc/manifest.json",
+    "bytes": 788
+  },
+  {
+    "path": "captures/single_raw/manifest.json",
+    "bytes": 792
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464449816411367-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 44837799
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464451761530022-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 44837799
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464453589321044-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 44837799
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0001-mosaic-dump-anonymous-original.txt",
+    "bytes": 44837809
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0002-mosaic-dump-anonymous-post-specialize-any-memory-space.txt",
+    "bytes": 44837809
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0003-mosaic-dump-anonymous-post-canonicalize-memory-space.txt",
+    "bytes": 45457865
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0004-mosaic-dump-anonymous-post-infer-memref-layout.txt",
+    "bytes": 45562293
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0005-mosaic-dump-anonymous-post-infer-memref-layout-simplify.txt",
+    "bytes": 19769039
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0006-mosaic-dump-anonymous-post-canonicalize-operations.txt",
+    "bytes": 20447827
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0007-mosaic-dump-anonymous-post-pre-canon-optimization.txt",
+    "bytes": 20447827
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0008-mosaic-dump-anonymous-post-canonicalize-mosaic.txt",
+    "bytes": 20447827
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0009-mosaic-dump-anonymous-post-post-canon-optimization.txt",
+    "bytes": 20447827
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0010-mosaic-dump-anonymous-post-canonicalize-mosaic-2.txt",
+    "bytes": 20447827
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0011-mosaic-dump-anonymous-post-canonicalize-mosaic-simplify.txt",
+    "bytes": 18873617
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0012-mosaic-dump-anonymous-post-tiling-propagation.txt",
+    "bytes": 19779598
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0013-mosaic-dump-anonymous-post-infer-vector-layout.txt",
+    "bytes": 36927887
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0014-mosaic-dump-anonymous-post-relayout-insertion.txt",
+    "bytes": 74257214
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0015-mosaic-dump-anonymous-post-apply-vector-layout.txt",
+    "bytes": 333882249
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0016-mosaic-dump-anonymous-post-apply-vector-layout-simplify.txt",
+    "bytes": 56325339
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0017-mosaic-dump-anonymous-post-logical-to-physical-device-id.txt",
+    "bytes": 56325339
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0018-mosaic-dump-anonymous-post-late-loop-unroll.txt",
+    "bytes": 56325339
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0019-mosaic-dump-anonymous-post-lower-to-llo.txt",
+    "bytes": 99114642
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0020-mosaic-dump-anonymous-post-eliminate-llo-extensions.txt",
+    "bytes": 99114642
+  },
+  {
+    "path": "rank-0/compiler/llo/baseline/1791464455197662145-0021-mosaic-dump-anonymous-post-finalize-llo.txt",
+    "bytes": 46288449
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464788893055541-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 49250415
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464790757214813-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 49250415
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464792774340536-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 49250415
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0001-mosaic-dump-anonymous-original.txt",
+    "bytes": 49250425
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0002-mosaic-dump-anonymous-post-specialize-any-memory-space.txt",
+    "bytes": 49250425
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0003-mosaic-dump-anonymous-post-canonicalize-memory-space.txt",
+    "bytes": 49987113
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0004-mosaic-dump-anonymous-post-infer-memref-layout.txt",
+    "bytes": 50086560
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0005-mosaic-dump-anonymous-post-infer-memref-layout-simplify.txt",
+    "bytes": 19946365
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0006-mosaic-dump-anonymous-post-canonicalize-operations.txt",
+    "bytes": 20630019
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0007-mosaic-dump-anonymous-post-pre-canon-optimization.txt",
+    "bytes": 20630019
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0008-mosaic-dump-anonymous-post-canonicalize-mosaic.txt",
+    "bytes": 20630019
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0009-mosaic-dump-anonymous-post-post-canon-optimization.txt",
+    "bytes": 20630019
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0010-mosaic-dump-anonymous-post-canonicalize-mosaic-2.txt",
+    "bytes": 20630019
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0011-mosaic-dump-anonymous-post-canonicalize-mosaic-simplify.txt",
+    "bytes": 19052091
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0012-mosaic-dump-anonymous-post-tiling-propagation.txt",
+    "bytes": 19991345
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0013-mosaic-dump-anonymous-post-infer-vector-layout.txt",
+    "bytes": 37316202
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0014-mosaic-dump-anonymous-post-relayout-insertion.txt",
+    "bytes": 74663338
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0015-mosaic-dump-anonymous-post-apply-vector-layout.txt",
+    "bytes": 333959782
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0016-mosaic-dump-anonymous-post-apply-vector-layout-simplify.txt",
+    "bytes": 55931786
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0017-mosaic-dump-anonymous-post-logical-to-physical-device-id.txt",
+    "bytes": 55931786
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0018-mosaic-dump-anonymous-post-late-loop-unroll.txt",
+    "bytes": 55931786
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0019-mosaic-dump-anonymous-post-lower-to-llo.txt",
+    "bytes": 99192542
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0020-mosaic-dump-anonymous-post-eliminate-llo-extensions.txt",
+    "bytes": 99192542
+  },
+  {
+    "path": "rank-0/compiler/llo/dual_acc/1791464794586700799-0021-mosaic-dump-anonymous-post-finalize-llo.txt",
+    "bytes": 45821212
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464618186081696-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 44837844
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464619978176142-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 44837844
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464621736366900-0000-mosaic-dump-anonymous-post-deserialization.txt",
+    "bytes": 44837844
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0001-mosaic-dump-anonymous-original.txt",
+    "bytes": 44837854
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0002-mosaic-dump-anonymous-post-specialize-any-memory-space.txt",
+    "bytes": 44837854
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0003-mosaic-dump-anonymous-post-canonicalize-memory-space.txt",
+    "bytes": 45457910
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0004-mosaic-dump-anonymous-post-infer-memref-layout.txt",
+    "bytes": 45562472
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0005-mosaic-dump-anonymous-post-infer-memref-layout-simplify.txt",
+    "bytes": 19769016
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0006-mosaic-dump-anonymous-post-canonicalize-operations.txt",
+    "bytes": 20447666
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0007-mosaic-dump-anonymous-post-pre-canon-optimization.txt",
+    "bytes": 20447666
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0008-mosaic-dump-anonymous-post-canonicalize-mosaic.txt",
+    "bytes": 20447666
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0009-mosaic-dump-anonymous-post-post-canon-optimization.txt",
+    "bytes": 20447666
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0010-mosaic-dump-anonymous-post-canonicalize-mosaic-2.txt",
+    "bytes": 20447666
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0011-mosaic-dump-anonymous-post-canonicalize-mosaic-simplify.txt",
+    "bytes": 18873595
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0012-mosaic-dump-anonymous-post-tiling-propagation.txt",
+    "bytes": 19779319
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0013-mosaic-dump-anonymous-post-infer-vector-layout.txt",
+    "bytes": 36927503
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0014-mosaic-dump-anonymous-post-relayout-insertion.txt",
+    "bytes": 74257070
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0015-mosaic-dump-anonymous-post-apply-vector-layout.txt",
+    "bytes": 333882211
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0016-mosaic-dump-anonymous-post-apply-vector-layout-simplify.txt",
+    "bytes": 56325355
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0017-mosaic-dump-anonymous-post-logical-to-physical-device-id.txt",
+    "bytes": 56325355
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0018-mosaic-dump-anonymous-post-late-loop-unroll.txt",
+    "bytes": 56325355
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0019-mosaic-dump-anonymous-post-lower-to-llo.txt",
+    "bytes": 99114431
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0020-mosaic-dump-anonymous-post-eliminate-llo-extensions.txt",
+    "bytes": 99114431
+  },
+  {
+    "path": "rank-0/compiler/llo/single_raw/1791464623266071299-0021-mosaic-dump-anonymous-post-finalize-llo.txt",
+    "bytes": 46288198
+  }
+]

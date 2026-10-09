@@ -1,0 +1,87 @@
+{
+  "binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "opcode_table_address": "0x1e2e9d70",
+  "mnemonic_table_address": "0x1e2eba50",
+  "opcode_count": 462,
+  "gf_performance_row_count": 465,
+  "ghostlite_classifier_address": "0x19357980",
+  "ghostlite_classifier_used_for_gf_binding": false,
+  "warning": "GL classifier is recorded for namespace audit only. GF automatic ISA classification remains unverified. Never index GF performance rows by raw LloOpcode.",
+  "examples": [
+    {
+      "raw_llo_opcode": 297,
+      "name": "kVectorPow2F32",
+      "mnemonic": "vpow2.f32",
+      "ghostlite_performance_id": 263,
+      "gf_row_at_same_number": {
+        "id": 297,
+        "latency_cycles": 211,
+        "resource_values": {
+          "4": 20,
+          "5": 8,
+          "6": 13,
+          "7": 7
+        }
+      }
+    },
+    {
+      "raw_llo_opcode": 298,
+      "name": "kVectorReciprocalF32",
+      "mnemonic": "vrcp.f32",
+      "ghostlite_performance_id": 267,
+      "gf_row_at_same_number": {
+        "id": 298,
+        "latency_cycles": 211,
+        "resource_values": {
+          "4": 20,
+          "5": 8,
+          "6": 13,
+          "7": 7
+        }
+      }
+    },
+    {
+      "raw_llo_opcode": 334,
+      "name": "kVectorEupResult",
+      "mnemonic": "vpop.eup",
+      "ghostlite_performance_id": 452,
+      "gf_row_at_same_number": {
+        "id": 334,
+        "latency_cycles": 1,
+        "resource_values": {
+          "13": 35,
+          "14": 34,
+          "15": 40,
+          "16": 18,
+          "17": 3
+        }
+      }
+    },
+    {
+      "raw_llo_opcode": 338,
+      "name": "kVectorMatres",
+      "mnemonic": "vpop",
+      "ghostlite_performance_id": 453,
+      "gf_row_at_same_number": {
+        "id": 338,
+        "latency_cycles": 1,
+        "resource_values": {
+          "17": 4
+        }
+      }
+    },
+    {
+      "raw_llo_opcode": 340,
+      "name": "kVectorTransposeResult",
+      "mnemonic": "vpop.trf",
+      "ghostlite_performance_id": 455,
+      "gf_row_at_same_number": {
+        "id": 340,
+        "latency_cycles": 1,
+        "resource_values": {
+          "17": 4
+        }
+      }
+    }
+  ]
+}

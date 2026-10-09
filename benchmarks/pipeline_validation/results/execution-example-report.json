@@ -1,0 +1,1066 @@
+{
+  "final_credits": {},
+  "status": "partial",
+  "modeled_cycles": 448,
+  "modeled_seconds": 2.0363636363636363e-07,
+  "estimated_seconds": null,
+  "frequency_hz": 2200000000.0,
+  "completion_tail_cycles": 1,
+  "wait_stall_cycles": 423,
+  "gaps": [
+    "BF16 MRB result width assumed 4 slots; target-specific validation pending",
+    "GF entry latencies used; consumer-specific latency adjustments incomplete",
+    "IMEM, runtime memory service and specialized execution units are not calibrated",
+    "matmul dtype names/issue intervals retained from 0.0.46.1 audit; modifier occupancy incomplete",
+    "modifier-specific latency/occupancy: vmatmul.mubr.bf16.mrb",
+    "specialized resource rule missing: 28 (vpop.f32.mrb)",
+    "specialized resource rule missing: 4 (vmatmul.mubr.bf16.mrb)",
+    "specialized resource rule missing: 5 (vmatmul.mubr.bf16.mrb)",
+    "specialized resource rule missing: 6 (vmatmul.mubr.bf16.mrb)",
+    "specialized resource rule missing: 7 (vmatmul.mubr.bf16.mrb)"
+  ],
+  "model_provenance": "GF direct classifier 0x19360660; libtpu 0.0.48 GF table; sha256=13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+  "events": [
+    {
+      "visit": 0,
+      "address": "0:0x0",
+      "start_cycle": 0,
+      "issue_end_cycle": 1,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 1,
+      "address": "0:0x1",
+      "start_cycle": 1,
+      "issue_end_cycle": 2,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 2,
+      "address": "0:0x2",
+      "start_cycle": 2,
+      "issue_end_cycle": 3,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 3,
+      "address": "0:0x3",
+      "start_cycle": 4,
+      "issue_end_cycle": 5,
+      "issue_stall_cycles": 1,
+      "stall_cycles": 1,
+      "blockers": [
+        "dependency:2:1"
+      ]
+    },
+    {
+      "visit": 4,
+      "address": "0:0x4",
+      "start_cycle": 215,
+      "issue_end_cycle": 216,
+      "issue_stall_cycles": 210,
+      "stall_cycles": 210,
+      "blockers": [
+        "dependency:3:1"
+      ]
+    },
+    {
+      "visit": 5,
+      "address": "0:0x5",
+      "start_cycle": 216,
+      "issue_end_cycle": 217,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 6,
+      "address": "0:0x6",
+      "start_cycle": 217,
+      "issue_end_cycle": 218,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 7,
+      "address": "0:0x7",
+      "start_cycle": 218,
+      "issue_end_cycle": 219,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 8,
+      "address": "0:0x8",
+      "start_cycle": 219,
+      "issue_end_cycle": 220,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 9,
+      "address": "0:0x9",
+      "start_cycle": 220,
+      "issue_end_cycle": 221,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 10,
+      "address": "0:0xa",
+      "start_cycle": 221,
+      "issue_end_cycle": 222,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 11,
+      "address": "0:0xb",
+      "start_cycle": 223,
+      "issue_end_cycle": 224,
+      "issue_stall_cycles": 1,
+      "stall_cycles": 1,
+      "blockers": [
+        "dependency:10:0"
+      ]
+    },
+    {
+      "visit": 12,
+      "address": "0:0x1@1",
+      "start_cycle": 224,
+      "issue_end_cycle": 225,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 13,
+      "address": "0:0x2@1",
+      "start_cycle": 225,
+      "issue_end_cycle": 226,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 14,
+      "address": "0:0x3@1",
+      "start_cycle": 227,
+      "issue_end_cycle": 228,
+      "issue_stall_cycles": 1,
+      "stall_cycles": 1,
+      "blockers": [
+        "dependency:13:1"
+      ]
+    },
+    {
+      "visit": 15,
+      "address": "0:0x4@1",
+      "start_cycle": 438,
+      "issue_end_cycle": 439,
+      "issue_stall_cycles": 210,
+      "stall_cycles": 210,
+      "blockers": [
+        "dependency:14:1"
+      ]
+    },
+    {
+      "visit": 16,
+      "address": "0:0x5@1",
+      "start_cycle": 439,
+      "issue_end_cycle": 440,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 17,
+      "address": "0:0x6@1",
+      "start_cycle": 440,
+      "issue_end_cycle": 441,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 18,
+      "address": "0:0x7@1",
+      "start_cycle": 441,
+      "issue_end_cycle": 442,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 19,
+      "address": "0:0x8@1",
+      "start_cycle": 442,
+      "issue_end_cycle": 443,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 20,
+      "address": "0:0x9@1",
+      "start_cycle": 443,
+      "issue_end_cycle": 444,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 21,
+      "address": "0:0xa@1",
+      "start_cycle": 444,
+      "issue_end_cycle": 445,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 22,
+      "address": "0:0xb@1",
+      "start_cycle": 445,
+      "issue_end_cycle": 446,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    },
+    {
+      "visit": 23,
+      "address": "0:0xc",
+      "start_cycle": 446,
+      "issue_end_cycle": 447,
+      "issue_stall_cycles": 0,
+      "stall_cycles": 0,
+      "blockers": []
+    }
+  ],
+  "timeline": [
+    {
+      "track": "Results",
+      "name": "smov",
+      "operation_id": "0:0",
+      "start_cycle": 0,
+      "end_cycle": 1,
+      "address": "0:0x0"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "2:0",
+      "start_cycle": 2,
+      "end_cycle": 4,
+      "address": "0:0x2"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "2:1",
+      "start_cycle": 2,
+      "end_cycle": 4,
+      "address": "0:0x2"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:2:1",
+      "start_cycle": 3,
+      "end_cycle": 4,
+      "address": "0:0x3"
+    },
+    {
+      "track": "Results",
+      "name": "vmatmul.mubr.bf16.mrb",
+      "operation_id": "3:0",
+      "start_cycle": 4,
+      "end_cycle": 215,
+      "address": "0:0x3"
+    },
+    {
+      "track": "Results",
+      "name": "vmatmul.mubr.bf16.mrb",
+      "operation_id": "3:1",
+      "start_cycle": 4,
+      "end_cycle": 215,
+      "address": "0:0x3"
+    },
+    {
+      "track": "mxu0.matmul",
+      "name": "3:0",
+      "start_cycle": 4,
+      "end_cycle": 12,
+      "address": "0:0x3"
+    },
+    {
+      "track": "mxu1.matmul",
+      "name": "3:1",
+      "start_cycle": 4,
+      "end_cycle": 12,
+      "address": "0:0x3"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:3:1",
+      "start_cycle": 5,
+      "end_cycle": 215,
+      "address": "0:0x4"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "4:0",
+      "start_cycle": 215,
+      "end_cycle": 216,
+      "address": "0:0x4"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "4:1",
+      "start_cycle": 215,
+      "end_cycle": 216,
+      "address": "0:0x4"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "5:0",
+      "start_cycle": 216,
+      "end_cycle": 217,
+      "address": "0:0x5"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "5:1",
+      "start_cycle": 216,
+      "end_cycle": 217,
+      "address": "0:0x5"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "6:0",
+      "start_cycle": 217,
+      "end_cycle": 218,
+      "address": "0:0x6"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "6:1",
+      "start_cycle": 217,
+      "end_cycle": 218,
+      "address": "0:0x6"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "7:0",
+      "start_cycle": 218,
+      "end_cycle": 219,
+      "address": "0:0x7"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "7:1",
+      "start_cycle": 218,
+      "end_cycle": 219,
+      "address": "0:0x7"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "8:0",
+      "start_cycle": 219,
+      "end_cycle": 221,
+      "address": "0:0x8"
+    },
+    {
+      "track": "Results",
+      "name": "sadd.s32",
+      "operation_id": "9:0",
+      "start_cycle": 220,
+      "end_cycle": 221,
+      "address": "0:0x9"
+    },
+    {
+      "track": "Results",
+      "name": "scmp.lt.s32.totalorder",
+      "operation_id": "10:0",
+      "start_cycle": 221,
+      "end_cycle": 223,
+      "address": "0:0xa"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:10:0",
+      "start_cycle": 222,
+      "end_cycle": 223,
+      "address": "0:0xb"
+    },
+    {
+      "track": "Results",
+      "name": "sbr.rel",
+      "operation_id": "11:0",
+      "start_cycle": 223,
+      "end_cycle": 224,
+      "address": "0:0xb"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "13:0",
+      "start_cycle": 225,
+      "end_cycle": 227,
+      "address": "0:0x2@1"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "13:1",
+      "start_cycle": 225,
+      "end_cycle": 227,
+      "address": "0:0x2@1"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:13:1",
+      "start_cycle": 226,
+      "end_cycle": 227,
+      "address": "0:0x3@1"
+    },
+    {
+      "track": "Results",
+      "name": "vmatmul.mubr.bf16.mrb",
+      "operation_id": "14:0",
+      "start_cycle": 227,
+      "end_cycle": 438,
+      "address": "0:0x3@1"
+    },
+    {
+      "track": "Results",
+      "name": "vmatmul.mubr.bf16.mrb",
+      "operation_id": "14:1",
+      "start_cycle": 227,
+      "end_cycle": 438,
+      "address": "0:0x3@1"
+    },
+    {
+      "track": "mxu0.matmul",
+      "name": "14:0",
+      "start_cycle": 227,
+      "end_cycle": 235,
+      "address": "0:0x3@1"
+    },
+    {
+      "track": "mxu1.matmul",
+      "name": "14:1",
+      "start_cycle": 227,
+      "end_cycle": 235,
+      "address": "0:0x3@1"
+    },
+    {
+      "track": "Bundle stalls",
+      "name": "dependency:14:1",
+      "start_cycle": 228,
+      "end_cycle": 438,
+      "address": "0:0x4@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "15:0",
+      "start_cycle": 438,
+      "end_cycle": 439,
+      "address": "0:0x4@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "15:1",
+      "start_cycle": 438,
+      "end_cycle": 439,
+      "address": "0:0x4@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "16:0",
+      "start_cycle": 439,
+      "end_cycle": 440,
+      "address": "0:0x5@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "16:1",
+      "start_cycle": 439,
+      "end_cycle": 440,
+      "address": "0:0x5@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "17:0",
+      "start_cycle": 440,
+      "end_cycle": 441,
+      "address": "0:0x6@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "17:1",
+      "start_cycle": 440,
+      "end_cycle": 441,
+      "address": "0:0x6@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "18:0",
+      "start_cycle": 441,
+      "end_cycle": 442,
+      "address": "0:0x7@1"
+    },
+    {
+      "track": "Results",
+      "name": "vpop.f32.mrb",
+      "operation_id": "18:1",
+      "start_cycle": 441,
+      "end_cycle": 442,
+      "address": "0:0x7@1"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "19:0",
+      "start_cycle": 442,
+      "end_cycle": 444,
+      "address": "0:0x8@1"
+    },
+    {
+      "track": "Results",
+      "name": "sadd.s32",
+      "operation_id": "20:0",
+      "start_cycle": 443,
+      "end_cycle": 444,
+      "address": "0:0x9@1"
+    },
+    {
+      "track": "Results",
+      "name": "scmp.lt.s32.totalorder",
+      "operation_id": "21:0",
+      "start_cycle": 444,
+      "end_cycle": 446,
+      "address": "0:0xa@1"
+    },
+    {
+      "track": "Results",
+      "name": "vadd.f32",
+      "operation_id": "23:0",
+      "start_cycle": 446,
+      "end_cycle": 448,
+      "address": "0:0xc"
+    }
+  ],
+  "assumptions": [
+    "Resolved dynamic path and versioned producer dependencies supplied.",
+    "Reservation durations and result latencies are distinct inputs.",
+    "No measured timestamps are consumed; no accuracy claim without validation."
+  ],
+  "execution": {
+    "initial_ready": {
+      "input:%input0": 0,
+      "input:%input1": 0
+    },
+    "gaps": [
+      "BF16 MRB result width assumed 4 slots; target-specific validation pending",
+      "GF entry latencies used; consumer-specific latency adjustments incomplete",
+      "IMEM, runtime memory service and specialized execution units are not calibrated",
+      "matmul dtype names/issue intervals retained from 0.0.46.1 audit; modifier occupancy incomplete",
+      "modifier-specific latency/occupancy: vmatmul.mubr.bf16.mrb",
+      "specialized resource rule missing: 28 (vpop.f32.mrb)",
+      "specialized resource rule missing: 4 (vmatmul.mubr.bf16.mrb)",
+      "specialized resource rule missing: 5 (vmatmul.mubr.bf16.mrb)",
+      "specialized resource rule missing: 6 (vmatmul.mubr.bf16.mrb)",
+      "specialized resource rule missing: 7 (vmatmul.mubr.bf16.mrb)"
+    ],
+    "counts": {
+      "instructions": 33,
+      "mapped": 33,
+      "predicate_disabled": 1
+    },
+    "dependencies": [
+      {
+        "id": "0:0",
+        "address": "0:0x0",
+        "opcode": "smov",
+        "performance_id": 27,
+        "reads": [],
+        "writes": "%s_seed",
+        "depends_on": []
+      },
+      {
+        "id": "2:0",
+        "address": "0:0x2",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%input0"
+        ],
+        "writes": "%v0",
+        "depends_on": [
+          "input:%input0"
+        ]
+      },
+      {
+        "id": "2:1",
+        "address": "0:0x2",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%input1"
+        ],
+        "writes": "%v1",
+        "depends_on": [
+          "input:%input1"
+        ]
+      },
+      {
+        "id": "3:0",
+        "address": "0:0x3",
+        "opcode": "vmatmul.mubr.bf16.mrb",
+        "performance_id": 295,
+        "reads": [
+          "%v0"
+        ],
+        "writes": "%m0",
+        "depends_on": [
+          "2:0"
+        ]
+      },
+      {
+        "id": "3:1",
+        "address": "0:0x3",
+        "opcode": "vmatmul.mubr.bf16.mrb",
+        "performance_id": 295,
+        "reads": [
+          "%v1"
+        ],
+        "writes": "%m1",
+        "depends_on": [
+          "2:1"
+        ]
+      },
+      {
+        "id": "4:0",
+        "address": "0:0x4",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r0",
+        "depends_on": [
+          "3:0"
+        ]
+      },
+      {
+        "id": "4:1",
+        "address": "0:0x4",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r1",
+        "depends_on": [
+          "3:1"
+        ]
+      },
+      {
+        "id": "5:0",
+        "address": "0:0x5",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r2",
+        "depends_on": [
+          "3:0"
+        ]
+      },
+      {
+        "id": "5:1",
+        "address": "0:0x5",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r3",
+        "depends_on": [
+          "3:1"
+        ]
+      },
+      {
+        "id": "6:0",
+        "address": "0:0x6",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r4",
+        "depends_on": [
+          "3:0"
+        ]
+      },
+      {
+        "id": "6:1",
+        "address": "0:0x6",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r5",
+        "depends_on": [
+          "3:1"
+        ]
+      },
+      {
+        "id": "7:0",
+        "address": "0:0x7",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r6",
+        "depends_on": [
+          "3:0"
+        ]
+      },
+      {
+        "id": "7:1",
+        "address": "0:0x7",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r7",
+        "depends_on": [
+          "3:1"
+        ]
+      },
+      {
+        "id": "8:0",
+        "address": "0:0x8",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%r0",
+          "%r1"
+        ],
+        "writes": "%v2",
+        "depends_on": [
+          "4:0",
+          "4:1"
+        ]
+      },
+      {
+        "id": "9:0",
+        "address": "0:0x9",
+        "opcode": "sadd.s32",
+        "performance_id": 11,
+        "reads": [
+          "%s_i"
+        ],
+        "writes": "%s_next",
+        "depends_on": [
+          "0:0"
+        ]
+      },
+      {
+        "id": "10:0",
+        "address": "0:0xa",
+        "opcode": "scmp.lt.s32.totalorder",
+        "performance_id": [
+          446,
+          447,
+          448,
+          449,
+          450,
+          451,
+          453,
+          454,
+          455,
+          456,
+          457,
+          458,
+          459,
+          460,
+          461,
+          462
+        ],
+        "reads": [
+          "%s_next"
+        ],
+        "writes": "%p_more",
+        "depends_on": [
+          "9:0"
+        ]
+      },
+      {
+        "id": "11:0",
+        "address": "0:0xb",
+        "opcode": "sbr.rel",
+        "performance_id": 32,
+        "reads": [
+          "%p_more"
+        ],
+        "writes": null,
+        "depends_on": [
+          "10:0"
+        ]
+      },
+      {
+        "id": "13:0",
+        "address": "0:0x2@1",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%input0"
+        ],
+        "writes": "%v0",
+        "depends_on": [
+          "2:0",
+          "input:%input0"
+        ]
+      },
+      {
+        "id": "13:1",
+        "address": "0:0x2@1",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%input1"
+        ],
+        "writes": "%v1",
+        "depends_on": [
+          "2:1",
+          "input:%input1"
+        ]
+      },
+      {
+        "id": "14:0",
+        "address": "0:0x3@1",
+        "opcode": "vmatmul.mubr.bf16.mrb",
+        "performance_id": 295,
+        "reads": [
+          "%v0"
+        ],
+        "writes": "%m0",
+        "depends_on": [
+          "13:0",
+          "3:0",
+          "4:0",
+          "5:0",
+          "6:0",
+          "7:0"
+        ]
+      },
+      {
+        "id": "14:1",
+        "address": "0:0x3@1",
+        "opcode": "vmatmul.mubr.bf16.mrb",
+        "performance_id": 295,
+        "reads": [
+          "%v1"
+        ],
+        "writes": "%m1",
+        "depends_on": [
+          "13:1",
+          "3:1",
+          "4:1",
+          "5:1",
+          "6:1",
+          "7:1"
+        ]
+      },
+      {
+        "id": "15:0",
+        "address": "0:0x4@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r0",
+        "depends_on": [
+          "14:0",
+          "4:0"
+        ]
+      },
+      {
+        "id": "15:1",
+        "address": "0:0x4@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r1",
+        "depends_on": [
+          "14:1",
+          "4:1"
+        ]
+      },
+      {
+        "id": "16:0",
+        "address": "0:0x5@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r2",
+        "depends_on": [
+          "14:0",
+          "5:0"
+        ]
+      },
+      {
+        "id": "16:1",
+        "address": "0:0x5@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r3",
+        "depends_on": [
+          "14:1",
+          "5:1"
+        ]
+      },
+      {
+        "id": "17:0",
+        "address": "0:0x6@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r4",
+        "depends_on": [
+          "14:0",
+          "6:0"
+        ]
+      },
+      {
+        "id": "17:1",
+        "address": "0:0x6@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r5",
+        "depends_on": [
+          "14:1",
+          "6:1"
+        ]
+      },
+      {
+        "id": "18:0",
+        "address": "0:0x7@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r6",
+        "depends_on": [
+          "14:0",
+          "7:0"
+        ]
+      },
+      {
+        "id": "18:1",
+        "address": "0:0x7@1",
+        "opcode": "vpop.f32.mrb",
+        "performance_id": 418,
+        "reads": [],
+        "writes": "%r7",
+        "depends_on": [
+          "14:1",
+          "7:1"
+        ]
+      },
+      {
+        "id": "19:0",
+        "address": "0:0x8@1",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%r0",
+          "%r1"
+        ],
+        "writes": "%v2",
+        "depends_on": [
+          "15:0",
+          "15:1",
+          "8:0"
+        ]
+      },
+      {
+        "id": "20:0",
+        "address": "0:0x9@1",
+        "opcode": "sadd.s32",
+        "performance_id": 11,
+        "reads": [
+          "%s_i"
+        ],
+        "writes": "%s_next",
+        "depends_on": [
+          "9:0"
+        ]
+      },
+      {
+        "id": "21:0",
+        "address": "0:0xa@1",
+        "opcode": "scmp.lt.s32.totalorder",
+        "performance_id": [
+          446,
+          447,
+          448,
+          449,
+          450,
+          451,
+          453,
+          454,
+          455,
+          456,
+          457,
+          458,
+          459,
+          460,
+          461,
+          462
+        ],
+        "reads": [
+          "%s_next"
+        ],
+        "writes": "%p_more",
+        "depends_on": [
+          "10:0",
+          "20:0"
+        ]
+      },
+      {
+        "id": "23:0",
+        "address": "0:0xc",
+        "opcode": "vadd.f32",
+        "performance_id": 66,
+        "reads": [
+          "%v2"
+        ],
+        "writes": "%v_out",
+        "depends_on": [
+          "19:0"
+        ]
+      }
+    ],
+    "dynamic_bundle_visits": 24,
+    "memory_profile": null,
+    "dma_events": []
+  }
+}

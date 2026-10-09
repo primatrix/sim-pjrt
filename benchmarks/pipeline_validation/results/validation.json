@@ -1,0 +1,174 @@
+{
+  "input_audit": "complete",
+  "independent_hardware_prediction": "not_validated",
+  "hardware_accuracy_accepted": false,
+  "model_scope": "Opt-in explicit resource/dependency scheduler; no default TPU latency changes",
+  "tests": {
+    "workspace_python": 59,
+    "candidate_worktree_python": 51,
+    "commands": [
+      "PYTHONPATH=python .venv/bin/python -m unittest discover -s tests/python -p pipeline*_test.py",
+      "PYTHONPATH=python .venv/bin/python tests/python/profile_import_test.py",
+      "PYTHONPATH=python .venv/bin/python tests/python/bundle_timing_test.py"
+    ],
+    "bazel_targets": {
+      "//tests/python:pipeline_test": "PASSED",
+      "//tests/python:pipeline_import_test": "PASSED",
+      "//tests/python:compiler_costs_test": "PASSED"
+    }
+  },
+  "blockers": [
+    "Matching backend Final LLO and hardware anchor/clock mapping are absent from the usable local inputs.",
+    "XProf reconstructed matmul counts differ from capture hardware counters by 0.51\u20131.36 percent.",
+    "No physical MRB address exists in inspected matmul/pop display events.",
+    "Real VPU/XLU/TRF/EUP, DMA/VMEM/IMEM parameters and independent validation are incomplete."
+  ],
+  "approval_pending": {
+    "action": "Export full LLO from existing Falcon artifact into Falcon analysis results, then download locally",
+    "reason": "Automatic approval rejected remote export of potentially proprietary compiler artifacts."
+  },
+  "variants": [
+    {
+      "variant": "baseline",
+      "source_sha256": "e6cf6adfe4814e7888de852dc527e33e480c0c4c5a60947a0b203061402af4fa",
+      "matmul_counter_coverage": {
+        "MXU0 Instructions": {
+          "capture_counter": 36864,
+          "trace_both_calls": 36361,
+          "relative_difference_percent": -1.364474826388884
+        },
+        "MXU1 Instructions": {
+          "capture_counter": 36864,
+          "trace_both_calls": 36538,
+          "relative_difference_percent": -0.884331597222221
+        }
+      },
+      "same_binary_repeatability_only": {
+        "reference_call": 0,
+        "held_out_call": 1,
+        "matched_events": 1509431,
+        "reference_events": 1523057,
+        "held_out_events": 1522243,
+        "match_fraction_reference": 0.9910535193364398,
+        "duration_error_percent": 0.14390134262820542,
+        "aligned_start_abs_error_us": {
+          "median": 0.12237299996195361,
+          "p95": 0.268605999997817,
+          "max": 134.3479900000384
+        },
+        "lanes_p95_start_error_us": {
+          "VST Instructions": 2.4648859999724664,
+          "VALU Instructions": 2.482443000015337,
+          "VLD Instructions": 0.27258400002028793,
+          "MXU0 Instructions": 0.25585199997294694,
+          "MXU1 Instructions": 0.2560020000091754,
+          "EUP Instructions": 0.2629792500229087,
+          "XLU Instructions": 0.267556999984663,
+          "SALU Instructions": 21.91364100005012
+        }
+      }
+    },
+    {
+      "variant": "single_raw",
+      "source_sha256": "8c93c52c2dca50214f3c6c40e75c444e9d5d03150a51cb4712039da85d13d4ab",
+      "matmul_counter_coverage": {
+        "MXU0 Instructions": {
+          "capture_counter": 36864,
+          "trace_both_calls": 36479,
+          "relative_difference_percent": -1.044379340277779
+        },
+        "MXU1 Instructions": {
+          "capture_counter": 36864,
+          "trace_both_calls": 36677,
+          "relative_difference_percent": -0.507269965277779
+        }
+      },
+      "same_binary_repeatability_only": {
+        "reference_call": 0,
+        "held_out_call": 1,
+        "matched_events": 1524127,
+        "reference_events": 1531677,
+        "held_out_events": 1532250,
+        "match_fraction_reference": 0.9950707623082412,
+        "duration_error_percent": 0.038744256618383766,
+        "aligned_start_abs_error_us": {
+          "median": 0.33253199997125193,
+          "p95": 0.6122450000257231,
+          "max": 158.08035800000653
+        },
+        "lanes_p95_start_error_us": {
+          "VLD Instructions": 0.6123950000037439,
+          "MXU1 Instructions": 0.6075169999967329,
+          "VALU Instructions": 0.6123200000147335,
+          "MXU0 Instructions": 0.6071430000010878,
+          "VST Instructions": 0.6121699999785051,
+          "EUP Instructions": 0.6102190000237897,
+          "XLU Instructions": 0.6122440000181086,
+          "SALU Instructions": 18.04059099999722
+        }
+      }
+    },
+    {
+      "variant": "dual_acc",
+      "source_sha256": "e456ce0f05142064c1c23a16fa31856bc7394d89283fb7665188cc385e024814",
+      "matmul_counter_coverage": {
+        "MXU0 Instructions": {
+          "capture_counter": 36864,
+          "trace_both_calls": 36391,
+          "relative_difference_percent": -1.283094618055558
+        },
+        "MXU1 Instructions": {
+          "capture_counter": 36864,
+          "trace_both_calls": 36644,
+          "relative_difference_percent": -0.596788194444442
+        }
+      },
+      "same_binary_repeatability_only": {
+        "reference_call": 0,
+        "held_out_call": 1,
+        "matched_events": 1515519,
+        "reference_events": 1525737,
+        "held_out_events": 1525427,
+        "match_fraction_reference": 0.9933029086926515,
+        "duration_error_percent": 0.1252574518525229,
+        "aligned_start_abs_error_us": {
+          "median": 0.5859100000234321,
+          "p95": 0.9519060000311583,
+          "max": 314.3987100000377
+        },
+        "lanes_p95_start_error_us": {
+          "VALU Instructions": 0.9537819999968633,
+          "MXU1 Instructions": 0.9159669999498874,
+          "VLD Instructions": 0.9189679999835789,
+          "EUP Instructions": 0.9154409999726341,
+          "MXU0 Instructions": 0.9172419999958947,
+          "SALU Instructions": 64.8762752499897,
+          "XLU Instructions": 3.3578631000125703,
+          "VST Instructions": 0.9179930000100285
+        }
+      }
+    }
+  ],
+  "compiler_cost_table": {
+    "target": "gf",
+    "libtpu_version": "0.0.48",
+    "rows": 465,
+    "resources": 32,
+    "explicit_resource_stores": 303,
+    "binary_sha256": "13fe4b883a085db3bce929eea75d0c93dab8ad245694e2d4598826765dbdb951",
+    "automatic_isa_classification_verified": "partial: GF direct map verified, modifiers retain stated assumptions"
+  },
+  "execution_model": {
+    "new_tests": 22,
+    "related_python_tests_passed": 110,
+    "direct_mapping_count": 274,
+    "historical_gemm_static_coverage": {
+      "mapped": 835,
+      "total": 919
+    },
+    "hardware_accuracy_accepted": false,
+    "pack_and_bf16_matpush": "implemented with current-binary provenance",
+    "dma_service": "existing memory profile connected; conservative ordering, uncalibrated",
+    "latest_full_llo_reaudit": "shared experiment lock busy (exit 75); previous coverage retained"
+  }
+}

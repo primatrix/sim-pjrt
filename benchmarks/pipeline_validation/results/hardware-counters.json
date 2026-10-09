@@ -1,0 +1,2521 @@
+{
+  "baseline": {
+    "COUNT_CYCLES": [
+      {
+        "ts": 0,
+        "value": "954649362",
+        "description": "This counter increments once per clock cycle the entire time that this  group of counters is enabled."
+      }
+    ],
+    "COUNT_SCALAR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "527002",
+        "description": "This counter increments whenever an instruction bundle undergoes scalar issue."
+      }
+    ],
+    "COUNT_TAKEN_BRANCH": [
+      {
+        "ts": 0,
+        "value": "498",
+        "description": "This counter counts scalar issue of bundles containing taken branch or call instructions."
+      }
+    ],
+    "COUNT_SMEM_INSTRUCTION_READS": [
+      {
+        "ts": 0,
+        "value": "590",
+        "description": "This counter counts scalar issue of bundles containing an Smem read instruction.  (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SMEM_INSTRUCTION_WRITES": [
+      {
+        "ts": 0,
+        "value": "2592",
+        "description": "This counter counts scalar issue of bundles containing an Smem write instruction. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_FENCE": [
+      {
+        "ts": 0,
+        "value": "12",
+        "description": "This counter counts scalar issue of bundles containing Scalar Fence instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DMA_SIMPLE_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts scalar issue of bundles containing Simple DMA instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DMA_GENERAL_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "368",
+        "description": "This counter counts scalar issue of bundles containing General DMA instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_ALU_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "13786",
+        "description": "This counter counts scalar issue of bundles containing any instruction in the sN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_ALU_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "7374",
+        "description": "This counter counts scalar issue of bundles containing any instruction in the sN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_BUNDLES_INTO_VIF": [
+      {
+        "ts": 0,
+        "value": "514520",
+        "description": "This counter counts bundles that have scalar-issued and contain any vector instructions or DMA instructions, such that they are pushed to the Vector Instruction FIFO."
+      }
+    ],
+    "COUNT_XN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "1552",
+        "description": "This counter counts hold-scalar-issue cycles for [xN_reserved](http://go/gfc-isa#xn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_YN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "114",
+        "description": "This counter counts hold-scalar-issue cycles for [yN_reserved](http://go/gfc-isa#yn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VIF_FULL": [
+      {
+        "ts": 0,
+        "value": "127031",
+        "description": "This counter counts hold-scalar-issue cycles for [vif_full](http://go/gfc-isa#vif_full). "
+      }
+    ],
+    "COUNT_SMEM_RESERVED": [
+      {
+        "ts": 0,
+        "value": "240",
+        "description": "This counter counts hold-scalar-issue cycles for [smem_reserved](http://go/gfc-isa#smem_reserved). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_FENCE_WAIT": [
+      {
+        "ts": 0,
+        "value": "953978470",
+        "description": "This counter counts hold-scalar-issue cycles for [scalar_fence_wait](http://go/gfc-isa#scalar_fence_wait)."
+      }
+    ],
+    "COUNT_BRANCH_SREG_RESERVED": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts hold-scalar-issue cycles for [branch_sreg_reserved](http://go/gfc-isa#branch_sreg_reserved) Since there is one automatic hold-scalar-issue cycle per taken Branch [Sreg] or Call [Sreg], this counter also serves as a count those instructions (unless TCS halts instead of holding on the cycle after the branch issues, as when single-stepping)."
+      }
+    ],
+    "COUNT_V2S_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "5093",
+        "description": "This counter counts hold-scalar-issue cycles for [v2s_result_wait](http://go/gfc-isa#v2s_result_wait). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PREDICATE_REGISTER_RESERVED": [
+      {
+        "ts": 0,
+        "value": "590",
+        "description": "This counter counts hold-scalar-issue cycles for [predicate_register_reserved](http://go/gfc-isa#predicate_register_reserved). "
+      }
+    ],
+    "COUNT_SFRF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "8336",
+        "description": "This counter counts hold-scalar-issue cycles for [sfrf_result_wait](http://go/gfc-isa#sfrf_result_wait). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "514520",
+        "description": "This counter increments whenever an instruction bundle undergoes issue (aka vector issue)."
+      }
+    ],
+    "COUNT_HOLD_VECTOR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "954119952",
+        "description": "This counter increments on every cycle that an instruction bundle attempts to vector issue, but does not due to a vector hold issue condition.  This counter does not increment if the bundle is holding due to a vdelay instruction."
+      }
+    ],
+    "COUNT_EUP_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "163840",
+        "description": "This counter increments when an EUP instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "438232",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "333688",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_2": [
+      {
+        "ts": 0,
+        "value": "216516",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_3": [
+      {
+        "ts": 0,
+        "value": "263156",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VST_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "277992",
+        "description": "This counter increments when a vmem store instruction issues. (This does not count instructions such as Set IAR which use the vector store slot but are not vector stores.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_VST_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "69184",
+        "description": "This counter increments when a vmisc slot store instruction issues. (This does not count instructions which use the vmisc slot but are not vector stores.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VLD_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "424538",
+        "description": "This counter increments when a vmem load instruction in vld slot (vldN) issues. (This does not count instructions such as Read IAR which use vector load slot but are not vector loads.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VLD_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "178968",
+        "description": "This counter increments when a vmem load instruction in vld slot (vldN) issues. (This does not count instructions such as Read IAR which use vector load slot but are not vector loads.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_VLD_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "60552",
+        "description": "This counter increments when a vmem load instruction in vmisc slot issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_MSC_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "102154",
+        "description": "This counter increments when an instruction other than a vmem load or store in vmisc slot issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VRES_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "320004",
+        "description": "This counter increments when any *_Result instruction issues from vresN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VRES_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "171532",
+        "description": "This counter increments when any *_Result instruction issues from vresN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SET_ADD_SYNC_FLAG": [
+      {
+        "ts": 0,
+        "value": "830",
+        "description": "This counter increments when any Set Sync Flag or Add Sync Flag instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_WAITED": [
+      {
+        "ts": 0,
+        "value": "356",
+        "description": "This counter increments when a Sync instruction issues where the first time it checks the Sync Flag the condition is not met. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_NO_WAIT": [
+      {
+        "ts": 0,
+        "value": "356",
+        "description": "This counter increments when a Sync instruction issues where the first time it checks the Sync Flag the condition is met.  (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_CORE_INTERRUPT": [
+      {
+        "ts": 0,
+        "value": "2",
+        "description": "This counter increments when a Core Interrupt instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MATMUL_VREG_BF16_MXU_0": [
+      {
+        "ts": 0,
+        "value": "36864",
+        "description": "This counter increments when a vmatmul (Matrix Multiply) instruction issues with an LHS data type of BF16 sourced from a Vreg.(Instructions only count if their predication evaluates to true.) Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATMUL_VREG_BF16_MXU_1": [
+      {
+        "ts": 0,
+        "value": "36864",
+        "description": "This counter increments when a vmatmul (Matrix Multiply) instruction issues with an LHS data type of BF16 sourced from a Vreg.(Instructions only count if their predication evaluates to true.) Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MXU_BUSY_0": [
+      {
+        "ts": 0,
+        "value": "954309498",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MXU_BUSY_1": [
+      {
+        "ts": 0,
+        "value": "89904",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MXU_BUSY_2": [
+      {
+        "ts": 0,
+        "value": "249960",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MATPUSH_MXU_0": [
+      {
+        "ts": 0,
+        "value": "20480",
+        "description": "This counter increments when a vmatpush instruction issues.  (This includes all the variants.)  (Instructions only count if their predication evaluates to true.)Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATPUSH_MXU_1": [
+      {
+        "ts": 0,
+        "value": "20480",
+        "description": "This counter increments when a vmatpush instruction issues.  (This includes all the variants.)  (Instructions only count if their predication evaluates to true.)Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATPUSH_CYCLES_MXU_0": [
+      {
+        "ts": 0,
+        "value": "163840",
+        "description": "This counts the number of cycles that the msr path is used for MXU."
+      }
+    ],
+    "COUNT_MATPUSH_CYCLES_MXU_1": [
+      {
+        "ts": 0,
+        "value": "81920",
+        "description": "This counts the number of cycles that the msr path is used for MXU."
+      }
+    ],
+    "COUNT_MATPUSH_MATRICES_MXU_0": [
+      {
+        "ts": 0,
+        "value": "40960",
+        "description": "This counts the number of 8x128 or 4x256 matrices that are pushed to mxuN by a vmatpush instruction."
+      }
+    ],
+    "COUNT_MATPUSH_MATRICES_MXU_1": [
+      {
+        "ts": 0,
+        "value": "40960",
+        "description": "This counts the number of 8x128 or 4x256 matrices that are pushed to mxuN by a vmatpush instruction."
+      }
+    ],
+    "COUNT_ROTATE_PERMUTE_INSTRUCTION_XLU_0": [
+      {
+        "ts": 0,
+        "value": "16400",
+        "description": "This counter increments when any instruction issues that uses the Rotate/Permute unit, including Permute, Xlane_*, etc., but not Set Permute. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_ROTATE_PERMUTE_INSTRUCTION_XLU_1": [
+      {
+        "ts": 0,
+        "value": "16384",
+        "description": "This counter increments when any instruction issues that uses the Rotate/Permute unit, including Permute, Xlane_*, etc., but not Set Permute. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_XLU_BUSY_0": [
+      {
+        "ts": 0,
+        "value": "954552349",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_XLU_BUSY_1": [
+      {
+        "ts": 0,
+        "value": "62890",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_XLU_BUSY_2": [
+      {
+        "ts": 0,
+        "value": "34123",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_V_X_RESERVED": [
+      {
+        "ts": 0,
+        "value": "1484",
+        "description": "This counter counts hold-vector-issue cycles for [v_x_reserved](http://go/gfc-isa#v-x-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_V_Y_RESERVED": [
+      {
+        "ts": 0,
+        "value": "90",
+        "description": "This counter counts hold-vector-issue cycles for [v_y_reserved](http://go/gfc-isa#v-y-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VST_RESERVED": [
+      {
+        "ts": 0,
+        "value": "1322",
+        "description": "This counter counts hold-vector-issue cycles for [vst_reserved](http://go/gfc-isa#vst-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MISC_VST_RESERVED": [
+      {
+        "ts": 0,
+        "value": "720",
+        "description": "This counter counts hold-vector-issue cycles for [misc_vst_reserved](http://go/gfc-isa#vst-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VEX_RESERVED": [
+      {
+        "ts": 0,
+        "value": "248",
+        "description": "This counter counts hold-vector-issue cycles for [vex_reserved](http://go/gfc-isa#vex-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MATMUL_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "4959",
+        "description": "This counter counts hold-vector-issue cycles for [matmul_path_reserved](http://go/gfc-isa#matmul-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MSR_RESERVED_FOR_LGMR": [
+      {
+        "ts": 0,
+        "value": "240",
+        "description": "This counter counts hold-vector-issue cycles for [msr_reserved_for_lgmr](http://go/gfc-isa#msr-reserved-for-lgmr). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MSR_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "3087",
+        "description": "This counter counts hold-vector-issue cycles for [msr_path_reserved](http://go/gfc-isa#msr-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MRB_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "2514",
+        "description": "This counter counts hold-vector-issue cycles for [mrb_result_wait](http://go/gfc-isa#mrb-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_XLU_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "948",
+        "description": "This counter counts hold-vector-issue cycles for [xlu_path_reserved](http://go/gfc-isa#xlu-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRF_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts hold-vector-issue cycles for [trf_path_reserved](http://go/gfc-isa#trf-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "2016",
+        "description": "This counter counts hold-vector-issue cycles for [trf_result_wait](http://go/gfc-isa#trf-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PRNG_LOAD_RESERVED": [
+      {
+        "ts": 0,
+        "value": "4",
+        "description": "This counter counts hold-vector-issue cycles for [prng_load_reserved](http://go/gfc-isa#prng-load-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_ERF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "60",
+        "description": "This counter counts hold-vector-issue cycles for [erf_result_wait](http://go/gfc-isa#erf-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_DELAY_WAIT": [
+      {
+        "ts": 0,
+        "value": "2",
+        "description": "This counter counts hold-vector-issue cycles for [vector_delay_wait](http://go/gfc-isa#vector-delay-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_WAIT": [
+      {
+        "ts": 0,
+        "value": "954098050",
+        "description": "This counter counts hold-vector-issue cycles for [sync_wait](http://go/gfc-isa#sync-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMEM_READ_AFTER_WRITE_WAIT": [
+      {
+        "ts": 0,
+        "value": "256",
+        "description": "This counter counts hold-vector-issue cycles for [vmem_read_after_write_wait](http://go/gfc-isa#vmem-read-after-write-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMEM_READ_TO_BUSY_BANK": [
+      {
+        "ts": 0,
+        "value": "1375",
+        "description": "This counter counts hold-vector-issue cycles for [vmem_read_to_busy_bank](http://go/gfc-isa#vmem-read-to-busy-bank). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VSTORE_DMA_STARVATION": [
+      {
+        "ts": 0,
+        "value": "1131",
+        "description": "This counter counts hold-vector-issue cycles for [vstore_dma_starvation](http://go/gfc-isa#vstore-dma-starvation). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MISC_VSTORE_DMA_STARVATION": [
+      {
+        "ts": 0,
+        "value": "254",
+        "description": "This counter counts hold-vector-issue cycles for [misc_vstore_dma_starvation](http://go/gfc-isa#vstore-dma-starvation). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VSTORE_BEGIN_STARVE_CYCLE": [
+      {
+        "ts": 0,
+        "value": "37",
+        "description": "This counter counts hold-vector-issue cycles for [vstore_vstore_begin_starve_cycle](http://go/gfc-isa#vstore-begin-starve-cycle). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PPM_SELF_THROTTLE": [
+      {
+        "ts": 0,
+        "value": "3225",
+        "description": "This counter counts hold-vector-issue cycles for [ppm_self_throttle](http://go/gfc-power#tc-ppm). "
+      }
+    ],
+    "COUNT_IMEM_WRITES": [
+      {
+        "ts": 0,
+        "value": "416",
+        "description": "This counter increments for each Q128 imem write."
+      }
+    ],
+    "COUNT_SMEM_OCI_WRITES": [
+      {
+        "ts": 0,
+        "value": "32",
+        "description": "This counter increments for each completed DMA write to Smem."
+      }
+    ],
+    "COUNT_SMEM_OCI_READS": [
+      {
+        "ts": 0,
+        "value": "1",
+        "description": "This counter increments for each completed DMA read to Smem."
+      }
+    ],
+    "COUNT_SMEM_DMA_ACTIVE": [
+      {
+        "ts": 0,
+        "value": "72",
+        "description": "This counter increments whenever the Smem DMA command FIFO is non-empty."
+      }
+    ],
+    "COUNT_IMEM_DMA_ACTIVE": [
+      {
+        "ts": 0,
+        "value": "416",
+        "description": "This counter increments whenever the Imem DMA command FIFO is non-empty."
+      }
+    ],
+    "COUNT_SYNC_FLAG_UPDATES": [
+      {
+        "ts": 0,
+        "value": "386",
+        "description": "This counter increments when an external set or add causes an update to any Sync Flag register."
+      }
+    ],
+    "COUNT_VMEM_DMA_BANK_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "339",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation but no read or write channel queue starvation."
+      }
+    ],
+    "COUNT_VMEM_DMA_READ_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "183",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation and read channel queue starvation."
+      }
+    ],
+    "COUNT_VMEM_DMA_WRITE_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "358",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation and write channel queue starvation."
+      }
+    ],
+    "COUNT_DMA_STARVATION_LOAD_HOLD": [
+      {
+        "ts": 0,
+        "value": "1375",
+        "description": "This counter increments every cycle that DMA starvation at Vmem resulted in a hold issue due to Vloads that targeted an starved bank."
+      }
+    ],
+    "COUNT_DMA_STARVATION_STORE_HOLD": [
+      {
+        "ts": 0,
+        "value": "414",
+        "description": "This counter increments every cycle that DMA starvation at Vmem resulted in a hold issue on Vstores in the vst slot."
+      }
+    ],
+    "COUNT_PPM_DIDT_BRAKE_LEVEL_0_2": [
+      {
+        "ts": 0,
+        "value": "954645814",
+        "description": "This counter increments every cycle that the corresponding power brake signal is asserted at the specified level."
+      }
+    ],
+    "COUNT_PPM_DIDT_BRAKE_LEVEL_1_4_2": [
+      {
+        "ts": 0,
+        "value": "3548",
+        "description": "This counter increments every cycle that the corresponding power brake signal is asserted at the specified level."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_0": [
+      {
+        "ts": 0,
+        "value": "53816",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_1": [
+      {
+        "ts": 0,
+        "value": "112796",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_2": [
+      {
+        "ts": 0,
+        "value": "151074",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_3": [
+      {
+        "ts": 0,
+        "value": "160974",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_0": [
+      {
+        "ts": 0,
+        "value": "66592",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_1": [
+      {
+        "ts": 0,
+        "value": "171542",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_2": [
+      {
+        "ts": 0,
+        "value": "177512",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_3": [
+      {
+        "ts": 0,
+        "value": "63960",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_0": [
+      {
+        "ts": 0,
+        "value": "192344",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_1": [
+      {
+        "ts": 0,
+        "value": "131028",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_2": [
+      {
+        "ts": 0,
+        "value": "57484",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_3": [
+      {
+        "ts": 0,
+        "value": "12360",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_0": [
+      {
+        "ts": 0,
+        "value": "28224",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_1": [
+      {
+        "ts": 0,
+        "value": "25824",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_2": [
+      {
+        "ts": 0,
+        "value": "10304",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_3": [
+      {
+        "ts": 0,
+        "value": "1184",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_0": [
+      {
+        "ts": 0,
+        "value": "46324",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_1": [
+      {
+        "ts": 0,
+        "value": "28516",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_2": [
+      {
+        "ts": 0,
+        "value": "21754",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_3": [
+      {
+        "ts": 0,
+        "value": "10718",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_0": [
+      {
+        "ts": 0,
+        "value": "18590",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_1": [
+      {
+        "ts": 0,
+        "value": "33478",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_2": [
+      {
+        "ts": 0,
+        "value": "40256",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_3": [
+      {
+        "ts": 0,
+        "value": "25748",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_0": [
+      {
+        "ts": 0,
+        "value": "11264",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_1": [
+      {
+        "ts": 0,
+        "value": "21938",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_2": [
+      {
+        "ts": 0,
+        "value": "22098",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_3": [
+      {
+        "ts": 0,
+        "value": "12282",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ]
+  },
+  "single_raw": {
+    "COUNT_CYCLES": [
+      {
+        "ts": 0,
+        "value": "928521107",
+        "description": "This counter increments once per clock cycle the entire time that this  group of counters is enabled."
+      }
+    ],
+    "COUNT_SCALAR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "528034",
+        "description": "This counter increments whenever an instruction bundle undergoes scalar issue."
+      }
+    ],
+    "COUNT_TAKEN_BRANCH": [
+      {
+        "ts": 0,
+        "value": "498",
+        "description": "This counter counts scalar issue of bundles containing taken branch or call instructions."
+      }
+    ],
+    "COUNT_SMEM_INSTRUCTION_READS": [
+      {
+        "ts": 0,
+        "value": "682",
+        "description": "This counter counts scalar issue of bundles containing an Smem read instruction.  (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SMEM_INSTRUCTION_WRITES": [
+      {
+        "ts": 0,
+        "value": "2836",
+        "description": "This counter counts scalar issue of bundles containing an Smem write instruction. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_FENCE": [
+      {
+        "ts": 0,
+        "value": "12",
+        "description": "This counter counts scalar issue of bundles containing Scalar Fence instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DMA_SIMPLE_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts scalar issue of bundles containing Simple DMA instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DMA_GENERAL_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "368",
+        "description": "This counter counts scalar issue of bundles containing General DMA instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_ALU_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "14130",
+        "description": "This counter counts scalar issue of bundles containing any instruction in the sN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_ALU_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "7446",
+        "description": "This counter counts scalar issue of bundles containing any instruction in the sN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_BUNDLES_INTO_VIF": [
+      {
+        "ts": 0,
+        "value": "515180",
+        "description": "This counter counts bundles that have scalar-issued and contain any vector instructions or DMA instructions, such that they are pushed to the Vector Instruction FIFO."
+      }
+    ],
+    "COUNT_XN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "1492",
+        "description": "This counter counts hold-scalar-issue cycles for [xN_reserved](http://go/gfc-isa#xn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_YN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "242",
+        "description": "This counter counts hold-scalar-issue cycles for [yN_reserved](http://go/gfc-isa#yn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts hold-scalar-issue cycles for [dN_reserved](http://go/gfc-isa#dn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VIF_FULL": [
+      {
+        "ts": 0,
+        "value": "100204",
+        "description": "This counter counts hold-scalar-issue cycles for [vif_full](http://go/gfc-isa#vif_full). "
+      }
+    ],
+    "COUNT_SMEM_RESERVED": [
+      {
+        "ts": 0,
+        "value": "224",
+        "description": "This counter counts hold-scalar-issue cycles for [smem_reserved](http://go/gfc-isa#smem_reserved). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_FENCE_WAIT": [
+      {
+        "ts": 0,
+        "value": "927875749",
+        "description": "This counter counts hold-scalar-issue cycles for [scalar_fence_wait](http://go/gfc-isa#scalar_fence_wait)."
+      }
+    ],
+    "COUNT_BRANCH_SREG_RESERVED": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts hold-scalar-issue cycles for [branch_sreg_reserved](http://go/gfc-isa#branch_sreg_reserved) Since there is one automatic hold-scalar-issue cycle per taken Branch [Sreg] or Call [Sreg], this counter also serves as a count those instructions (unless TCS halts instead of holding on the cycle after the branch issues, as when single-stepping)."
+      }
+    ],
+    "COUNT_V2S_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "5093",
+        "description": "This counter counts hold-scalar-issue cycles for [v2s_result_wait](http://go/gfc-isa#v2s_result_wait). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PREDICATE_REGISTER_RESERVED": [
+      {
+        "ts": 0,
+        "value": "446",
+        "description": "This counter counts hold-scalar-issue cycles for [predicate_register_reserved](http://go/gfc-isa#predicate_register_reserved). "
+      }
+    ],
+    "COUNT_SFRF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "8341",
+        "description": "This counter counts hold-scalar-issue cycles for [sfrf_result_wait](http://go/gfc-isa#sfrf_result_wait). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "515180",
+        "description": "This counter increments whenever an instruction bundle undergoes issue (aka vector issue)."
+      }
+    ],
+    "COUNT_HOLD_VECTOR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "927990288",
+        "description": "This counter increments on every cycle that an instruction bundle attempts to vector issue, but does not due to a vector hold issue condition.  This counter does not increment if the bundle is holding due to a vdelay instruction."
+      }
+    ],
+    "COUNT_EUP_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "163840",
+        "description": "This counter increments when an EUP instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "438224",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "333616",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_2": [
+      {
+        "ts": 0,
+        "value": "216548",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_3": [
+      {
+        "ts": 0,
+        "value": "263204",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VST_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "278016",
+        "description": "This counter increments when a vmem store instruction issues. (This does not count instructions such as Set IAR which use the vector store slot but are not vector stores.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_VST_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "69160",
+        "description": "This counter increments when a vmisc slot store instruction issues. (This does not count instructions which use the vmisc slot but are not vector stores.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VLD_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "424594",
+        "description": "This counter increments when a vmem load instruction in vld slot (vldN) issues. (This does not count instructions such as Read IAR which use vector load slot but are not vector loads.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VLD_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "178976",
+        "description": "This counter increments when a vmem load instruction in vld slot (vldN) issues. (This does not count instructions such as Read IAR which use vector load slot but are not vector loads.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_VLD_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "60488",
+        "description": "This counter increments when a vmem load instruction in vmisc slot issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_MSC_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "102174",
+        "description": "This counter increments when an instruction other than a vmem load or store in vmisc slot issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VRES_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "319852",
+        "description": "This counter increments when any *_Result instruction issues from vresN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VRES_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "171684",
+        "description": "This counter increments when any *_Result instruction issues from vresN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SET_ADD_SYNC_FLAG": [
+      {
+        "ts": 0,
+        "value": "830",
+        "description": "This counter increments when any Set Sync Flag or Add Sync Flag instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_WAITED": [
+      {
+        "ts": 0,
+        "value": "397",
+        "description": "This counter increments when a Sync instruction issues where the first time it checks the Sync Flag the condition is not met. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_NO_WAIT": [
+      {
+        "ts": 0,
+        "value": "307",
+        "description": "This counter increments when a Sync instruction issues where the first time it checks the Sync Flag the condition is met.  (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_CORE_INTERRUPT": [
+      {
+        "ts": 0,
+        "value": "2",
+        "description": "This counter increments when a Core Interrupt instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MATMUL_VREG_BF16_MXU_0": [
+      {
+        "ts": 0,
+        "value": "36864",
+        "description": "This counter increments when a vmatmul (Matrix Multiply) instruction issues with an LHS data type of BF16 sourced from a Vreg.(Instructions only count if their predication evaluates to true.) Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATMUL_VREG_BF16_MXU_1": [
+      {
+        "ts": 0,
+        "value": "36864",
+        "description": "This counter increments when a vmatmul (Matrix Multiply) instruction issues with an LHS data type of BF16 sourced from a Vreg.(Instructions only count if their predication evaluates to true.) Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MXU_BUSY_0": [
+      {
+        "ts": 0,
+        "value": "928180472",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MXU_BUSY_1": [
+      {
+        "ts": 0,
+        "value": "91446",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MXU_BUSY_2": [
+      {
+        "ts": 0,
+        "value": "249189",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MATPUSH_MXU_0": [
+      {
+        "ts": 0,
+        "value": "20480",
+        "description": "This counter increments when a vmatpush instruction issues.  (This includes all the variants.)  (Instructions only count if their predication evaluates to true.)Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATPUSH_MXU_1": [
+      {
+        "ts": 0,
+        "value": "20480",
+        "description": "This counter increments when a vmatpush instruction issues.  (This includes all the variants.)  (Instructions only count if their predication evaluates to true.)Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATPUSH_CYCLES_MXU_0": [
+      {
+        "ts": 0,
+        "value": "163840",
+        "description": "This counts the number of cycles that the msr path is used for MXU."
+      }
+    ],
+    "COUNT_MATPUSH_CYCLES_MXU_1": [
+      {
+        "ts": 0,
+        "value": "81920",
+        "description": "This counts the number of cycles that the msr path is used for MXU."
+      }
+    ],
+    "COUNT_MATPUSH_MATRICES_MXU_0": [
+      {
+        "ts": 0,
+        "value": "40960",
+        "description": "This counts the number of 8x128 or 4x256 matrices that are pushed to mxuN by a vmatpush instruction."
+      }
+    ],
+    "COUNT_MATPUSH_MATRICES_MXU_1": [
+      {
+        "ts": 0,
+        "value": "40960",
+        "description": "This counts the number of 8x128 or 4x256 matrices that are pushed to mxuN by a vmatpush instruction."
+      }
+    ],
+    "COUNT_ROTATE_PERMUTE_INSTRUCTION_XLU_0": [
+      {
+        "ts": 0,
+        "value": "16400",
+        "description": "This counter increments when any instruction issues that uses the Rotate/Permute unit, including Permute, Xlane_*, etc., but not Set Permute. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_ROTATE_PERMUTE_INSTRUCTION_XLU_1": [
+      {
+        "ts": 0,
+        "value": "16384",
+        "description": "This counter increments when any instruction issues that uses the Rotate/Permute unit, including Permute, Xlane_*, etc., but not Set Permute. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_XLU_BUSY_0": [
+      {
+        "ts": 0,
+        "value": "928423572",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_XLU_BUSY_1": [
+      {
+        "ts": 0,
+        "value": "63934",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_XLU_BUSY_2": [
+      {
+        "ts": 0,
+        "value": "33601",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_V_X_RESERVED": [
+      {
+        "ts": 0,
+        "value": "1400",
+        "description": "This counter counts hold-vector-issue cycles for [v_x_reserved](http://go/gfc-isa#v-x-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_V_Y_RESERVED": [
+      {
+        "ts": 0,
+        "value": "106",
+        "description": "This counter counts hold-vector-issue cycles for [v_y_reserved](http://go/gfc-isa#v-y-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VST_RESERVED": [
+      {
+        "ts": 0,
+        "value": "1378",
+        "description": "This counter counts hold-vector-issue cycles for [vst_reserved](http://go/gfc-isa#vst-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MISC_VST_RESERVED": [
+      {
+        "ts": 0,
+        "value": "672",
+        "description": "This counter counts hold-vector-issue cycles for [misc_vst_reserved](http://go/gfc-isa#vst-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VEX_RESERVED": [
+      {
+        "ts": 0,
+        "value": "204",
+        "description": "This counter counts hold-vector-issue cycles for [vex_reserved](http://go/gfc-isa#vex-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MATMUL_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "4833",
+        "description": "This counter counts hold-vector-issue cycles for [matmul_path_reserved](http://go/gfc-isa#matmul-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MSR_RESERVED_FOR_LGMR": [
+      {
+        "ts": 0,
+        "value": "256",
+        "description": "This counter counts hold-vector-issue cycles for [msr_reserved_for_lgmr](http://go/gfc-isa#msr-reserved-for-lgmr). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MSR_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "3000",
+        "description": "This counter counts hold-vector-issue cycles for [msr_path_reserved](http://go/gfc-isa#msr-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MRB_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "2523",
+        "description": "This counter counts hold-vector-issue cycles for [mrb_result_wait](http://go/gfc-isa#mrb-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_XLU_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "815",
+        "description": "This counter counts hold-vector-issue cycles for [xlu_path_reserved](http://go/gfc-isa#xlu-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRF_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts hold-vector-issue cycles for [trf_path_reserved](http://go/gfc-isa#trf-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "2016",
+        "description": "This counter counts hold-vector-issue cycles for [trf_result_wait](http://go/gfc-isa#trf-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PRNG_LOAD_RESERVED": [
+      {
+        "ts": 0,
+        "value": "4",
+        "description": "This counter counts hold-vector-issue cycles for [prng_load_reserved](http://go/gfc-isa#prng-load-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_ERF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "48",
+        "description": "This counter counts hold-vector-issue cycles for [erf_result_wait](http://go/gfc-isa#erf-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_DELAY_WAIT": [
+      {
+        "ts": 0,
+        "value": "2",
+        "description": "This counter counts hold-vector-issue cycles for [vector_delay_wait](http://go/gfc-isa#vector-delay-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_WAIT": [
+      {
+        "ts": 0,
+        "value": "927967959",
+        "description": "This counter counts hold-vector-issue cycles for [sync_wait](http://go/gfc-isa#sync-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMEM_READ_AFTER_WRITE_WAIT": [
+      {
+        "ts": 0,
+        "value": "176",
+        "description": "This counter counts hold-vector-issue cycles for [vmem_read_after_write_wait](http://go/gfc-isa#vmem-read-after-write-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMEM_READ_TO_BUSY_BANK": [
+      {
+        "ts": 0,
+        "value": "1812",
+        "description": "This counter counts hold-vector-issue cycles for [vmem_read_to_busy_bank](http://go/gfc-isa#vmem-read-to-busy-bank). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VSTORE_DMA_STARVATION": [
+      {
+        "ts": 0,
+        "value": "1956",
+        "description": "This counter counts hold-vector-issue cycles for [vstore_dma_starvation](http://go/gfc-isa#vstore-dma-starvation). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MISC_VSTORE_DMA_STARVATION": [
+      {
+        "ts": 0,
+        "value": "471",
+        "description": "This counter counts hold-vector-issue cycles for [misc_vstore_dma_starvation](http://go/gfc-isa#vstore-dma-starvation). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VSTORE_BEGIN_STARVE_CYCLE": [
+      {
+        "ts": 0,
+        "value": "91",
+        "description": "This counter counts hold-vector-issue cycles for [vstore_vstore_begin_starve_cycle](http://go/gfc-isa#vstore-begin-starve-cycle). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PPM_SELF_THROTTLE": [
+      {
+        "ts": 0,
+        "value": "3147",
+        "description": "This counter counts hold-vector-issue cycles for [ppm_self_throttle](http://go/gfc-power#tc-ppm). "
+      }
+    ],
+    "COUNT_IMEM_WRITES": [
+      {
+        "ts": 0,
+        "value": "416",
+        "description": "This counter increments for each Q128 imem write."
+      }
+    ],
+    "COUNT_SMEM_OCI_WRITES": [
+      {
+        "ts": 0,
+        "value": "32",
+        "description": "This counter increments for each completed DMA write to Smem."
+      }
+    ],
+    "COUNT_SMEM_OCI_READS": [
+      {
+        "ts": 0,
+        "value": "1",
+        "description": "This counter increments for each completed DMA read to Smem."
+      }
+    ],
+    "COUNT_SYNC_FLAG_UPDATE_HOLD": [
+      {
+        "ts": 0,
+        "value": "1",
+        "description": "This counter increments each cycle an external update to a Sync Flag is held off by a Set or Add Sync Flag instruction to the same bank of Sync Flags."
+      }
+    ],
+    "COUNT_SMEM_DMA_ACTIVE": [
+      {
+        "ts": 0,
+        "value": "72",
+        "description": "This counter increments whenever the Smem DMA command FIFO is non-empty."
+      }
+    ],
+    "COUNT_IMEM_DMA_ACTIVE": [
+      {
+        "ts": 0,
+        "value": "416",
+        "description": "This counter increments whenever the Imem DMA command FIFO is non-empty."
+      }
+    ],
+    "COUNT_SYNC_FLAG_UPDATES": [
+      {
+        "ts": 0,
+        "value": "386",
+        "description": "This counter increments when an external set or add causes an update to any Sync Flag register."
+      }
+    ],
+    "COUNT_VMEM_DMA_BANK_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "396",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation but no read or write channel queue starvation."
+      }
+    ],
+    "COUNT_VMEM_DMA_READ_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "97",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation and read channel queue starvation."
+      }
+    ],
+    "COUNT_VMEM_DMA_WRITE_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "708",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation and write channel queue starvation."
+      }
+    ],
+    "COUNT_DMA_STARVATION_LOAD_HOLD": [
+      {
+        "ts": 0,
+        "value": "1812",
+        "description": "This counter increments every cycle that DMA starvation at Vmem resulted in a hold issue due to Vloads that targeted an starved bank."
+      }
+    ],
+    "COUNT_DMA_STARVATION_STORE_HOLD": [
+      {
+        "ts": 0,
+        "value": "768",
+        "description": "This counter increments every cycle that DMA starvation at Vmem resulted in a hold issue on Vstores in the vst slot."
+      }
+    ],
+    "COUNT_PPM_DIDT_BRAKE_LEVEL_0_2": [
+      {
+        "ts": 0,
+        "value": "928517716",
+        "description": "This counter increments every cycle that the corresponding power brake signal is asserted at the specified level."
+      }
+    ],
+    "COUNT_PPM_DIDT_BRAKE_LEVEL_1_4_2": [
+      {
+        "ts": 0,
+        "value": "3391",
+        "description": "This counter increments every cycle that the corresponding power brake signal is asserted at the specified level."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_0": [
+      {
+        "ts": 0,
+        "value": "53760",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_1": [
+      {
+        "ts": 0,
+        "value": "113068",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_2": [
+      {
+        "ts": 0,
+        "value": "151074",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_3": [
+      {
+        "ts": 0,
+        "value": "160822",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_0": [
+      {
+        "ts": 0,
+        "value": "66680",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_1": [
+      {
+        "ts": 0,
+        "value": "171446",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_2": [
+      {
+        "ts": 0,
+        "value": "177592",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_3": [
+      {
+        "ts": 0,
+        "value": "63936",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_0": [
+      {
+        "ts": 0,
+        "value": "192304",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_1": [
+      {
+        "ts": 0,
+        "value": "131036",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_2": [
+      {
+        "ts": 0,
+        "value": "57516",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_3": [
+      {
+        "ts": 0,
+        "value": "12360",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_0": [
+      {
+        "ts": 0,
+        "value": "28224",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_1": [
+      {
+        "ts": 0,
+        "value": "25824",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_2": [
+      {
+        "ts": 0,
+        "value": "10304",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_3": [
+      {
+        "ts": 0,
+        "value": "1184",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_0": [
+      {
+        "ts": 0,
+        "value": "46324",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_1": [
+      {
+        "ts": 0,
+        "value": "28516",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_2": [
+      {
+        "ts": 0,
+        "value": "21754",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_3": [
+      {
+        "ts": 0,
+        "value": "10718",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_0": [
+      {
+        "ts": 0,
+        "value": "18582",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_1": [
+      {
+        "ts": 0,
+        "value": "33454",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_2": [
+      {
+        "ts": 0,
+        "value": "40240",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_3": [
+      {
+        "ts": 0,
+        "value": "25796",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_0": [
+      {
+        "ts": 0,
+        "value": "11264",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_1": [
+      {
+        "ts": 0,
+        "value": "21938",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_2": [
+      {
+        "ts": 0,
+        "value": "22098",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_3": [
+      {
+        "ts": 0,
+        "value": "12282",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ]
+  },
+  "dual_acc": {
+    "COUNT_CYCLES": [
+      {
+        "ts": 0,
+        "value": "915762277",
+        "description": "This counter increments once per clock cycle the entire time that this  group of counters is enabled."
+      }
+    ],
+    "COUNT_SCALAR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "722564",
+        "description": "This counter increments whenever an instruction bundle undergoes scalar issue."
+      }
+    ],
+    "COUNT_TAKEN_BRANCH": [
+      {
+        "ts": 0,
+        "value": "3530",
+        "description": "This counter counts scalar issue of bundles containing taken branch or call instructions."
+      }
+    ],
+    "COUNT_SMEM_INSTRUCTION_READS": [
+      {
+        "ts": 0,
+        "value": "2406",
+        "description": "This counter counts scalar issue of bundles containing an Smem read instruction.  (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SMEM_INSTRUCTION_WRITES": [
+      {
+        "ts": 0,
+        "value": "5988",
+        "description": "This counter counts scalar issue of bundles containing an Smem write instruction. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_FENCE": [
+      {
+        "ts": 0,
+        "value": "74",
+        "description": "This counter counts scalar issue of bundles containing Scalar Fence instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DMA_SIMPLE_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "78",
+        "description": "This counter counts scalar issue of bundles containing Simple DMA instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DMA_GENERAL_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "368",
+        "description": "This counter counts scalar issue of bundles containing General DMA instructions. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_ALU_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "52414",
+        "description": "This counter counts scalar issue of bundles containing any instruction in the sN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_ALU_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "37348",
+        "description": "This counter counts scalar issue of bundles containing any instruction in the sN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_BUNDLES_INTO_VIF": [
+      {
+        "ts": 0,
+        "value": "650178",
+        "description": "This counter counts bundles that have scalar-issued and contain any vector instructions or DMA instructions, such that they are pushed to the Vector Instruction FIFO."
+      }
+    ],
+    "COUNT_XN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "9304",
+        "description": "This counter counts hold-scalar-issue cycles for [xN_reserved](http://go/gfc-isa#xn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_YN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "3576",
+        "description": "This counter counts hold-scalar-issue cycles for [yN_reserved](http://go/gfc-isa#yn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_DN_RESERVED": [
+      {
+        "ts": 0,
+        "value": "910",
+        "description": "This counter counts hold-scalar-issue cycles for [dN_reserved](http://go/gfc-isa#dn_reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VIF_FULL": [
+      {
+        "ts": 0,
+        "value": "278394",
+        "description": "This counter counts hold-scalar-issue cycles for [vif_full](http://go/gfc-isa#vif_full). "
+      }
+    ],
+    "COUNT_SMEM_RESERVED": [
+      {
+        "ts": 0,
+        "value": "228",
+        "description": "This counter counts hold-scalar-issue cycles for [smem_reserved](http://go/gfc-isa#smem_reserved). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SCALAR_FENCE_WAIT": [
+      {
+        "ts": 0,
+        "value": "914740457",
+        "description": "This counter counts hold-scalar-issue cycles for [scalar_fence_wait](http://go/gfc-isa#scalar_fence_wait)."
+      }
+    ],
+    "COUNT_BRANCH_SREG_RESERVED": [
+      {
+        "ts": 0,
+        "value": "417010",
+        "description": "This counter counts hold-scalar-issue cycles for [branch_sreg_reserved](http://go/gfc-isa#branch_sreg_reserved) Since there is one automatic hold-scalar-issue cycle per taken Branch [Sreg] or Call [Sreg], this counter also serves as a count those instructions (unless TCS halts instead of holding on the cycle after the branch issues, as when single-stepping)."
+      }
+    ],
+    "COUNT_V2S_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "4224",
+        "description": "This counter counts hold-scalar-issue cycles for [v2s_result_wait](http://go/gfc-isa#v2s_result_wait). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PREDICATE_REGISTER_RESERVED": [
+      {
+        "ts": 0,
+        "value": "2246",
+        "description": "This counter counts hold-scalar-issue cycles for [predicate_register_reserved](http://go/gfc-isa#predicate_register_reserved). "
+      }
+    ],
+    "COUNT_SFRF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "564",
+        "description": "This counter counts hold-scalar-issue cycles for [sfrf_result_wait](http://go/gfc-isa#sfrf_result_wait). (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "650178",
+        "description": "This counter increments whenever an instruction bundle undergoes issue (aka vector issue)."
+      }
+    ],
+    "COUNT_HOLD_VECTOR_ISSUE": [
+      {
+        "ts": 0,
+        "value": "915043019",
+        "description": "This counter increments on every cycle that an instruction bundle attempts to vector issue, but does not due to a vector hold issue condition.  This counter does not increment if the bundle is holding due to a vdelay instruction."
+      }
+    ],
+    "COUNT_EUP_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "149504",
+        "description": "This counter increments when an EUP instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "475556",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "353972",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_2": [
+      {
+        "ts": 0,
+        "value": "211812",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_ALU_INSTRUCTION_3": [
+      {
+        "ts": 0,
+        "value": "241964",
+        "description": "This counter increments when an instruction in the vector alu slot (vN) issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VST_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "241772",
+        "description": "This counter increments when a vmem store instruction issues. (This does not count instructions such as Set IAR which use the vector store slot but are not vector stores.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_VST_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "56432",
+        "description": "This counter increments when a vmisc slot store instruction issues. (This does not count instructions which use the vmisc slot but are not vector stores.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VLD_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "409434",
+        "description": "This counter increments when a vmem load instruction in vld slot (vldN) issues. (This does not count instructions such as Read IAR which use vector load slot but are not vector loads.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VLD_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "156504",
+        "description": "This counter increments when a vmem load instruction in vld slot (vldN) issues. (This does not count instructions such as Read IAR which use vector load slot but are not vector loads.) (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_VLD_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "57092",
+        "description": "This counter increments when a vmem load instruction in vmisc slot issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMISC_MSC_INSTRUCTION": [
+      {
+        "ts": 0,
+        "value": "142602",
+        "description": "This counter increments when an instruction other than a vmem load or store in vmisc slot issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VRES_INSTRUCTION_0": [
+      {
+        "ts": 0,
+        "value": "337644",
+        "description": "This counter increments when any *_Result instruction issues from vresN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VRES_INSTRUCTION_1": [
+      {
+        "ts": 0,
+        "value": "175396",
+        "description": "This counter increments when any *_Result instruction issues from vresN slot. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SET_ADD_SYNC_FLAG": [
+      {
+        "ts": 0,
+        "value": "954",
+        "description": "This counter increments when any Set Sync Flag or Add Sync Flag instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_WAITED": [
+      {
+        "ts": 0,
+        "value": "412",
+        "description": "This counter increments when a Sync instruction issues where the first time it checks the Sync Flag the condition is not met. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_NO_WAIT": [
+      {
+        "ts": 0,
+        "value": "315",
+        "description": "This counter increments when a Sync instruction issues where the first time it checks the Sync Flag the condition is met.  (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_CORE_INTERRUPT": [
+      {
+        "ts": 0,
+        "value": "2",
+        "description": "This counter increments when a Core Interrupt instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MATMUL_VREG_BF16_MXU_0": [
+      {
+        "ts": 0,
+        "value": "36864",
+        "description": "This counter increments when a vmatmul (Matrix Multiply) instruction issues with an LHS data type of BF16 sourced from a Vreg.(Instructions only count if their predication evaluates to true.) Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATMUL_VREG_BF16_MXU_1": [
+      {
+        "ts": 0,
+        "value": "36864",
+        "description": "This counter increments when a vmatmul (Matrix Multiply) instruction issues with an LHS data type of BF16 sourced from a Vreg.(Instructions only count if their predication evaluates to true.) Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MXU_BUSY_0": [
+      {
+        "ts": 0,
+        "value": "915415878",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MXU_BUSY_1": [
+      {
+        "ts": 0,
+        "value": "102974",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MXU_BUSY_2": [
+      {
+        "ts": 0,
+        "value": "243425",
+        "description": "These three counters increment for every cycle that: Counter0: No mxus  Counter1: Exactly 1 mxu  Counter2: Exactly 2 mxus are executing a matmul."
+      }
+    ],
+    "COUNT_MATPUSH_MXU_0": [
+      {
+        "ts": 0,
+        "value": "20480",
+        "description": "This counter increments when a vmatpush instruction issues.  (This includes all the variants.)  (Instructions only count if their predication evaluates to true.)Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATPUSH_MXU_1": [
+      {
+        "ts": 0,
+        "value": "20480",
+        "description": "This counter increments when a vmatpush instruction issues.  (This includes all the variants.)  (Instructions only count if their predication evaluates to true.)Counts instructions targeting mxuN."
+      }
+    ],
+    "COUNT_MATPUSH_CYCLES_MXU_0": [
+      {
+        "ts": 0,
+        "value": "163840",
+        "description": "This counts the number of cycles that the msr path is used for MXU."
+      }
+    ],
+    "COUNT_MATPUSH_CYCLES_MXU_1": [
+      {
+        "ts": 0,
+        "value": "81920",
+        "description": "This counts the number of cycles that the msr path is used for MXU."
+      }
+    ],
+    "COUNT_MATPUSH_MATRICES_MXU_0": [
+      {
+        "ts": 0,
+        "value": "40960",
+        "description": "This counts the number of 8x128 or 4x256 matrices that are pushed to mxuN by a vmatpush instruction."
+      }
+    ],
+    "COUNT_MATPUSH_MATRICES_MXU_1": [
+      {
+        "ts": 0,
+        "value": "40960",
+        "description": "This counts the number of 8x128 or 4x256 matrices that are pushed to mxuN by a vmatpush instruction."
+      }
+    ],
+    "COUNT_ROTATE_PERMUTE_INSTRUCTION_XLU_0": [
+      {
+        "ts": 0,
+        "value": "26640",
+        "description": "This counter increments when any instruction issues that uses the Rotate/Permute unit, including Permute, Xlane_*, etc., but not Set Permute. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_ROTATE_PERMUTE_INSTRUCTION_XLU_1": [
+      {
+        "ts": 0,
+        "value": "38912",
+        "description": "This counter increments when any instruction issues that uses the Rotate/Permute unit, including Permute, Xlane_*, etc., but not Set Permute. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRANSPOSE_XLU_0": [
+      {
+        "ts": 0,
+        "value": "2080",
+        "description": "This counter increments when a Transpose instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRANSPOSE_XLU_1": [
+      {
+        "ts": 0,
+        "value": "96",
+        "description": "This counter increments when a Transpose instruction issues. (Instructions only count if their predication evaluates to true.)"
+      }
+    ],
+    "COUNT_XLU_BUSY_0": [
+      {
+        "ts": 0,
+        "value": "915568968",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_XLU_BUSY_1": [
+      {
+        "ts": 0,
+        "value": "115706",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_XLU_BUSY_2": [
+      {
+        "ts": 0,
+        "value": "77603",
+        "description": "These three counters increment for every cycle that: Counter0: No xlus  Counter1: Exactly 1 xlu  Counter2: Exactly 2 xlus are busy."
+      }
+    ],
+    "COUNT_V_X_RESERVED": [
+      {
+        "ts": 0,
+        "value": "5004",
+        "description": "This counter counts hold-vector-issue cycles for [v_x_reserved](http://go/gfc-isa#v-x-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_V_Y_RESERVED": [
+      {
+        "ts": 0,
+        "value": "10722",
+        "description": "This counter counts hold-vector-issue cycles for [v_y_reserved](http://go/gfc-isa#v-y-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VST_RESERVED": [
+      {
+        "ts": 0,
+        "value": "554",
+        "description": "This counter counts hold-vector-issue cycles for [vst_reserved](http://go/gfc-isa#vst-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MISC_VST_RESERVED": [
+      {
+        "ts": 0,
+        "value": "16",
+        "description": "This counter counts hold-vector-issue cycles for [misc_vst_reserved](http://go/gfc-isa#vst-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VEX_RESERVED": [
+      {
+        "ts": 0,
+        "value": "768",
+        "description": "This counter counts hold-vector-issue cycles for [vex_reserved](http://go/gfc-isa#vex-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MATMUL_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "12256",
+        "description": "This counter counts hold-vector-issue cycles for [matmul_path_reserved](http://go/gfc-isa#matmul-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MSR_RESERVED_FOR_LGMR": [
+      {
+        "ts": 0,
+        "value": "336",
+        "description": "This counter counts hold-vector-issue cycles for [msr_reserved_for_lgmr](http://go/gfc-isa#msr-reserved-for-lgmr). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MSR_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "3288",
+        "description": "This counter counts hold-vector-issue cycles for [msr_path_reserved](http://go/gfc-isa#msr-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MRB_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "2331",
+        "description": "This counter counts hold-vector-issue cycles for [mrb_result_wait](http://go/gfc-isa#mrb-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_XLU_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "55046",
+        "description": "This counter counts hold-vector-issue cycles for [xlu_path_reserved](http://go/gfc-isa#xlu-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRF_PATH_RESERVED": [
+      {
+        "ts": 0,
+        "value": "12807",
+        "description": "This counter counts hold-vector-issue cycles for [trf_path_reserved](http://go/gfc-isa#trf-path-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_TRF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "157284",
+        "description": "This counter counts hold-vector-issue cycles for [trf_result_wait](http://go/gfc-isa#trf-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PRNG_LOAD_RESERVED": [
+      {
+        "ts": 0,
+        "value": "4",
+        "description": "This counter counts hold-vector-issue cycles for [prng_load_reserved](http://go/gfc-isa#prng-load-reserved). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_ERF_RESULT_WAIT": [
+      {
+        "ts": 0,
+        "value": "5199",
+        "description": "This counter counts hold-vector-issue cycles for [erf_result_wait](http://go/gfc-isa#erf-result-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VECTOR_DELAY_WAIT": [
+      {
+        "ts": 0,
+        "value": "2",
+        "description": "This counter counts hold-vector-issue cycles for [vector_delay_wait](http://go/gfc-isa#vector-delay-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_SYNC_WAIT": [
+      {
+        "ts": 0,
+        "value": "914784073",
+        "description": "This counter counts hold-vector-issue cycles for [sync_wait](http://go/gfc-isa#sync-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMEM_READ_AFTER_WRITE_WAIT": [
+      {
+        "ts": 0,
+        "value": "72",
+        "description": "This counter counts hold-vector-issue cycles for [vmem_read_after_write_wait](http://go/gfc-isa#vmem-read-after-write-wait). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VMEM_READ_TO_BUSY_BANK": [
+      {
+        "ts": 0,
+        "value": "1687",
+        "description": "This counter counts hold-vector-issue cycles for [vmem_read_to_busy_bank](http://go/gfc-isa#vmem-read-to-busy-bank). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VSTORE_DMA_STARVATION": [
+      {
+        "ts": 0,
+        "value": "1221",
+        "description": "This counter counts hold-vector-issue cycles for [vstore_dma_starvation](http://go/gfc-isa#vstore-dma-starvation). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_MISC_VSTORE_DMA_STARVATION": [
+      {
+        "ts": 0,
+        "value": "314",
+        "description": "This counter counts hold-vector-issue cycles for [misc_vstore_dma_starvation](http://go/gfc-isa#vstore-dma-starvation). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_VSTORE_BEGIN_STARVE_CYCLE": [
+      {
+        "ts": 0,
+        "value": "26",
+        "description": "This counter counts hold-vector-issue cycles for [vstore_vstore_begin_starve_cycle](http://go/gfc-isa#vstore-begin-starve-cycle). (Reservations only count if the associated instruction's predication evaluates to true.)"
+      }
+    ],
+    "COUNT_PPM_SELF_THROTTLE": [
+      {
+        "ts": 0,
+        "value": "6513",
+        "description": "This counter counts hold-vector-issue cycles for [ppm_self_throttle](http://go/gfc-power#tc-ppm). "
+      }
+    ],
+    "COUNT_IMEM_WRITES": [
+      {
+        "ts": 0,
+        "value": "547336",
+        "description": "This counter increments for each Q128 imem write."
+      }
+    ],
+    "COUNT_SMEM_OCI_WRITES": [
+      {
+        "ts": 0,
+        "value": "32",
+        "description": "This counter increments for each completed DMA write to Smem."
+      }
+    ],
+    "COUNT_SMEM_OCI_READS": [
+      {
+        "ts": 0,
+        "value": "1",
+        "description": "This counter increments for each completed DMA read to Smem."
+      }
+    ],
+    "COUNT_SMEM_DMA_ACTIVE": [
+      {
+        "ts": 0,
+        "value": "72",
+        "description": "This counter increments whenever the Smem DMA command FIFO is non-empty."
+      }
+    ],
+    "COUNT_IMEM_DMA_ACTIVE": [
+      {
+        "ts": 0,
+        "value": "548345",
+        "description": "This counter increments whenever the Imem DMA command FIFO is non-empty."
+      }
+    ],
+    "COUNT_SYNC_FLAG_UPDATES": [
+      {
+        "ts": 0,
+        "value": "448",
+        "description": "This counter increments when an external set or add causes an update to any Sync Flag register."
+      }
+    ],
+    "COUNT_VMEM_DMA_BANK_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "310",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation but no read or write channel queue starvation."
+      }
+    ],
+    "COUNT_VMEM_DMA_READ_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "279",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation and read channel queue starvation."
+      }
+    ],
+    "COUNT_VMEM_DMA_WRITE_QUEUE_STARVATION": [
+      {
+        "ts": 0,
+        "value": "674",
+        "description": "This counter increments every cycle that Vmem signals DMA bank queue starvation and write channel queue starvation."
+      }
+    ],
+    "COUNT_DMA_STARVATION_LOAD_HOLD": [
+      {
+        "ts": 0,
+        "value": "1687",
+        "description": "This counter increments every cycle that DMA starvation at Vmem resulted in a hold issue due to Vloads that targeted an starved bank."
+      }
+    ],
+    "COUNT_DMA_STARVATION_STORE_HOLD": [
+      {
+        "ts": 0,
+        "value": "394",
+        "description": "This counter increments every cycle that DMA starvation at Vmem resulted in a hold issue on Vstores in the vst slot."
+      }
+    ],
+    "COUNT_PPM_DIDT_BRAKE_LEVEL_0_2": [
+      {
+        "ts": 0,
+        "value": "915755283",
+        "description": "This counter increments every cycle that the corresponding power brake signal is asserted at the specified level."
+      }
+    ],
+    "COUNT_PPM_DIDT_BRAKE_LEVEL_1_4_2": [
+      {
+        "ts": 0,
+        "value": "6994",
+        "description": "This counter increments every cycle that the corresponding power brake signal is asserted at the specified level."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_0": [
+      {
+        "ts": 0,
+        "value": "118276",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_1": [
+      {
+        "ts": 0,
+        "value": "143228",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_2": [
+      {
+        "ts": 0,
+        "value": "143750",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_READ_ACCESS_3": [
+      {
+        "ts": 0,
+        "value": "143470",
+        "description": "This counter increments when the issued bundle performs a read access to any vreg. count[0]: 1 or 2 read ports active; count[1]: 3 or 4 read ports active; count[2]: 5 or 6 read ports active; count[3]: 7 or more read ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_0": [
+      {
+        "ts": 0,
+        "value": "158028",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_1": [
+      {
+        "ts": 0,
+        "value": "189678",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_2": [
+      {
+        "ts": 0,
+        "value": "150436",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VREG_WRITE_ACCESS_3": [
+      {
+        "ts": 0,
+        "value": "59732",
+        "description": "This counter increments when the issued bundle performs a write access to any vreg. count[0]: 1 or 2 write ports active; count[1]: 3 or 4 write ports active; count[2]: 5 or 6 write ports active; count[3]: 7 or more write ports active; Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_0": [
+      {
+        "ts": 0,
+        "value": "195540",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_1": [
+      {
+        "ts": 0,
+        "value": "130672",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_2": [
+      {
+        "ts": 0,
+        "value": "55396",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FADD_OPS_3": [
+      {
+        "ts": 0,
+        "value": "11608",
+        "description": "This counter increments when a Vector Standard ALU floating point add or subtract operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_0": [
+      {
+        "ts": 0,
+        "value": "26528",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_1": [
+      {
+        "ts": 0,
+        "value": "26640",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_2": [
+      {
+        "ts": 0,
+        "value": "11744",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMUL_OPS_3": [
+      {
+        "ts": 0,
+        "value": "624",
+        "description": "This counter increments when a Vector Standard ALU floating point multiply operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_0": [
+      {
+        "ts": 0,
+        "value": "51960",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_1": [
+      {
+        "ts": 0,
+        "value": "32300",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_2": [
+      {
+        "ts": 0,
+        "value": "17774",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_MISC_OPS_3": [
+      {
+        "ts": 0,
+        "value": "8542",
+        "description": "This counter increments when a Vector Standard ALU other/misc operation issues, that doesn't fall in categories [kFAdd], [kFMul], or [kIntOps], but does have a Y operand, and whose operation does not involve crossing sub-lanes. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_0": [
+      {
+        "ts": 0,
+        "value": "21078",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_1": [
+      {
+        "ts": 0,
+        "value": "33850",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_2": [
+      {
+        "ts": 0,
+        "value": "41764",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_INT_OPS_3": [
+      {
+        "ts": 0,
+        "value": "24676",
+        "description": "This counter increments when a Vector Standard ALU integer operation issues. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_0": [
+      {
+        "ts": 0,
+        "value": "30428",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_1": [
+      {
+        "ts": 0,
+        "value": "21054",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_2": [
+      {
+        "ts": 0,
+        "value": "11538",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ],
+    "COUNT_VPU_VALU_FMAC_OPS_3": [
+      {
+        "ts": 0,
+        "value": "6482",
+        "description": "This counter increments when any of the following classes of instructions issue: (i) vector standard ALU vmul.bf16 op, (ii) vmul.bf16.f32 or vmac.bf16.f32 vector floating point multiply-accumulate ternary ops, (iii) vsetacc.b32 vector ternary op, or (iv) Vselect ops. Instructions only count if their predication evaluates to true."
+      }
+    ]
+  }
+}

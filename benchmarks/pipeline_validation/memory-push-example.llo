@@ -1,0 +1,4 @@
+0: { dma.hbm_to_vmem %hbm, 32, %vmem, [#allocation0] }
+1: { %v0 = vpack.c.bf16 %input0, %input1 }
+2: { %1 = vmatpush1.bf16.msra.mxu0 %v0 ;; %2 = vmatpush1.bf16.msra.mxu1 %v0 }
+3: { dma.done.wait [#allocation0], 32 }
