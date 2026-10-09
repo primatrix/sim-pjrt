@@ -1,6 +1,7 @@
 #include "src/output_simulation.h"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -57,6 +58,33 @@ bool HasOnlyArrays(const Shape& shape) {
   return shape.IsArray() && shape.is_static();
 }
 
+// SGL-JAX fused_ep_moe v1 uses side effects for device-local scratch and
+// cross-device DMA/barriers. Its public result is a fresh floating array;
+// there is no host I/O or persistent state update. Recognize only its
+// unquantized, no-shared-expert ABI (with optional all-reduce metadata).
+bool IsFusedMoeCollective(const HloInstruction& instruction) {
+  const auto& name = instruction.metadata().op_name();
+  const auto position = name.find("fused-moe-k_");
+  if (instruction.custom_call_target() != "tpu_custom_call" ||
+      position == std::string::npos || (position && name[position - 1] != '/') ||
+      !instruction.output_operand_aliasing().empty() ||
+      !instruction.shape().IsArray() || instruction.shape().dimensions_size() != 2 ||
+      !instruction.shape().is_static() ||
+      !primitive_util::IsFloatingPointType(instruction.shape().element_type()) ||
+      (instruction.operand_count() != 9 && instruction.operand_count() != 12)) {
+    return false;
+  }
+  const auto dtype = instruction.shape().element_type();
+  const int ranks[] = {3, 3, 3, 3, 2, 2, 4, 4, 4, 3, 3, 4};
+  for (int64_t i = 0; i < instruction.operand_count(); ++i) {
+    const Shape& shape = instruction.operand(i)->shape();
+    const auto expected = i == 5 || i >= 9 ? S32 : (i == 4 ? F32 : dtype);
+    if (!shape.IsArray() || !shape.is_static() ||
+        shape.dimensions_size() != ranks[i] || shape.element_type() != expected) return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 absl::StatusOr<int64_t> SubstituteSimulationOutputs(HloModule& module) {
@@ -72,14 +100,25 @@ absl::StatusOr<int64_t> SubstituteSimulationOutputs(HloModule& module) {
         const auto& target = instruction->custom_call_target();
         // Sharding annotations have no executable numerical semantics.
         if (IsShardingAnnotation(*instruction)) continue;
-        if (target != "tpu_custom_call" && target != "sim_pallas") {
+        const bool allocation = target == "AllocateBuffer";
+        if (allocation &&
+            (instruction->operand_count() != 0 ||
+             !instruction->shape().IsArray() ||
+             !instruction->output_operand_aliasing().empty())) {
+          return absl::UnimplementedError(
+              "AllocateBuffer requires an unaliased array with no operands");
+        }
+        if (target != "tpu_custom_call" && target != "sim_pallas" &&
+            !allocation) {
           return absl::UnimplementedError(absl::StrCat(
               "TPU simulator has no adapter for custom call: ", target));
         }
-        if (instruction->HasSideEffect()) {
+        if (instruction->HasSideEffect() && !IsFusedMoeCollective(*instruction)) {
           return absl::UnimplementedError(
               "TPU kernel side effects require an explicit adapter");
         }
+        // Uninitialized scratch storage may contain any value. Zero-filled
+        // virtual storage gives it deterministic contents without a TPU call.
         substitute = true;
       }
       if (!substitute) continue;

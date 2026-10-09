@@ -157,6 +157,31 @@ class LloProgramTest(unittest.TestCase):
             dma={'hbm_to_vmem': {'bytes_per_second': 1e9}}), aliases)
         self.assertEqual(report['dma_bytes'], 32)
 
+    def test_explicit_scenario_can_load_without_automatic_branch_alignment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = []
+            for name, text in (
+                ('1-TLP-00-final_bundles.txt',
+                 '0: { sbr.rel target = $region1 }\n1: {} /* Start region 1 */'),
+                ('1-TLP-01-assembly-pre-overlay.txt', '0: {}\n1: {}'),
+                ('1-TLP-02-deduplication-map.txt',
+                 'key:TLP\nordinal:0\nequivalent_hlos[size=0]:\n'),
+            ):
+                file = root / name
+                file.write_text(text)
+                files.append(str(file))
+            manifest = root / 'manifest.json'
+            manifest.write_text(json.dumps({'files': files}))
+            with self.assertRaisesRegex(ValueError, 'branch mismatch'):
+                load_final_modules(manifest)
+            modules, aliases, provenance = load_final_modules(
+                manifest, resolve_branches=False)
+        self.assertFalse(provenance['assembly_branch_resolution_requested'])
+        report = estimate_bundles(modules['TLP'], PROFILE, {'assume_no_faults': True})
+        self.assertIsNone(report['estimated_seconds'])
+        self.assertTrue(report['gaps'])
+
     def test_assembly_alignment_validates_calls_predicates_targets_and_length(self):
         modules = {
             'TLP': parse_bundles('0: { inlined_call /* kernel */ }\n1: { inlined_call /* alias */ }'),
