@@ -1,4 +1,5 @@
 #include "src/tpu_compilation.h"
+#include "src/llo_dump_flags.h"
 
 #include <dlfcn.h>
 
@@ -48,8 +49,7 @@ absl::StatusOr<const PJRT_Api*> Load(const char* path, const char* topology) {
       " --xla_sc_dump_bundles_to=", dump_dir,
       " --xla_jf_dump_llo_text=true --xla_jf_dump_hlo_text=true",
       " --xla_jf_debug_level=2 --xla_jf_dump_use_subdirectories=false",
-      " --xla_jf_dump_llo_pass_label_regex=^(final_bundles|assembly-pre-overlay|deduplication-map)"
-      "$");
+      DefaultLloDumpPassFilter(previous ? previous : ""));
   if (setenv("LIBTPU_INIT_ARGS", flags.c_str(), 1))
     return absl::UnavailableError("Cannot configure libtpu bundle dumps");
   void* library = dlopen(path, RTLD_NOW | RTLD_LOCAL);
