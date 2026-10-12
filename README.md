@@ -69,6 +69,24 @@ This exports Final LLO files and manifests for programs reached during simulated
 execution, grouped by process. It requires no timing profile and applies no
 simulated timing delays. Use an output path without spaces or quotes.
 
+To include diagnostic passes for [TPU LLO Viewer](https://github.com/aios-tpu-infra/tpu-llo-viewer),
+set an explicit pass filter before backend initialization:
+
+```sh
+LIBTPU_INIT_ARGS="${LIBTPU_INIT_ARGS:-} --xla_jf_dump_llo_pass_label_regex=.* --xla_mosaic_enable_llo_source_annotations=true" \
+  spjrt compile --output ./llo-viewer workload.py
+```
+
+Without an explicit filter, sim-pjrt retains its compact final-bundles,
+assembly and deduplication-map default. An explicit filter is preserved;
+sim-pjrt still manages dump paths. Selecting all passes can produce large
+artifacts. Additional utilization/allocation files require the corresponding
+libtpu debug flags from the viewer documentation and depend on the compiler
+version. Inspect the resulting files rather than assuming every panel is available.
+These are compiler diagnostics, not device timings or hardware utilization.
+Rebuild/reinstall the native plugin to use this change; changing Python alone
+cannot fix a previously installed shared library.
+
 ### Collect and replay measured timings
 
 On a real TPU, install `xprof==2.23.1` and record a workload:

@@ -237,7 +237,7 @@ cc_library(
 cc_library(
     name = "compilation",
     srcs = ["src/compilation.cc", "src/tpu_compilation.cc"],
-    hdrs = ["src/compilation.h", "src/tpu_compilation.h"],
+    hdrs = ["src/compilation.h", "src/tpu_compilation.h", "src/llo_dump_flags.h"],
     linkopts = ["-ldl"],
     deps = [
         ":bundle_timing",
@@ -333,4 +333,10 @@ xla_cc_test(
         "@com_google_googletest//:gtest_main",
         "@tsl//tsl/platform:status_matchers",
     ],
+)
+
+# Header-only flag selection; no libtpu, TPU, or XLA compilation required.
+xla_cc_test(
+    name = "llo_dump_flags_test",
+    srcs = ["tests/cpp/llo_dump_flags_test.cc", "src/llo_dump_flags.h"],
 )
