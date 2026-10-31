@@ -1,5 +1,6 @@
 #include "src/virtual_hbm.h"
 
+#include <algorithm>
 #include <cstring>
 #include <utility>
 #include <vector>
@@ -618,6 +619,14 @@ CompileVirtual(PjRtClient *client, std::unique_ptr<HloModule> module,
         ShapeLayout(*shape);
   }
   CompileOptions logical_options = options;
+  // libtpu has already received the original options. Its private TPU flags
+  // (including TorchTPU's defaults) are unknown to the CPU output compiler.
+  auto& overrides = options.env_option_overrides;
+  overrides.erase(std::remove_if(overrides.begin(), overrides.end(),
+                                 [](const auto& option) {
+                                   return option.first.rfind("xla_tpu_", 0) == 0;
+                                 }),
+                  overrides.end());
   ABSL_RETURN_IF_ERROR(VirtualizeModule(*module));
   if (options.argument_layouts) {
     for (Shape &shape : *options.argument_layouts)

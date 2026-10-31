@@ -48,6 +48,11 @@ def environment(args, inherited=None):
     if args.action == "collect":
         # Collection must run the ordinary real TPU backend, even when invoked
         # from a shell previously configured for simulation.
+        plugins = env.get("PJRT_NAMES_AND_LIBRARY_PATHS", "").split(",")
+        simulation_paths = {entry[4:] for entry in plugins if entry.startswith("tpu:")}
+        simulation_paths.add(env.get("SIM_PJRT_PLUGIN_PATH"))
+        if env.get("TPU_LIBRARY_PATH") in simulation_paths:
+            env.pop("TPU_LIBRARY_PATH", None)
         for key in list(env):
             if key.startswith("PJRT_SIM_") or key in (
                 "PJRT_NAMES_AND_LIBRARY_PATHS", "SIM_PJRT_PLUGIN_PATH"):
@@ -97,6 +102,10 @@ def environment(args, inherited=None):
         PJRT_SIM_BUNDLE_PYTHON=sys.executable,
         TPU_SKIP_MDS_QUERY="1",
     )
+    if getattr(args, "framework", "jax") == "torch_tpu":
+        # TorchTPU uses XLA's dynamic plugin registry, not JAX's registry.
+        # Keep the real offline compiler in PJRT_SIM_LIBTPU_PATH.
+        env["TPU_LIBRARY_PATH"] = plugin
     for field in ("capacity", "reserved"):
         value = getattr(args, f"hbm_{field}_gib", None)
         if value is not None:
@@ -129,6 +138,8 @@ def main(argv=None):
                                  help="Discard this many device samples per executable (default: 1)")
             command.add_argument("command", nargs=argparse.REMAINDER)
             continue
+        command.add_argument("--framework", choices=("jax", "torch_tpu"), default="jax",
+                             help="Workload frontend (default: jax)")
         command.add_argument("--topology", help="Offline TPU topology (default: tpu7x:2x2x1)")
         command.add_argument("--devices", type=int, help="Simulated devices (default: 8)")
         command.add_argument("--hbm-capacity-gib", type=float, help="Logical HBM capacity per device")
@@ -160,7 +171,7 @@ def main(argv=None):
         if args.action == "doctor":
             from importlib.metadata import PackageNotFoundError, version
             versions = {}
-            for name in ("sim-pjrt", "jax", "jaxlib", "libtpu"):
+            for name in ("sim-pjrt", "jax", "jaxlib", "libtpu", "torch", "torch_tpu"):
                 try:
                     versions[name] = version(name)
                 except PackageNotFoundError:
@@ -174,6 +185,9 @@ def main(argv=None):
             command = command[1:]
         if not command:
             raise ValueError("Provide a command or script, e.g. workload.py")
+        if getattr(args, "framework", "jax") == "torch_tpu":
+            if args.action == "run" and (args.predictor != "llo" or args.database):
+                raise ValueError("TorchTPU supports the LLO predictor; collection/replay is JAX-only")
         if args.action == "collect":
             if args.skip_first < 0:
                 raise ValueError("--skip-first must be nonnegative")
@@ -194,15 +208,18 @@ def main(argv=None):
                     raise ValueError("--replay-miss requires --predictor replay")
                 env.pop("PJRT_SIM_PREDICTOR", None)
                 env.pop("PJRT_SIM_REPLAY_MISS", None)
-            if selected is not None or args.report:
+            if selected is not None or args.report or args.framework == "torch_tpu":
                 options = dict(command=command, predictor=args.predictor, replay_miss=args.replay_miss,
-                               database=selected.path if selected else None)
+                               database=selected.path if selected else None, framework=args.framework)
                 if args.report:
                     directory = Path(args.report).expanduser().resolve()
                     directory.mkdir(parents=True, exist_ok=False)
                     env["PJRT_SIM_TRACE"] = str(directory / "execution")
                     options["report"] = str(directory)
                 command = [sys.executable, "-m", "sim_pjrt.workload", json.dumps(["run", options])]
+        elif args.action == "compile" and args.framework == "torch_tpu":
+            options = dict(command=command, framework=args.framework)
+            command = [sys.executable, "-m", "sim_pjrt.workload", json.dumps(["run", options])]
         if command[0].endswith(".py"):
             command.insert(0, sys.executable)
         elif command[0] in ("python", "python3"):

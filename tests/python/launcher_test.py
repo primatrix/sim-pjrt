@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from sim_pjrt.cli import environment
 from argparse import Namespace
@@ -84,6 +85,58 @@ class LauncherTest(unittest.TestCase):
         summary = json.loads((report / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'complete')
         self.assertIsNone(summary['device_memory'])
+
+    def test_torch_tpu_library_is_separate_from_offline_compiler(self):
+        compiler = self.file.parent / "libtpu.so"
+        compiler.touch()
+        args = Namespace(action="run", framework="torch_tpu", plugin=str(self.file),
+                         libtpu=str(compiler), topology=None, devices=1, timing_profile=str(self.file))
+        inherited = {"TPU_LIBRARY_PATH": "/old/libtpu.so"}
+        env = environment(args, inherited)
+        self.assertEqual(env["TPU_LIBRARY_PATH"], str(self.file))
+        self.assertEqual(env["PJRT_SIM_LIBTPU_PATH"], str(compiler))
+        self.assertEqual(inherited["TPU_LIBRARY_PATH"], "/old/libtpu.so")
+        collected = environment(Namespace(action="collect"), env)
+        self.assertNotIn("TPU_LIBRARY_PATH", collected)
+        self.assertEqual(environment(Namespace(action="collect"), inherited)["TPU_LIBRARY_PATH"],
+                         "/old/libtpu.so")
+
+    def test_torch_tpu_replay_rejected_before_creating_report(self):
+        report = self.file.parent / "report"
+        self.options += ["--framework", "torch_tpu", "--predictor", "replay",
+                         "--report", str(report)]
+        result = self.launch(["workload.py"])
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("collection/replay is JAX-only", result.stderr)
+        self.assertFalse(report.exists())
+
+    def test_torch_tpu_report_waits_without_jax_observer(self):
+        from sim_pjrt.run import run
+
+        report = self.file.parent / "report"
+        report.mkdir()
+        events = []
+        with mock.patch("sim_pjrt.torch_tpu.initialize", side_effect=lambda: events.append("init")), \
+             mock.patch("sim_pjrt.run.run_python", side_effect=lambda command: events.append(command)), \
+             mock.patch("sim_pjrt.torch_tpu.synchronize", side_effect=lambda: events.append("sync")), \
+             mock.patch("sim_pjrt.run.compilation_observer", side_effect=AssertionError("JAX used")):
+            run(["workload.py"], framework="torch_tpu", report=report)
+        self.assertEqual(events, ["init", ["workload.py"], "sync"])
+        summary = json.loads((report / "summary.json").read_text())
+        self.assertEqual(summary["status"], "complete")
+        self.assertIsNone(summary["device_memory"])
+
+    def test_torch_tpu_async_failure_marks_report_failed(self):
+        from sim_pjrt.run import run
+
+        report = self.file.parent / "report"
+        report.mkdir()
+        with mock.patch("sim_pjrt.torch_tpu.initialize"), \
+             mock.patch("sim_pjrt.run.run_python"), \
+             mock.patch("sim_pjrt.torch_tpu.synchronize", side_effect=RuntimeError("execution failed")):
+            with self.assertRaisesRegex(RuntimeError, "execution failed"):
+                run(["workload.py"], framework="torch_tpu", report=report)
+        self.assertEqual(json.loads((report / "summary.json").read_text())["status"], "failed")
 
     def test_compile_script_forwards_arguments_without_timing(self):
         output = str(self.file.parent / "dumps")
