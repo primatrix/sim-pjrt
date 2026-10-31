@@ -61,6 +61,10 @@ xla_cc_test(
 xla_cc_binary(
     name = "pjrt_sim_plugin.so",
     srcs = ["src/plugin.cc", "src/instrumentation.cc", "src/instrumentation.h", "src/profiler_api.cc"],
+    # Match upstream PJRT plugins: C++ runtimes/XLA symbols must stay private
+    # when PyTorch, JAX and their extensions share the host process.
+    additional_linker_inputs = ["@xla//xla/pjrt/c:pjrt_c_api_cpu_version_script.lds"],
+    linkopts = ["-Wl,--version-script,$(location @xla//xla/pjrt/c:pjrt_c_api_cpu_version_script.lds)"],
     linkshared = True,
     deps = [
         "@com_google_absl//absl/container:flat_hash_map",
@@ -76,6 +80,8 @@ xla_cc_binary(
         "@xla//xla/pjrt/c:pjrt_c_api_helpers",
         "@xla//xla/pjrt/c:pjrt_c_api_hdrs",
         "@xla//xla/pjrt/c:pjrt_c_api_layouts_extension_hdrs",
+        "@xla//xla/pjrt/c:pjrt_c_api_tpu_topology_extension_hdrs",
+        "@xla//xla/pjrt/extensions/host_memory_allocator:host_memory_allocator_extension",
         "@xla//xla/pjrt/c:pjrt_c_api_status_utils",
         "@xla//xla/pjrt/c:pjrt_c_api_wrapper_impl",
         "@xla//xla/pjrt/plugin/xla_cpu:cpu_client_options",
@@ -279,6 +285,7 @@ xla_cc_test(
     srcs = ["tests/cpp/compilation_test.cc"],
     deps = [
         ":compilation",
+        ":virtual_hbm",
         "@xla//xla:literal",
         "@xla//xla/hlo/parser:hlo_parser",
         "@xla//xla/hlo/ir:hlo",

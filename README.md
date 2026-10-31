@@ -6,7 +6,7 @@ on CPU, without TPU hardware.
 sim-pjrt uses libtpu to compile workloads (both JIT and AOT) for a target TPU
 topology. It supports Final LLO timing estimates, measured timing replay,
 Virtual HBM, and XProf traces. The `spjrt` launcher configures the backend for
-existing Python programs, including supported JAX and SGLang-Jax workloads.
+existing Python programs, including supported JAX, SGLang-Jax and TorchTPU workloads.
 
 ![sim-pjrt architecture](docs/images/architecture.svg)
 
@@ -118,6 +118,20 @@ spjrt run python -m sgl_jax.launch_server \
 See the [workload guide](docs/plugin-guide.md) for model setup and XProf capture,
 and [Python packaging](docs/python-package.md) for uv integration and launcher
 configuration. Use `spjrt COMMAND --help` for all options.
+
+### Run TorchTPU
+
+Use an [isolated TorchTPU environment](docs/python-package.md#torchtpu)
+with a separate libtpu 0.0.48 compiler:
+
+```sh
+spjrt run --framework torch_tpu --devices 1 --libtpu /path/to/libtpu-0.0.48/libtpu.so \
+  --report ./torch-report workload.py
+```
+
+Single-process eager and `torch.compile(backend="tpu")` workloads are supported.
+Floating-point outputs are placeholders. See the
+[vLLM-TorchTPU example](docs/python-package.md#vllm-torchtpu) for framework integration.
 
 ## Scope and limitations
 

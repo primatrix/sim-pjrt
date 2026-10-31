@@ -1,8 +1,11 @@
 // A C API adapter over the CPU functional backend. Ownership and numerical
 // control semantics remain upstream; SimRuntime gates public readiness using
 // libtpu bundle durations. Virtual storage bounds large arrays by default.
+#include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <set>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -18,7 +21,9 @@
 #include "xla/pjrt/c/pjrt_c_api_helpers.h"
 #include "xla/pjrt/c/pjrt_c_api_layouts_extension.h"
 #include "xla/pjrt/c/pjrt_c_api_status_utils.h"
+#include "xla/pjrt/c/pjrt_c_api_tpu_topology_extension.h"
 #include "xla/pjrt/c/pjrt_c_api_wrapper_impl.h"
+#include "xla/pjrt/extensions/host_memory_allocator/host_memory_allocator_extension.h"
 #include "xla/pjrt/plugin/xla_cpu/cpu_client_options.h"
 #include "xla/pjrt/plugin/xla_cpu/xla_cpu_pjrt_client.h"
 #include "xla/pjrt/proto/compile_options.pb.h"
@@ -60,9 +65,20 @@ PJRT_Error* Create(PJRT_Client_Create_Args* args) {
   if (device_count > target->devices.size())
     return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
         "PJRT_SIM_DEVICE_COUNT exceeds the libtpu topology device count"));
-  if (args->num_options != 0) {
-    return pjrt::StatusToPjRtError(
-        absl::InvalidArgumentError("Simulator does not accept client options"));
+  for (size_t i = 0; i < args->num_options; ++i) {
+    const auto& option = args->create_options[i];
+    PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+        "PJRT_NamedValue", PJRT_NamedValue_STRUCT_SIZE, option.struct_size));
+    // TorchTPU passes this libtpu host-transfer allocation hint. CPU-backed
+    // transfers need no premapped TPU memory, so accepting it is a no-op.
+    if (absl::string_view(option.name, option.name_size) !=
+            "premapped_buffer_size" ||
+        option.type != PJRT_NamedValue_kInt64 || option.value_size != 1 ||
+        option.int64_value < 0) {
+      return pjrt::StatusToPjRtError(absl::InvalidArgumentError(
+          "Simulator only accepts a nonnegative int64 premapped_buffer_size "
+          "client option"));
+    }
   }
   PJRT_ASSIGN_OR_RETURN(std::unique_ptr<PjRtClient> client,
                         GetXlaPjrtCpuClient(options));
@@ -169,6 +185,90 @@ PJRT_Error* Compile(PJRT_Client_Compile_Args* args) {
   return nullptr;
 }
 
+template <typename Args>
+PJRT_Error* UnsupportedTopology(Args*) {
+  return pjrt::StatusToPjRtError(absl::UnimplementedError(
+      "This TPU topology operation is not implemented by the simulator"));
+}
+
+PJRT_Error* ChipCount(PJRT_TpuTopology_ChipCount_Args* args) {
+  PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+      "PJRT_TpuTopology_ChipCount_Args",
+      PJRT_TpuTopology_ChipCount_Args_STRUCT_SIZE, args->struct_size));
+  const auto& target = TargetTopology();
+  PJRT_RETURN_IF_ERROR(target.status());
+  if (!args->topology || args->topology->descriptions.empty() ||
+      args->topology->descriptions.size() > target->devices.size()) {
+    return pjrt::StatusToPjRtError(
+        absl::InvalidArgumentError("Invalid simulator topology"));
+  }
+  // A v7x chip has two logical devices. Count distinct chip coordinates among
+  // the devices actually exposed by this client, not the full AOT target.
+  std::set<std::array<int64_t, 3>> chips;
+  for (size_t i = 0; i < args->topology->descriptions.size(); ++i)
+    chips.insert(target->devices[i].coords);
+  args->chip_count = chips.size();
+  return nullptr;
+}
+
+PJRT_TpuTopology_Extension TopologyExtension(PJRT_Extension_Base* next) {
+  PJRT_TpuTopology_Extension extension{};
+  extension.base.struct_size = PJRT_TpuTopology_Extension_STRUCT_SIZE;
+  extension.base.type = PJRT_Extension_Type_TpuTopology;
+  extension.base.next = next;
+  // The C++ client calls these slots without null checks. Fail explicitly for
+  // unsupported operations instead of advertising callbacks that can crash.
+  extension.subslice = UnsupportedTopology;
+  extension.is_subslice_topology = UnsupportedTopology;
+  extension.subslice_device_id_from_full_device_id = UnsupportedTopology;
+  extension.replace_host_bounds = UnsupportedTopology;
+  extension.is_enhanced_barrier_enabled = UnsupportedTopology;
+  extension.has_limited_ici_connectivity = UnsupportedTopology;
+  extension.is_reachable_over_limited_ici = UnsupportedTopology;
+  extension.process_count = UnsupportedTopology;
+  extension.chips_per_process = UnsupportedTopology;
+  extension.core_count_per_chip = UnsupportedTopology;
+  extension.chip_count = ChipCount;
+  extension.core_count = UnsupportedTopology;
+  extension.logical_device_count_per_process = UnsupportedTopology;
+  extension.logical_device_count = UnsupportedTopology;
+  extension.logical_device_count_per_chip = UnsupportedTopology;
+  extension.core_count_per_process = UnsupportedTopology;
+  extension.process_ids = UnsupportedTopology;
+  extension.logical_device_ids_on_process = UnsupportedTopology;
+  extension.proc_id_and_idx_on_proc_for_chip = UnsupportedTopology;
+  extension.proc_id_and_idx_on_proc_for_logi_device = UnsupportedTopology;
+  extension.process_coord_from_id = UnsupportedTopology;
+  extension.chip_id_from_coord = UnsupportedTopology;
+  extension.logical_device_id_from_chip_coord_and_idx = UnsupportedTopology;
+  extension.chip_coord_and_idx_for_logi_device = UnsupportedTopology;
+  extension.chips_per_process_bounds = UnsupportedTopology;
+  extension.chip_bounds = UnsupportedTopology;
+  extension.process_bounds = UnsupportedTopology;
+  extension.get_routing_strategy = UnsupportedTopology;
+  extension.get_slice_config = UnsupportedTopology;
+  extension.get_slice_configs = UnsupportedTopology;
+  extension.get_default_platform_config = UnsupportedTopology;
+  return extension;
+}
+
+PJRT_Error* AllocateHostMemory(PJRT_HostMemoryAllocator_Allocate_Args* args) {
+  PJRT_RETURN_IF_ERROR(pjrt::ActualStructSizeIsGreaterOrEqual(
+      "PJRT_HostMemoryAllocator_Allocate_Args",
+      PJRT_HostMemoryAllocator_Allocate_Args_STRUCT_SIZE, args->struct_size));
+  if (!args->client)
+    return pjrt::StatusToPjRtError(absl::InvalidArgumentError("Null client"));
+  // Device storage is CPU-backed, so transfers need aligned host memory but
+  // no TPU pinning or mapping. NUMA placement is only a hint in this API.
+  void* memory = nullptr;
+  if (posix_memalign(&memory, 64, args->size ? args->size : 1) != 0)
+    memory = nullptr;
+  args->ptr = static_cast<uint8_t*>(memory);
+  args->deleter = [](void* ptr, void*) { std::free(ptr); };
+  args->deleter_arg = nullptr;
+  return nullptr;
+}
+
 const PJRT_Api* Api() {
   // Expose only extensions implemented by this adapter. In particular, phased
   // compilation must not bypass CompileProgram via the CPU extension.
@@ -176,9 +276,14 @@ const PJRT_Api* Api() {
       RawBufferExtension(&ProfilerExtension()->base);
   static PJRT_Layouts_Extension layouts =
       pjrt::CreateLayoutsExtension(&raw_buffers.base);
+  static PJRT_TpuTopology_Extension topology = TopologyExtension(&layouts.base);
+  static PJRT_HostMemoryAllocator_Extension host_allocator = {
+      {PJRT_HostMemoryAllocator_Extension_STRUCT_SIZE,
+       PJRT_Extension_Type_HostMemoryAllocator, &topology.base},
+      AllocateHostMemory};
   static const PJRT_Api api = [] {
     PJRT_Api result = *pjrt::cpu_plugin::GetCpuPjrtApi();
-    result.extension_start = &layouts.base;
+    result.extension_start = &host_allocator.base;
     result.PJRT_Client_Create = Create;
     result.PJRT_Client_PlatformName = PlatformName;
     result.PJRT_DeviceDescription_Kind = DeviceKind;

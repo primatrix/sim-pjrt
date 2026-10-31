@@ -8,6 +8,18 @@ import numpy as np
 
 
 class RuntimeTest(unittest.TestCase):
+    def test_client_transfer_hint_validation(self):
+        from jaxlib import xla_client
+
+        jax.devices()  # Register and initialize the plugin before direct clients.
+        for size in (0, 4096):
+            client = xla_client.make_c_api_client("tpu", {"premapped_buffer_size": size})
+            self.assertEqual(client.platform, "tpu")
+        for options in ({"premapped_buffer_size": -1}, {"premapped_buffer_size": "0"},
+                        {"unknown_option": 0}):
+            with self.assertRaisesRegex(Exception, "nonnegative int64 premapped_buffer_size"):
+                xla_client.make_c_api_client("tpu", options)
+
     def test_device(self):
         (device,) = jax.devices()
         self.assertEqual(device.platform, "tpu")

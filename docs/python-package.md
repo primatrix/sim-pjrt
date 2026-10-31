@@ -70,6 +70,7 @@ CLI options override environment values. The launcher accepts:
 
 | Option | Environment fallback | Default |
 | --- | --- | --- |
+| `--framework` | — | `jax`; select `torch_tpu` explicitly |
 | `--topology` | `PJRT_SIM_TPU_TOPOLOGY` | `tpu7x:2x2x1` |
 | `--devices` | `PJRT_SIM_DEVICE_COUNT` | 8 |
 | `--timing-profile` | `PJRT_SIM_BUNDLE_PROFILE` | Bundled `tpu7x` profile |
@@ -96,6 +97,79 @@ sim-pjrt doctor --topology v5e:2x2 --timing-profile example
 This checks file presence and configuration, not binary loading or model support.
 The top-level `bundle_timing` and `profile_report` modules are included for
 compatibility with the native estimator subprocess and existing integration tools.
+
+## TorchTPU
+
+Google's [TorchTPU](https://github.com/google-pytorch/torch_tpu) is optional.
+Use a separate Python 3.12 environment: `torch_tpu==0.2.0` requires
+libtpu >=0.0.50, while the simulator's timing model requires a separate
+**libtpu 0.0.48 compiler**. From a source checkout:
+
+```sh
+python3.12 -m venv .build/torch-compiler
+.build/torch-compiler/bin/python -m pip install libtpu==0.0.48
+python3.12 -m venv .build/torch-workload
+.build/torch-workload/bin/python -m pip install \
+  torch==2.11.0 torch_tpu==0.2.0 jax==0.11.1 jaxlib==0.11.1 requests \
+  --extra-index-url https://download.pytorch.org/whl/cpu
+bazel build //:plugin
+
+PYTHONPATH="$PWD/python" .build/torch-workload/bin/python -m sim_pjrt run \
+  --framework torch_tpu --devices 1 --plugin "$PWD/bazel-bin/pjrt_sim_plugin.so" \
+  --libtpu "$PWD/.build/torch-compiler/lib/python3.12/site-packages/libtpu/libtpu.so" \
+  --report ./torch-report tests/python/torch_tpu_smoke_test.py -v
+```
+
+Use `compile --framework torch_tpu --output DIRECTORY` to execute and export
+LLO without timing analysis. `doctor --framework torch_tpu` checks configuration.
+The launcher sets `TPU_LIBRARY_PATH` to the simulator and `PJRT_SIM_LIBTPU_PATH`
+to the offline compiler, registers the backend, and synchronizes execution.
+
+Support covers single-process eager and compiled workloads. Floating-point
+outputs are placeholders; collection and replay remain JAX-only. TorchTPU
+reports use native execution records and omit JAX compile identities and
+device-memory snapshots. Revalidate compatibility when upgrading TorchTPU.
+
+### vLLM-TorchTPU
+
+[vLLM-TorchTPU](https://github.com/vllm-project/vllm-torchtpu) includes `vllm`.
+Use its published wheels in a separate Linux x86-64 / Python 3.12 environment:
+
+```sh
+python3.12 -m venv .build/vllm-torchtpu-venv
+.build/vllm-torchtpu-venv/bin/python -m pip install \
+  vllm-torchtpu==0.29.0 torch==2.13.0+cpu torchvision==0.28.0+cpu \
+  torch_tpu==0.2.0 jax==0.11.2 jaxlib==0.11.2 libtpu==0.0.50 \
+  --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+Use the **libtpu 0.0.48 compiler** from the setup above. From the source checkout:
+
+```sh
+export PYTHONPATH="$PWD/python"
+export VLLM_ENABLE_V1_MULTIPROCESSING=0
+export VLLM_DISABLE_COMPILE_CACHE=1
+export TPU_ACCELERATOR_TYPE=tpu7x-8 TPU_NAME=sim-pjrt TPU_WORKER_ID=0
+export HF_HUB_OFFLINE=1 VLLM_NO_USAGE_STATS=1 DO_NOT_TRACK=1
+export XDG_CACHE_HOME="$PWD/.build/vllm-cache"
+export HF_HOME="$XDG_CACHE_HOME/hf" VLLM_CACHE_ROOT="$XDG_CACHE_HOME/vllm"
+export NUMBA_CACHE_DIR="$XDG_CACHE_HOME/numba"
+
+.build/vllm-torchtpu-venv/bin/python -m sim_pjrt compile \
+  --framework torch_tpu --devices 1 --plugin "$PWD/bazel-bin/pjrt_sim_plugin.so" \
+  --libtpu "$PWD/.build/torch-compiler/lib/python3.12/site-packages/libtpu/libtpu.so" \
+  --output .build/vllm-llo tests/python/vllm_torchtpu_smoke_test.py
+```
+
+The test runs Llama generation with dummy weights and token IDs, without model
+downloads. Append `--compiled` after the filename for compiled execution.
+`VLLM_DISABLE_COMPILE_CACHE=1` disables unsupported executable serialization
+while retaining compilation.
+
+Scope is single-process TP1, with prefix caching and async scheduling disabled.
+Outputs validate framework execution, not model accuracy. Full latency
+prediction remains unsupported: dynamic attention loops can exceed scalar
+analysis limits. Use `compile` for this test; failed timing reports are incomplete.
 
 ## Distribution validation
 

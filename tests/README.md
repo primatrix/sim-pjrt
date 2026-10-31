@@ -79,6 +79,22 @@ configured topology. `SIM_RESULTS_DIR` selects the artifact directory.
 `SIM_INTERMEDIATE_SIZE` and `SIM_TEST_TIMEOUT` select larger serving experiments.
 Dummy weights validate serving and simulator behavior, not numerical accuracy.
 
+## TorchTPU integration
+
+Use the [isolated TorchTPU environment](../docs/python-package.md#torchtpu), then
+run `torch_tpu_smoke_test.py` with `--framework torch_tpu --devices 1` in
+`run` or `compile` mode. Coverage includes device discovery, integer arithmetic,
+eager and compiled operations, JAX kernel integration, and asynchronous host
+transfers. Floating-point checks cover metadata, not numerical accuracy.
+
+## vLLM-TorchTPU integration
+
+Follow the [separate environment and command](../docs/python-package.md#vllm-torchtpu).
+`vllm_torchtpu_smoke_test.py` covers batched generation and engine reuse with
+dummy Llama weights. Run through `spjrt compile`; append `--compiled` for the
+compiled model path. These optional integrations are separate from the Bazel
+suite. Dynamic attention loops currently prevent complete vLLM timing analysis.
+
 ## Hardware measurements
 
 See [collection](../docs/collection.md) for profiling your workloads and

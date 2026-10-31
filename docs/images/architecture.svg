@@ -1,89 +1,118 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="493" viewBox="0 0 1160 596" role="img" aria-labelledby="title desc"><title id="title">StableHLO-based TPU simulation</title><desc id="desc">JAX lowers through StableHLO and PJRT. The hardware path compiles with libtpu for TPU execution. The simulator supports runtime JIT and ahead-of-time compilation of StableHLO with libtpu into Final LLO bundles and a call map, without physical TPU hardware. The cost model uses those artifacts, a hardware profile and execution scenario to estimate bundle issue, DMA and synchronization time. Ready joins the modeled timer with CPU output simulation and Virtual HBM.</desc><defs><marker id="a6E8295" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#6E8295" stroke-width="1.5"/></marker><marker id="aA3ADB6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#A3ADB6" stroke-width="1.5"/></marker></defs><rect width="1160" height="596" fill="#FFFFFF"/>
-<rect x="16" y="16" width="424" height="168" rx="6" fill="transparent" stroke="#CDD3D8" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="16" fill="#596B7D" text-anchor="start"><tspan x="36" y="50.0">JAX</tspan></text>
-<rect x="602" y="16" width="422" height="168" rx="6" fill="transparent" stroke="#CDD3D8" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="16" fill="#596B7D" text-anchor="start"><tspan x="622" y="50.0">libtpu · XLA TPU compiler</tspan></text>
-<rect x="34" y="98" width="100" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#79838D" text-anchor="middle"><tspan x="84.0" y="118.0">SOURCE</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="84.0" y="146.0">Python</tspan></text>
-<rect x="181" y="98" width="92" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#607C99" text-anchor="middle"><tspan x="227.0" y="118.0">IR</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="227.0" y="146.0">jaxpr</tspan></text>
-<rect x="320" y="98" width="102" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#607C99" text-anchor="middle"><tspan x="371.0" y="118.0">IR</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="371.0" y="146.0">StableHLO</tspan></text>
-<rect x="474" y="98" width="90" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#A1875D" text-anchor="middle"><tspan x="519.0" y="118.0">API</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="519.0" y="146.0">PJRT</tspan></text>
-<rect x="620" y="98" width="82" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#607C99" text-anchor="middle"><tspan x="661.0" y="118.0">IR</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="661.0" y="146.0">HLO</tspan></text>
-<rect x="759" y="98" width="82" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#607C99" text-anchor="middle"><tspan x="800.0" y="118.0">IR</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="800.0" y="146.0">LLO</tspan></text>
-<rect x="898" y="98" width="108" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#A1875D" text-anchor="middle"><tspan x="952.0" y="118.0">INSTRUCTIONS</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="952.0" y="146.0">VLIW</tspan></text>
-<rect x="1060" y="98" width="84" height="64" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#867396" text-anchor="middle"><tspan x="1102.0" y="118.0">HARDWARE</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="1102.0" y="146.0">TPU</tspan></text>
-<path d="M 138 130 L 175 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 277 130 L 314 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 426 130 L 468 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 568 130 L 614 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 706 130 L 753 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 845 130 L 892 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 1010 130 L 1054 130" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" fill="#79838D" text-anchor="middle"><tspan x="157.5" y="86.0">trace</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" fill="#79838D" text-anchor="middle"><tspan x="296.5" y="86.0">lower</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" fill="#79838D" text-anchor="middle"><tspan x="730.5" y="86.0">lower</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" fill="#79838D" text-anchor="middle"><tspan x="869.5" y="86.0">pack</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" fill="#79838D" text-anchor="middle"><tspan x="1033.0" y="86.0">execute</tspan></text>
-<rect x="193" y="98" width="68" height="2" rx="0" fill="#607C99" stroke="transparent" stroke-width="0"/>
-<rect x="332" y="98" width="78" height="2" rx="0" fill="#607C99" stroke="transparent" stroke-width="0"/>
-<rect x="486" y="98" width="66" height="2" rx="0" fill="#A1875D" stroke="transparent" stroke-width="0"/>
-<rect x="632" y="98" width="58" height="2" rx="0" fill="#607C99" stroke="transparent" stroke-width="0"/>
-<rect x="771" y="98" width="58" height="2" rx="0" fill="#607C99" stroke="transparent" stroke-width="0"/>
-<rect x="910" y="98" width="84" height="2" rx="0" fill="#A1875D" stroke="transparent" stroke-width="0"/>
-<rect x="1072" y="98" width="60" height="2" rx="0" fill="#867396" stroke="transparent" stroke-width="0"/>
-<rect x="16" y="240" width="1128" height="342" rx="6" fill="transparent" stroke="#B2BDC5" stroke-width="1" stroke-dasharray="4 5"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="16" fill="#596B7D" text-anchor="start"><tspan x="36" y="274.0">PJRT plugin</tspan></text>
-<path d="M 519 168 L 519 205 Q 519 212 512 212 L 31 212 Q 24 212 24 219 L 24 375 Q 24 380 29 380 L 34 380" fill="none" stroke="#6E8295" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a6E8295)"/>
-<rect x="40" y="350" width="136" height="60" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" fill="#283442" text-anchor="middle"><tspan x="108.0" y="386.0">StableHLO</tspan></text>
-<rect x="52" y="350" width="112" height="2" rx="0" fill="#607C99" stroke="transparent" stroke-width="0"/>
-<rect x="218" y="350" width="146" height="60" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#607C99" text-anchor="middle"><tspan x="291.0" y="368.0">JIT / AOT COMPILE</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="18" fill="#283442" text-anchor="middle"><tspan x="291.0" y="396.0">libtpu</tspan></text>
-<rect x="230" y="350" width="122" height="2" rx="0" fill="#607C99" stroke="transparent" stroke-width="0"/>
-<rect x="406" y="350" width="164" height="60" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#A1875D" text-anchor="middle"><tspan x="488.0" y="368.0">BUNDLES + CALL MAP</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="18" fill="#283442" text-anchor="middle"><tspan x="488.0" y="396.0">Final LLO</tspan></text>
-<rect x="418" y="350" width="140" height="2" rx="0" fill="#A1875D" stroke="transparent" stroke-width="0"/>
-<rect x="612" y="304" width="254" height="154" rx="6" fill="#F8FAF8" stroke="#B7C6BE" stroke-width="1"/>
-<rect x="612" y="304" width="254" height="44" rx="6" fill="#476A5E" stroke="#476A5E" stroke-width="1"/>
-<rect x="613" y="332" width="252" height="16" rx="0" fill="#476A5E" stroke="#476A5E" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="19" fill="#FFFFFF" text-anchor="middle"><tspan x="739.0" y="333.0">Cost model</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="14" fill="#476A5E" text-anchor="middle"><tspan x="739.0" y="380.0">Calls / execution path</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="14" fill="#476A5E" text-anchor="middle"><tspan x="739.0" y="418.0">Issue / DMA / sync timing</tspan></text>
-<rect x="908" y="350" width="90" height="60" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#A1875D" text-anchor="middle"><tspan x="953.0" y="368.0">ESTIMATE</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="18" fill="#283442" text-anchor="middle"><tspan x="953.0" y="396.0">Timer</tspan></text>
-<rect x="920" y="350" width="66" height="2" rx="0" fill="#A1875D" stroke="transparent" stroke-width="0"/>
-<rect x="1040" y="350" width="82" height="60" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="10" fill="#867396" text-anchor="middle"><tspan x="1081.0" y="368.0">JOIN</tspan></text>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="18" fill="#283442" text-anchor="middle"><tspan x="1081.0" y="396.0">Ready</tspan></text>
-<rect x="1052" y="350" width="58" height="2" rx="0" fill="#867396" stroke="transparent" stroke-width="0"/>
-<path d="M 182 380 L 212 380" fill="none" stroke="#6E8295" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a6E8295)"/>
-<path d="M 370 380 L 400 380" fill="none" stroke="#6E8295" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a6E8295)"/>
-<path d="M 576 380 L 606 380" fill="none" stroke="#6E8295" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a6E8295)"/>
-<path d="M 872 380 L 902 380" fill="none" stroke="#6E8295" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a6E8295)"/>
-<path d="M 1004 380 L 1034 380" fill="none" stroke="#6E8295" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a6E8295)"/>
-<rect x="218" y="498" width="252" height="34" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="14" fill="#79838D" text-anchor="middle"><tspan x="344.0" y="518.0">CPU / Virtual HBM</tspan></text>
-<path d="M 192 380 L 192 508 Q 192 515 199 515 L 212 515" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<path d="M 476 515 L 483 515 Q 490 515 490 522 L 490 557 Q 490 564 497 564 L 1074 564 Q 1081 564 1081 557 L 1081 416" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
-<rect x="612" y="498" width="254" height="34" rx="6" fill="#FAFBFC" stroke="#D5DBE0" stroke-width="1"/>
-<text font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="14" fill="#79838D" text-anchor="middle"><tspan x="739.0" y="518.0">Hardware profile / scenario</tspan></text>
-<path d="M 739 492 L 739 464" fill="none" stroke="#A3ADB6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#aA3ADB6)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="352"
+     viewBox="0 0 1200 440" role="img" aria-labelledby="title desc">
+  <title id="title">JAX and TorchTPU through the sim-pjrt backend</title>
+  <desc id="desc">JAX with SGLang-Jax and PyTorch with vLLM-TorchTPU produce StableHLO
+    for the PJRT C API. On real TPUs, libtpu compiles HLO to LLO and VLIW. The
+    sim-pjrt PJRT plugin runs on the CPU host: libtpu emits Final LLO bundles for
+    the cost model, while a CPU lowering and Virtual HBM keep control values with
+    placeholder floats. Ready waits for both the modeled timer and the outputs.</desc>
+  <style>
+    /* Page colors match GitHub's README canvas; accent matches logo.svg. */
+    .paper { fill: #FFFFFF; }
+    .ink { fill: #1F2328; }
+    .muted { fill: #59636E; }
+    .accent { fill: #5B7194; }
+    .box { fill: #FFFFFF; stroke: #424A53; stroke-width: 1; }
+    .box-thin { fill: none; stroke: #5B7194; stroke-width: 0.75; }
+    .region { fill: none; stroke: #C8D1DA; stroke-width: 1; }
+    .lane { fill: none; stroke: #C8D1DA; stroke-width: 1; stroke-dasharray: 3 4; }
+    .wire { fill: none; stroke: #8C959F; stroke-width: 1.1; }
+    .dash { stroke-dasharray: 3 4; }
+    .tip, .node { fill: #8C959F; }
+    .caps { font-size: 11px; letter-spacing: 0.18em; }
+    .knock { paint-order: stroke; stroke: #FFFFFF; stroke-width: 16px;
+             stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) {
+      .paper { fill: #0D1117; }
+      .ink { fill: #E6EDF3; }
+      .muted { fill: #9198A1; }
+      .accent { fill: #A3B8D8; }
+      .box { fill: #0D1117; stroke: #8B949E; }
+      .box-thin { stroke: #A3B8D8; }
+      .region, .lane { stroke: #3D444D; }
+      .wire { stroke: #6E7681; }
+      .tip, .node { fill: #6E7681; }
+      .knock { stroke: #0D1117; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="tip" d="M 0 0.8 L 8 4 L 0 7.2 Z"/>
+    </marker>
+  </defs>
+
+  <rect class="paper" x="0" y="0" width="1200" height="440"/>
+
+  <g font-family="'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', P052, Georgia, 'Times New Roman', serif"
+     text-anchor="middle">
+
+    <!-- Real TPU path -->
+    <rect class="lane" x="544.5" y="44.5" width="600" height="68"/>
+    <text class="muted caps knock" x="600" y="48.5">REAL TPU</text>
+    <text class="ink" x="608" y="84" font-size="19" font-weight="600">libtpu</text>
+    <g font-size="15" font-style="italic">
+      <text class="muted" x="812" y="83">HLO</text>
+      <text class="muted" x="904" y="83">LLO</text>
+      <text class="muted" x="996" y="83">VLIW</text>
+      <text class="ink" x="1088" y="83">TPU</text>
+    </g>
+    <path class="wire" d="M834 78 H880" marker-end="url(#arrow)"/>
+    <path class="wire" d="M926 78 H970" marker-end="url(#arrow)"/>
+    <path class="wire" d="M1024 78 H1066" marker-end="url(#arrow)"/>
+
+    <!-- Simulator region -->
+    <rect class="region" x="544.5" y="140.5" width="600" height="256"/>
+
+    <!-- Wires (under the boxes) -->
+    <path class="wire" d="M248 216 H280 V320 H248"/>
+    <path class="wire" d="M280 268 H312" marker-end="url(#arrow)"/>
+    <path class="wire dash" d="M392 232 V78 H544" marker-end="url(#arrow)"/>
+    <path class="wire" d="M472 268 H504"/>
+    <path class="wire" d="M504 268 V216 H576" marker-end="url(#arrow)"/>
+    <path class="wire" d="M504 268 V320 H576" marker-end="url(#arrow)"/>
+    <path class="wire" d="M752 216 H800" marker-end="url(#arrow)"/>
+    <path class="wire" d="M752 320 H800" marker-end="url(#arrow)"/>
+    <path class="wire" d="M976 216 H1000 V320 H976"/>
+    <path class="wire" d="M1000 268 H1024" marker-end="url(#arrow)"/>
+    <circle class="node" cx="280" cy="268" r="2.5"/>
+    <circle class="node" cx="504" cy="268" r="2.5"/>
+    <circle class="node" cx="1000" cy="268" r="2.5"/>
+
+    <text class="muted caps knock" x="652" y="144.5">PJRT PLUGIN · CPU HOST</text>
+
+    <!-- Frontends -->
+    <rect class="box" x="56.5" y="180.5" width="191" height="71"/>
+    <text class="ink" x="152" y="211" font-size="19" font-weight="600">JAX</text>
+    <text class="muted" x="152" y="235" font-size="14.5" font-style="italic">SGLang-Jax</text>
+    <rect class="box" x="56.5" y="284.5" width="191" height="71"/>
+    <text class="ink" x="152" y="315" font-size="19" font-weight="600">PyTorch</text>
+    <text class="muted" x="152" y="339" font-size="14.5" font-style="italic">vLLM-TorchTPU</text>
+
+    <!-- Shared interface -->
+    <rect class="box" x="312.5" y="232.5" width="159" height="71"/>
+    <text class="ink" x="392" y="263" font-size="19" font-weight="600">StableHLO</text>
+    <text class="muted" x="392" y="287" font-size="14.5" font-style="italic">PJRT C API</text>
+
+    <!-- Timing track -->
+    <rect class="box" x="576.5" y="180.5" width="175" height="71"/>
+    <text class="ink" x="664" y="211" font-size="19" font-weight="600">libtpu</text>
+    <text class="muted" x="664" y="235" font-size="14.5" font-style="italic">Final LLO bundles</text>
+    <rect class="box" x="800.5" y="180.5" width="175" height="71"/>
+    <text class="ink" x="888" y="211" font-size="19" font-weight="600">Cost model</text>
+    <text class="muted" x="888" y="235" font-size="14.5" font-style="italic">Issue · DMA · sync</text>
+
+    <!-- Output track -->
+    <rect class="box" x="576.5" y="284.5" width="175" height="71"/>
+    <text class="ink" x="664" y="315" font-size="19" font-weight="600">CPU lowering</text>
+    <text class="muted" x="664" y="339" font-size="14.5" font-style="italic">Control values</text>
+    <rect class="box" x="800.5" y="284.5" width="175" height="71"/>
+    <text class="ink" x="888" y="315" font-size="19" font-weight="600">Virtual HBM</text>
+    <text class="muted" x="888" y="339" font-size="14.5" font-style="italic">Placeholder floats</text>
+
+    <!-- Ready (double rule) -->
+    <rect class="box" x="1024.5" y="232.5" width="95" height="71"/>
+    <rect class="box-thin" x="1028.5" y="236.5" width="87" height="63"/>
+    <text class="accent" x="1072" y="275" font-size="20" font-weight="600">Ready</text>
+  </g>
 </svg>

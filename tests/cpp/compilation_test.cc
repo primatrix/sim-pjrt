@@ -6,6 +6,7 @@
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 #include "src/tpu_compilation.h"
+#include "src/virtual_hbm.h"
 #include "tsl/platform/status_matchers.h"
 #include "xla/hlo/parser/hlo_parser.h"
 #include "xla/literal.h"
@@ -33,6 +34,24 @@ module @matmul {
 )";
 
 class CompilationTest : public testing::TestWithParam<bool> {};
+
+TEST(CompilationInputTest, CpuOutputsIgnoreTpuOptionsButKeepOtherValidation) {
+  ASSERT_OK_AND_ASSIGN(auto client, GetXlaPjrtCpuClient(CpuClientOptions{}));
+  CompileOptions options;
+  options.env_option_overrides = {
+      {"xla_tpu_autofdo", false},
+      {"xla_tpu_vmem_scavenging_mode", std::string("SAFE_IFF_KERNEL_REQUIRED")}};
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnUnverifiedModule(kHlo));
+  ASSERT_OK_AND_ASSIGN(auto executable,
+                      CompileVirtual(client.get(), std::move(module), options));
+  ASSERT_OK_AND_ASSIGN(auto retained, executable->GetCompileOptions());
+  EXPECT_EQ(retained.env_option_overrides, options.env_option_overrides);
+
+  options.env_option_overrides.push_back({"not_a_compile_option", true});
+  ASSERT_OK_AND_ASSIGN(auto invalid, ParseAndReturnUnverifiedModule(kHlo));
+  EXPECT_EQ(CompileVirtual(client.get(), std::move(invalid), options).status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
 
 TEST_P(CompilationTest, RetainsOriginalInputAndUsesBundles) {
   if (!std::getenv("PJRT_SIM_LIBTPU_PATH")) GTEST_SKIP() << "requires libtpu";
